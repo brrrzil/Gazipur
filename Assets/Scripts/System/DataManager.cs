@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
-
+using static EnumData;
 public class DataManager
 {
     public int Money { get; private set; }
+    public GameMode gameMode;
     public HeroInfo Hero { get; private set; }
     public ItemInfo[] Inventory { get; private set; }
     public List<ItemInfo> HomeBox { get; private set; }
