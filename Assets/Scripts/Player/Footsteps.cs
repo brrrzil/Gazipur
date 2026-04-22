@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(AudioSource))]
@@ -43,6 +44,14 @@ public class Footsteps : MonoBehaviour
     private bool isPlayingStep = false;
     private float stepEndTime;
 
+    // Input System переменные
+    private PlayerInputActions inputActions;
+    private Vector2 moveInput;
+    private bool isRunning;
+
+    // Для проверки нахождения на земле (нужно связать с PlayerMovement)
+    private bool isGrounded = true;
+
     private enum SurfaceType
     {
         Indoor,
@@ -50,11 +59,15 @@ public class Footsteps : MonoBehaviour
         Unknown
     }
 
-    void Start()
+    void Awake()
     {
         controller = GetComponent<CharacterController>();
         audioSource = GetComponent<AudioSource>();
+        inputActions = new PlayerInputActions();
+    }
 
+    void Start()
+    {
         audioSource.loop = false;
         audioSource.playOnAwake = false;
 
@@ -62,11 +75,51 @@ public class Footsteps : MonoBehaviour
         UpdateSurfaceSettings();
     }
 
+    private void OnEnable()
+    {
+        inputActions.Player.Enable();
+
+        inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+
+        inputActions.Player.Run.performed += ctx => isRunning = true;
+        inputActions.Player.Run.canceled += ctx => isRunning = false;
+    }
+
+    private void OnDisable()
+    {
+        inputActions.Player.Move.performed -= ctx => moveInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Move.canceled -= ctx => moveInput = Vector2.zero;
+        inputActions.Player.Run.performed -= ctx => isRunning = true;
+        inputActions.Player.Run.canceled -= ctx => isRunning = false;
+
+        inputActions.Player.Disable();
+
+        if (audioSource != null && audioSource.isPlaying)
+            audioSource.Stop();
+        isPlayingStep = false;
+    }
+
     void Update()
     {
         CheckSurface();
         CheckMovement();
         HandleFootsteps();
+    }
+
+    /// <summary>
+    /// Проверяет, находится ли игрок на земле.
+    /// Этот метод должен вызываться извне или можно получать доступ к компоненту PlayerMovement.
+    /// Альтернатива: сделать isGrounded публичным свойством в PlayerMovement.
+    /// </summary>
+    private bool IsPlayerGrounded()
+    {
+        PlayerMovement playerMovement = GetComponent<PlayerMovement>();
+        if (playerMovement != null)
+        {
+            return playerMovement.IsGrounded;
+        }
+        return false;
     }
 
     void CheckSurface()
@@ -130,18 +183,18 @@ public class Footsteps : MonoBehaviour
 
     void CheckMovement()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-
-        Vector3 moveDirection = new Vector3(horizontal, 0, vertical);
+        // Получаем направление движения из Input System
+        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
         float currentSpeed = moveDirection.magnitude;
 
-        if (Input.GetKey(KeyCode.LeftShift))
+        // Рассчитываем текущую скорость с учетом бега
+        if (isRunning)
             currentSpeed *= runSpeed;
         else
             currentSpeed *= walkSpeed;
 
-        bool isMovingNow = currentSpeed > minSpeedForSteps;
+        // Проверяем, что игрок на земле и скорость выше порога
+        bool isMovingNow = currentSpeed > minSpeedForSteps && IsPlayerGrounded();
 
         if (isMovingNow != isMoving)
         {
@@ -159,20 +212,21 @@ public class Footsteps : MonoBehaviour
     {
         if (!isMoving) return;
 
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-
-        Vector3 moveDirection = new Vector3(horizontal, 0, vertical);
+        // Получаем текущее движение
+        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
         float currentSpeed = moveDirection.magnitude;
 
-        if (Input.GetKey(KeyCode.LeftShift))
+        // Рассчитываем скорость с учетом бега
+        if (isRunning)
             currentSpeed *= runSpeed;
         else
             currentSpeed *= walkSpeed;
 
+        // Вычисляем интервал шагов на основе скорости
         float speedRatio = Mathf.InverseLerp(minSpeedForSteps, runSpeed, currentSpeed);
         currentStepInterval = Mathf.Lerp(maxStepInterval, minStepInterval, speedRatio);
 
+        // Управление воспроизведением шага
         if (isPlayingStep && Time.time >= stepEndTime)
         {
             if (audioSource.isPlaying)
@@ -180,6 +234,7 @@ public class Footsteps : MonoBehaviour
             isPlayingStep = false;
         }
 
+        // Воспроизведение следующего шага
         if (!isPlayingStep && Time.time >= nextStepTime)
         {
             PlayRandomStep();
@@ -209,12 +264,5 @@ public class Footsteps : MonoBehaviour
         audioSource.Play();
         isPlayingStep = true;
         stepEndTime = Time.time + currentStepDuration;
-    }
-
-    void OnDisable()
-    {
-        if (audioSource != null && audioSource.isPlaying)
-            audioSource.Stop();
-        isPlayingStep = false;
     }
 }

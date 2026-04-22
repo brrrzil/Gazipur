@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
@@ -16,7 +17,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _crouchTransitionSpeed = 8f;
 
     [Header("Camera")]
-    [SerializeField] private Transform _playerCamera;
+    [SerializeField] private Transform _cameraHolder;
     [SerializeField] private float _mouseSensitivity = 100f;
     [SerializeField] private float _cameraHeightNormal = 0.8f;
     [SerializeField] private float _cameraHeightCrouch = 0.4f;
@@ -33,44 +34,84 @@ public class PlayerMovement : MonoBehaviour
     private float _currentCameraHeight;
     private bool _hasJumped = false;
 
-    void Start()
+    private PlayerInputActions _inputActions;
+    private Vector2 _moveInput;
+    private Vector2 _lookInput;
+    private bool _isRunning;
+    private bool _jumpPressed;
+
+    private bool _isGrounded;
+    public bool IsGrounded => _isGrounded;
+
+    void Awake()
     {
         _controller = GetComponent<CharacterController>();
-        Cursor.lockState = CursorLockMode.Locked;
+        _inputActions = new PlayerInputActions();
 
         _standingHeight = _controller.height;
-        _controller.height = _standingHeight;
         _currentCameraHeight = _cameraHeightNormal;
+    }
+
+    void Start()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
         UpdateCameraPosition();
+    }
+
+    private void OnEnable()
+    {
+        _inputActions.Player.Enable();
+
+        _inputActions.Player.Jump.performed += OnJumpPerformed;
+        _inputActions.Player.Jump.canceled += OnJumpCanceled;
+
+        _inputActions.Player.Crouch.performed += OnCrouchPerformed;
+        _inputActions.Player.Crouch.canceled += OnCrouchCanceled;
+
+        _inputActions.Player.Move.performed += ctx => _moveInput = ctx.ReadValue<Vector2>();
+        _inputActions.Player.Move.canceled += ctx => _moveInput = Vector2.zero;
+
+        _inputActions.Player.Look.performed += ctx => _lookInput = ctx.ReadValue<Vector2>();
+        _inputActions.Player.Look.canceled += ctx => _lookInput = Vector2.zero;
+
+        _inputActions.Player.Run.performed += ctx => _isRunning = true;
+        _inputActions.Player.Run.canceled += ctx => _isRunning = false;
+    }
+
+    private void OnDisable()
+    {
+        _inputActions.Player.Jump.performed -= OnJumpPerformed;
+        _inputActions.Player.Jump.canceled -= OnJumpCanceled;
+        _inputActions.Player.Crouch.performed -= OnCrouchPerformed;
+        _inputActions.Player.Crouch.canceled -= OnCrouchCanceled;
+
+        _inputActions.Player.Disable();
     }
 
     void Update()
     {
-        HandleMouseLook();
-        HandleCrouchInput();
         HandleCrouch();
+        ApplyGravity();
         HandleMovement();
         HandleJump();
-        ApplyGravity();
+        HandleCameraRotation();
         UpdateCameraPosition();
+
+        _isGrounded = CheckIfGrounded();
     }
 
-    void HandleMouseLook()
+    void HandleCameraRotation()
     {
-        float mouseX = Input.GetAxis("Mouse X") * _mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * _mouseSensitivity * Time.deltaTime;
+        float mouseX = _lookInput.x * _mouseSensitivity * Time.deltaTime;
+        float mouseY = _lookInput.y * _mouseSensitivity * Time.deltaTime;
 
-        transform.Rotate(Vector3.up * mouseX);
+        _xRotation -= mouseY;
+        _xRotation = Mathf.Clamp(_xRotation, -90f, 90f);
 
-        if (_playerCamera != null)
-        {
-            _xRotation -= mouseY;
-            _xRotation = Mathf.Clamp(_xRotation, -90f, 90f);
-            _playerCamera.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
-        }
+        _cameraHolder.localRotation = Quaternion.Euler(_xRotation, _cameraHolder.localEulerAngles.y + mouseX, 0f);
     }
 
-    bool IsGrounded()
+    bool CheckIfGrounded()
     {
         float rayLength = (_controller.height / 2) + _groundCheckDistance;
         RaycastHit hit;
@@ -93,9 +134,14 @@ public class PlayerMovement : MonoBehaviour
         return !Physics.Raycast(checkStart, Vector3.up, checkDistance);
     }
 
-    void HandleCrouchInput()
+    void OnCrouchPerformed(InputAction.CallbackContext context)
     {
-        _wantsToCrouch = Input.GetKey(KeyCode.LeftControl);
+        _wantsToCrouch = true;
+    }
+
+    void OnCrouchCanceled(InputAction.CallbackContext context)
+    {
+        _wantsToCrouch = false;
     }
 
     void HandleCrouch()
@@ -153,43 +199,52 @@ public class PlayerMovement : MonoBehaviour
 
     void UpdateCameraPosition()
     {
-        //if (_playerCamera == null) return;
+        if (_cameraHolder == null) return;
 
-        //Vector3 cameraPos = _playerCamera.localPosition;
-        //cameraPos.y = _currentCameraHeight;
-        //_playerCamera.localPosition = cameraPos;
+        Vector3 cameraPos = _cameraHolder.localPosition;
+        cameraPos.y = _currentCameraHeight;
+        _cameraHolder.localPosition = cameraPos;
     }
 
     void HandleMovement()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
+        float horizontal = _moveInput.x / 10;
+        float vertical = _moveInput.y / 10;
 
         if (_isCrouching)
             _currentSpeed = _crouchSpeed;
-        else if (Input.GetKey(KeyCode.LeftShift))
+        else if (_isRunning)
             _currentSpeed = _runSpeed;
         else
             _currentSpeed = _walkSpeed;
 
-        Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
-
-        if (moveDirection.magnitude > 1f)
-            moveDirection.Normalize();
+        Vector3 moveDirection = _cameraHolder.right * horizontal + _cameraHolder.forward * vertical;
+        moveDirection.y = 0;
+        moveDirection.Normalize();
 
         Vector3 movement = moveDirection * _currentSpeed * Time.deltaTime;
         _controller.Move(movement);
     }
 
+    void OnJumpPerformed(InputAction.CallbackContext context)
+    {
+        _jumpPressed = true;
+    }
+
+    void OnJumpCanceled(InputAction.CallbackContext context)
+    {
+        _jumpPressed = false;
+    }
+
     void HandleJump()
     {
-        if (Input.GetButtonDown("Jump") && !_isCrouching && IsGrounded() && !_hasJumped)
+        if (_jumpPressed && !_isCrouching && CheckIfGrounded() && !_hasJumped)
         {
             _velocity.y = Mathf.Sqrt(_jumpHeight * 2f * _gravity);
             _hasJumped = true;
         }
 
-        if (IsGrounded() && _velocity.y <= 0)
+        if (CheckIfGrounded() && _velocity.y <= 0)
         {
             _hasJumped = false;
         }
