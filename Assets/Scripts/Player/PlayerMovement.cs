@@ -55,6 +55,12 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false; // Скрываем курсор
+
+        // Центрируем взгляд
+        _xRotation = 0f;
+        _cameraHolder.localRotation = Quaternion.Euler(0f, 0f, 0f);
+
         UpdateCameraPosition();
     }
 
@@ -102,13 +108,15 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCameraRotation()
     {
-        float mouseX = _lookInput.x * _mouseSensitivity * Time.deltaTime;
-        float mouseY = _lookInput.y * _mouseSensitivity * Time.deltaTime;
+        float mouseX = _lookInput.x * _mouseSensitivity / 100;
+        float mouseY = _lookInput.y * _mouseSensitivity / 100;
 
         _xRotation -= mouseY;
         _xRotation = Mathf.Clamp(_xRotation, -90f, 90f);
 
-        _cameraHolder.localRotation = Quaternion.Euler(_xRotation, _cameraHolder.localEulerAngles.y + mouseX, 0f);
+        _cameraHolder.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
+
+        transform.Rotate(Vector3.up * mouseX);
     }
 
     bool CheckIfGrounded()
@@ -208,8 +216,8 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleMovement()
     {
-        float horizontal = _moveInput.x / 10;
-        float vertical = _moveInput.y / 10;
+        float horizontal = _moveInput.x;
+        float vertical = _moveInput.y;
 
         if (_isCrouching)
             _currentSpeed = _crouchSpeed;
@@ -218,7 +226,7 @@ public class PlayerMovement : MonoBehaviour
         else
             _currentSpeed = _walkSpeed;
 
-        Vector3 moveDirection = _cameraHolder.right * horizontal + _cameraHolder.forward * vertical;
+        Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
         moveDirection.y = 0;
         moveDirection.Normalize();
 
