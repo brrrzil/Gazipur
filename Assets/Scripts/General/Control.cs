@@ -4,24 +4,31 @@ using UnityEngine.EventSystems;
 
 public class Control : MonoBehaviour
 {
-    public Action<Vector2> OnMouseDown;
-    public Action<GameObject> OnSelectObject;
-    public Action OnChooseObject;  
+    public static Action<Vector2> OnMouseDownInObject;
+    public static Action<InteractObject> OnSelectObject;
+    public static Action OnInteractObject;
+    public static Action OnOpenInventory;
 
     private void Update()
     {
-        if (!EventSystem.current.IsPointerOverGameObject() && Input.GetMouseButtonDown(0))
+        InteractObject iObject = null;
+        if (!EventSystem.current.IsPointerOverGameObject())
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit))
             {
-                OnSelectObject?.Invoke(hit.collider.gameObject);
+                if (iObject = hit.collider.GetComponent<InteractObject>()) { }
             }
-        }
-        if (Input.GetKey(KeyCode.E))
+        }        
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            OnChooseObject?.Invoke();
+            OnInteractObject?.Invoke();
         }
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            OnOpenInventory?.Invoke();
+        }
+        OnSelectObject?.Invoke(iObject);
     }
 }

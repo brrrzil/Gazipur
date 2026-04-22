@@ -4,11 +4,12 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ItemData", menuName = "ItemData")]
 public class ItemData : ScriptableObject
 {
-    [field: SerializeField] public int Index; 
-    [field: SerializeField] public string Name; 
-    [field: SerializeField, TextArea] public string Description; 
-    [field: SerializeField, ShowAssetPreview] public Sprite Icon; 
-    [field: SerializeField] public int Price; 
-    [field: SerializeField] public int MaxInInventoryCell; 
-    [field: SerializeField] public MeshRenderer Mesh; 
+    [field: SerializeField] public int Index { get; private set; }
+    [field: SerializeField] public string Name { get; private set; }
+    [field: SerializeField, TextArea] public string Description { get; private set; }
+    [field: SerializeField, ShowAssetPreview] public Sprite Icon { get; private set; }
+    [field: SerializeField] public int Price { get; private set; }
+    [field: SerializeField] public int MaxInInventoryCell { get; private set; }
+    [field: SerializeField] public float Weight { get; private set; }
+    [field: SerializeField] public MeshRenderer Mesh { get; private set; }
 }

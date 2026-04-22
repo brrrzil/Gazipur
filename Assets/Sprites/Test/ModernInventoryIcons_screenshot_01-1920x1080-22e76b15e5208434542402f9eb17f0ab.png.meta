@@ -1,0 +1,2550 @@
+fileFormatVersion: 2
+guid: 4b981a695afc33e4ea9a28c6cd9f4539
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_0
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c8cd4823df93cc74e922c7248fe4b558
+      internalID: -937936209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_1
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 46bbc7b2062cdaf4eae62ccc96abf548
+      internalID: -1834301013
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_2
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 433083c4a5ce2c14fbc8287338f0a023
+      internalID: 1752371590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_3
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bf9d385d9b0a7ed4d921011a58ac4539
+      internalID: -1183527630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_4
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 31d015971e137ca4f99e893d6ee9a235
+      internalID: -688173717
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_5
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7404307ce40e3a1428d0963e4df7a7ae
+      internalID: -594207901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_6
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c5f5a2a374c9b1546ab1f82da0d73bd8
+      internalID: -452755265
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_7
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 279a8c0398d745849a873aac74d9c987
+      internalID: -424833359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_8
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 91b55641711642f4cb459c97d69ef4af
+      internalID: -1492229517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_9
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 80f429d234abf0b498aa1af73bd19b6f
+      internalID: -611736995
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_10
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1ccef52391441514a8772d89d8106df1
+      internalID: -729963269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_11
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a4aa449d34e252745b44e6916e610b32
+      internalID: 2134382014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_12
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 801
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4fa3ec0a473f4144f8dfad0b75d0a6a6
+      internalID: -744162300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_13
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8c2d9cb3ae45fee4194cb2c52f053303
+      internalID: 721660093
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_14
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1ee87f5404c321e41905bc1c601a2a11
+      internalID: -2138637826
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_15
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb594c3e48003434b82c94743362485c
+      internalID: -1235860786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_16
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cf13433a10521b944ab762dbd46d59b4
+      internalID: -1933389532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_17
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4a0f1de3ec0ba7849a8734500274af92
+      internalID: 88448415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_18
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d7488ccdbd95af24eb19d964178be0bb
+      internalID: 1567517733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_19
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f62d62827fcfa44ea8d6bc0fe6e146c
+      internalID: -2067388518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_20
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bf313e7222daaab4eb79a146baad6bd5
+      internalID: 328396464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_21
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b7af5259fac1e6f449ff83224d840670
+      internalID: 1799098528
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_22
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b6eb20ad86b2d64e983fa4a31ddabb6
+      internalID: -1275981115
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_23
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b4a2ceb8d9984be49bf61324207a8237
+      internalID: 212389749
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_24
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b71da1b86a40d254b9084e1220368c95
+      internalID: 75519428
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_25
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 687
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5dc14081398f81444a96d76c0647f542
+      internalID: -1320720890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_26
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e18ab8d0b0adb784c873d47614ad403b
+      internalID: -1574208480
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_27
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 733f316265ee8834db43c22b31bbc2e1
+      internalID: -1592899481
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_28
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 07ce2430a4ae25c428cfef604ebe7927
+      internalID: -939654252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_29
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ad1067bcf9080e04fac52af12e23434b
+      internalID: 809071788
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_30
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c2473e981509c03429057bf160051ce6
+      internalID: 495312217
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_31
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b20356c24f8c3c141b6d9037ff9f1d88
+      internalID: -466740439
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_32
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 28af93a846174624fa3692c34cf93f80
+      internalID: -1553258767
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_33
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7f8df548599e4c445988e5da59599a55
+      internalID: 459321186
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_34
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 96163ab473eca1547b6bb485c0cd56a0
+      internalID: 1308158693
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_35
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 28c47ae89950b2f42a37d79d5ea298ed
+      internalID: -401024988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_36
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6f0f8e269868ae74bbe77e95fb340691
+      internalID: -1857723569
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_37
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5ae0602f55250b146ad81b653429fc41
+      internalID: -18673959
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_38
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 573
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b3c07313d1770e449f9d5c3f9330205
+      internalID: -1119641053
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_39
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bedbc2f09170e8942a99db5c768435e3
+      internalID: 463735755
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_40
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 91f31ab0717c0f24499832f182892c79
+      internalID: -169467378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_41
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1198c198e0baa3547b4adfe64c36539b
+      internalID: 665473988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_42
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e2d664e446c09ed42ae89be47c27ff1e
+      internalID: -398541873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_43
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 82913e1d96c96004f96584fc26d2ac3d
+      internalID: -2024061144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_44
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d1edde3aea549c246a67828b65a0921c
+      internalID: -1604487105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_45
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 249dd8e1d058b9c48aa44f9a2f778f67
+      internalID: -790973931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_46
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ecfe8abdcaaa63a43ab78caab912ccea
+      internalID: 1768570598
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_47
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 92417b930cabaa846b007d7045d7918d
+      internalID: 1754225391
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_48
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9539de582650042448d0d330aea2a810
+      internalID: -1907684007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_49
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ef64626a9a23b0f45a832cad05b4010b
+      internalID: -1189213506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_50
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 283be50662d8875458fb8b1a58adba10
+      internalID: 784490096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_51
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 459
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f28d4d1da6daa694ea84cf5e9c36b4bf
+      internalID: 473794390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_52
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af050303535324148bf09ba5488a74ae
+      internalID: 204503171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_53
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b5ab253d1d72fc94f9642e02774beab2
+      internalID: -274132446
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_54
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7577e9a7c53c4c0419ac8ab48b940dae
+      internalID: -1766815958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_55
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0cee2f17661ef2846bdfffe26e66b27e
+      internalID: 128951838
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_56
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: baae80b643a5085439cd3679fa99b48f
+      internalID: 1024736883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_57
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f33278f9e5d031e4d85dee3b4e927930
+      internalID: 178810576
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_58
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3813d4809cff4014885338ce30371dd0
+      internalID: -315352827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_59
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3cbd76baefc815742ab9de5b44f8323d
+      internalID: 1214323839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_60
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a8fbf19fe2f38b240b81924a1015fdb2
+      internalID: -1886815715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_61
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9d4dd5bcf93ae6e4d921985de3279c32
+      internalID: -1645323203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_62
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5a4c58476f163c440b09cfb3eac8d5f6
+      internalID: -2086621583
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_63
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b63a4d4d0811894e8bfd32038be9035
+      internalID: -668439037
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_64
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 345
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e7ccbc6fb0517044992daa1d7cb1cc8a
+      internalID: -1594351721
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_65
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 65389efb12e230942961ae8fe6e0b4c4
+      internalID: 1625567235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_66
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c211f205f7b7ef14795fc8c355357a42
+      internalID: 284007141
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_67
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a2b24580c66696448bdd231bc54c7ca4
+      internalID: -182025302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_68
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 13c4d98276321af4f873e16213c1390c
+      internalID: 314260744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_69
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f550518b2a1c51e4fbce48cc14d1f933
+      internalID: 951810139
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_70
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ea05daaa5dd15b14a8a130ddf1979c61
+      internalID: 2092675798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_71
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6e011329e24b9ec49b613b6df05a9a62
+      internalID: 934006122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_72
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d7e7baa552b7394cb96b844f69c9025
+      internalID: -32519199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_73
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 535c0b1f76b77df43b0d4ed9bb7cbab9
+      internalID: -1279725774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_74
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 890e657a00874f8488a710e0973414ee
+      internalID: -522945559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_75
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 068eb01001fc42942848ce0f3f416f9a
+      internalID: -1143626759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_76
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 131cd7c58f44b6b4a83a8d2a44e64096
+      internalID: 1459333643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_77
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 231
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5aa5fd01944a02f4c9879e67a4a8a801
+      internalID: -816840114
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_78
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 72013106dc666c6419906714c06acd32
+      internalID: -1980029329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_79
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b06795279217fa41abe32697388fa94
+      internalID: 256113253
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_80
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d1fdd1cfd7ccd50488e9497c5115c870
+      internalID: 127690521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_81
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 06cf1948c724fc241bbf8ab1ca498406
+      internalID: 2056270997
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_82
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2322f55832f74814eb69cf32708bb2b9
+      internalID: 2116634920
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_83
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b04e312266df09f40adb272ad3210bac
+      internalID: 123380300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_84
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5e5a2a43fc4b40a43bdc3bf9e8033ab2
+      internalID: 681855855
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_85
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b9f17d78ca7576b42b3b0c00d1585727
+      internalID: 1833196220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_86
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9e7d68a5abd05664dad91fb9bed7c127
+      internalID: -1419572643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_87
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52d15261ad1629946acfcc1fd0aa079e
+      internalID: -1709837304
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_88
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ce4f1302f2e2b7d45b58c107cd21a588
+      internalID: 790588998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_89
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 222313fd695a49e4490acbb0577d6649
+      internalID: -1219560195
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_90
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 117
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 02402adfc929d194ba8229dbffb0b60c
+      internalID: 1290619140
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_91
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2293332769031824698bb3fd7387e800
+      internalID: 861310101
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_92
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0eb843e4110ef36469afee5aa36e05fe
+      internalID: 709901845
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_93
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 40b0e3efff879864cafb19c35b6eb210
+      internalID: 184517426
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_94
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c11fa3701346a2442a541adbc47060e2
+      internalID: -92847597
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_95
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd66b442edf0fef40989a98a8b9e061d
+      internalID: 671844522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_96
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 252fa1e687deaeb4b9da9677cf2bd348
+      internalID: 680872577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_97
+      rect:
+        serializedVersion: 2
+        x: 692
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c73ce077f2829a447b00ae1266194f45
+      internalID: -1477515498
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_98
+      rect:
+        serializedVersion: 2
+        x: 805
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d6a5947b6f700f245a9095d75beec3e8
+      internalID: -1993556117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_99
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a6867f5766c5558439803390ad2ac0b6
+      internalID: -539735519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_100
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0e441888a695ab841a738ef1bd528cd2
+      internalID: 597437852
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_101
+      rect:
+        serializedVersion: 2
+        x: 1144
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e868805fe2904f54a9ec21c755f15340
+      internalID: -1228756369
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_102
+      rect:
+        serializedVersion: 2
+        x: 1257
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 575291e8ad3131543b1817df8d232d4e
+      internalID: -818646476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_103
+      rect:
+        serializedVersion: 2
+        x: 1370
+        y: 3
+        width: 101
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5ae7b6d027325d143b0e0774890b5949
+      internalID: -255461652
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 1afc397a502cdce43aaf9b339cf04319
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":13.0,"y":8.0},"gridSpriteSize":{"x":101.0,"y":102.0},"gridSpriteOffset":{"x":14.0,"y":12.0},"gridSpritePadding":{"x":12.0,"y":12.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_0: -937936209
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_1: -1834301013
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_10: -729963269
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_100: 597437852
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_101: -1228756369
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_102: -818646476
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_103: -255461652
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_11: 2134382014
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_12: -744162300
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_13: 721660093
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_14: -2138637826
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_15: -1235860786
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_16: -1933389532
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_17: 88448415
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_18: 1567517733
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_19: -2067388518
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_2: 1752371590
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_20: 328396464
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_21: 1799098528
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_22: -1275981115
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_23: 212389749
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_24: 75519428
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_25: -1320720890
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_26: -1574208480
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_27: -1592899481
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_28: -939654252
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_29: 809071788
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_3: -1183527630
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_30: 495312217
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_31: -466740439
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_32: -1553258767
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_33: 459321186
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_34: 1308158693
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_35: -401024988
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_36: -1857723569
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_37: -18673959
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_38: -1119641053
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_39: 463735755
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_4: -688173717
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_40: -169467378
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_41: 665473988
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_42: -398541873
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_43: -2024061144
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_44: -1604487105
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_45: -790973931
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_46: 1768570598
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_47: 1754225391
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_48: -1907684007
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_49: -1189213506
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_5: -594207901
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_50: 784490096
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_51: 473794390
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_52: 204503171
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_53: -274132446
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_54: -1766815958
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_55: 128951838
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_56: 1024736883
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_57: 178810576
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_58: -315352827
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_59: 1214323839
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_6: -452755265
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_60: -1886815715
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_61: -1645323203
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_62: -2086621583
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_63: -668439037
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_64: -1594351721
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_65: 1625567235
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_66: 284007141
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_67: -182025302
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_68: 314260744
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_69: 951810139
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_7: -424833359
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_70: 2092675798
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_71: 934006122
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_72: -32519199
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_73: -1279725774
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_74: -522945559
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_75: -1143626759
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_76: 1459333643
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_77: -816840114
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_78: -1980029329
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_79: 256113253
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_8: -1492229517
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_80: 127690521
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_81: 2056270997
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_82: 2116634920
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_83: 123380300
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_84: 681855855
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_85: 1833196220
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_86: -1419572643
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_87: -1709837304
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_88: 790588998
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_89: -1219560195
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_9: -611736995
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_90: 1290619140
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_91: 861310101
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_92: 709901845
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_93: 184517426
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_94: -92847597
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_95: 671844522
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_96: 680872577
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_97: -1477515498
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_98: -1993556117
+      ModernInventoryIcons_screenshot_01-1920x1080-22e76b15e5208434542402f9eb17f0ab_99: -539735519
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

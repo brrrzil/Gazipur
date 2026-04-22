@@ -1,16 +1,37 @@
 using UnityEngine;
+using Zenject;
 
-public class ItemObject : MonoBehaviour
+[RequireComponent(typeof(MeshFilter))]
+public class ItemObject : InteractObject
 {
-    public ItemData Item { get; private set; }
-    public int Count { get; private set; }
-    [SerializeField] private MeshRenderer _mesh;
-    [SerializeField] private Outline _outline;
+    [field: SerializeField] public ItemData Item { get; private set; }
+    [field: SerializeField] public int Count { get; private set; }    
+    private MeshRenderer _mesh;
+    [Inject] private Inventory _inventory;
+    private void Start()
+    {        
+        if (Item)
+        {
+            SetData(Item, Count);
+        }
+    }
     public void SetData(ItemData item, int count)
     {
+        _mesh = GetComponent<MeshRenderer>();
         Count = count;
         Item = item;
         _mesh = item.Mesh;
     }
-    public void ShowOutline(bool isShow) => _outline.enabled = isShow;
+    public override void Intearct()
+    {
+        int cnt = _inventory.AddItem(Item, Count);
+        if (cnt == 0)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Count = cnt;
+        }
+    }
 }

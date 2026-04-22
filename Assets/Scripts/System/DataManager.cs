@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using static EnumData;
-public class DataManager
+public class DataManager: MonoBehaviour
 {
+    public System.Action onChangeMoney;
     public int Money { get; private set; }
     public GameMode gameMode;
     public HeroInfo Hero { get; private set; }
@@ -40,5 +41,14 @@ public class DataManager
             }
             Inventory[i] = new ItemInfo();
         }
+    }
+    public void ChangeMoney(int count)
+    {
+        Money += count;
+        onChangeMoney?.Invoke();
+    }
+    public void SetDeffoultHeroState()
+    {
+        Hero = new HeroInfo() { health = 100, hunger = 100, thirst = 100 };
     }
 }
