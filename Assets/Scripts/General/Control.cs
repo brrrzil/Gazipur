@@ -6,7 +6,8 @@ public class Control : MonoBehaviour
 {
     public static Action<Vector2> OnMouseDownInObject;
     public static Action<InteractObject> OnSelectObject;
-    public static Action OnInteractObject;  
+    public static Action OnInteractObject;
+    public static Action OnOpenInventory;
 
     private void Update()
     {
@@ -20,9 +21,13 @@ public class Control : MonoBehaviour
                 if (iObject = hit.collider.GetComponent<InteractObject>()) { }
             }
         }        
-        if (Input.GetKey(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.E))
         {
             OnInteractObject?.Invoke();
+        }
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            OnOpenInventory?.Invoke();
         }
         OnSelectObject?.Invoke(iObject);
     }

@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Zenject;
 
-public class InventoryCell : MonoBehaviour, IDragHandler, IDropHandler, IPointerClickHandler
+public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDropHandler, IEndDragHandler, IPointerClickHandler
 {
     public bool IsReady { get; private set; }
     public ItemData Item { get; private set; }
@@ -16,6 +16,8 @@ public class InventoryCell : MonoBehaviour, IDragHandler, IDropHandler, IPointer
     public int AddItem(ItemData item, int count)
     {
         Item = item;
+        _itemIcon.enabled = true;
+        _itemIcon.sprite = Item.Icon;
         int remains = Mathf.Max((Count + count) - item.MaxInInventoryCell, 0);
         Count = Mathf.Min(Item.MaxInInventoryCell, Count + count);
         _countText.text = Count.ToString();
@@ -26,6 +28,7 @@ public class InventoryCell : MonoBehaviour, IDragHandler, IDropHandler, IPointer
         Item = null;
         _itemIcon.enabled = false;
         Count = 0;
+        _countText.text = "";
     }
     public void RemoveItem(int count)
     {
@@ -37,8 +40,14 @@ public class InventoryCell : MonoBehaviour, IDragHandler, IDropHandler, IPointer
         Count -= count;
         _countText.text = Count.ToString();
     }
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (!Item) return;
+        _itemIcon.transform.SetParent(transform.parent);
+    }
     public void OnDrag(PointerEventData eventData)
     {
+        if (!Item) return;
         _itemIcon.transform.position = eventData.position;
     }
 
@@ -62,8 +71,7 @@ public class InventoryCell : MonoBehaviour, IDragHandler, IDropHandler, IPointer
                     _countText.text = Count.ToString();                    
                 }
             }
-        }
-        _itemIcon.transform.position = transform.position;
+        }        
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -73,5 +81,11 @@ public class InventoryCell : MonoBehaviour, IDragHandler, IDropHandler, IPointer
         {
 
         }
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        _itemIcon.transform.position = transform.position;
+        _itemIcon.transform.parent = transform;
     }
 }
