@@ -3,11 +3,12 @@ using Zenject;
 
 public class ItemsManager : MonoBehaviour
 {
-    [SerializeField] private ItemObject _itemPrefab;
+
     [Inject] private DiContainer _container;
-    public void DropItem(ItemData item, int count, Vector2 position)
+    public void DropItem(ItemData item, int count, Vector3 position)
     {
-        var obj = _container.InstantiatePrefabForComponent<ItemObject>(_itemPrefab);
-        obj.SetData(item, count);
+        var obj = _container.InstantiatePrefabForComponent<ItemObject>(item.ItemPrefab);
+        obj.transform.position = position;
+        obj.SetData(item, count); 
     }
 }

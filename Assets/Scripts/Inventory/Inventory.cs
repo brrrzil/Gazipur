@@ -6,14 +6,12 @@ public class Inventory : MonoBehaviour
     [field: SerializeField] public float Capacity { get; private set; }
     [SerializeField] private GameObject _inventoryPanel;
     [SerializeField] private InventoryCell[] _cells;
+
+    private bool _isOpen;
     [Inject] DataManager _data;
     private void Start()
     {
-        Control.OnOpenInventory += () =>
-        {
-            _inventoryPanel.SetActive(!_inventoryPanel.activeSelf);
-            Cursor.lockState =_inventoryPanel.activeSelf? CursorLockMode.None: CursorLockMode.Locked;
-        };
+        Control.OnOpenInventory += () => ShowPanel(!_isOpen);
     }
     public int AddItem(ItemData item, int count)
     {
@@ -59,5 +57,11 @@ public class Inventory : MonoBehaviour
             }
         }
         return res;
+    }
+    public void ShowPanel(bool isShow)
+    {
+        _isOpen = isShow;
+        _inventoryPanel.SetActive(isShow);
+        Cursor.lockState = isShow ? CursorLockMode.None : CursorLockMode.Locked;
     }
 }

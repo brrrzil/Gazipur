@@ -11,5 +11,5 @@ public class ItemData : ScriptableObject
     [field: SerializeField] public int Price { get; private set; }
     [field: SerializeField] public int MaxInInventoryCell { get; private set; }
     [field: SerializeField] public float Weight { get; private set; }
-    [field: SerializeField] public MeshRenderer Mesh { get; private set; }
+    [field: SerializeField] public GameObject ItemPrefab { get; private set; }
 }

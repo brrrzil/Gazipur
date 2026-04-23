@@ -12,6 +12,7 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     [SerializeField] private Text _countText;
     [Inject] private ItemsManager _itemsManager;
     [Inject] private DataManager _data;
+    [Inject] private MarketManager _market;
     public void SetReady(bool ready) => IsReady = ready;
     public int AddItem(ItemData item, int count)
     {
@@ -42,8 +43,9 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (!Item) return;
+        if (!Item) return;        
         _itemIcon.transform.SetParent(transform.parent);
+        _itemIcon.transform.position = eventData.position;
     }
     public void OnDrag(PointerEventData eventData)
     {
@@ -55,7 +57,7 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     {
         if (!EventSystem.current.IsPointerOverGameObject())
         {
-            _itemsManager.DropItem(Item, Count, eventData.position);
+            _itemsManager.DropItem(Item, Count, Camera.main.ScreenToWorldPoint(eventData.position));
             RemoveItem();
         }
         else
@@ -63,13 +65,9 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
             InventoryCell target;
             if (target = eventData.pointerDrag.GetComponent<InventoryCell>())
             {
-                 int cnt = target.AddItem(Item, Count);
-                if (cnt == 0) RemoveItem();
-                else
-                {
-                    Count = cnt;
-                    _countText.text = Count.ToString();                    
-                }
+                int cnt = target.Count;
+                int rem = AddItem(target.Item, target.Count);
+                target.RemoveItem(cnt - rem);
             }
         }        
     }
@@ -79,13 +77,13 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
        if(_data.gameMode== EnumData.GameMode.market && 
             eventData.button == PointerEventData.InputButton.Left)
         {
-
+            _market.TradePanel.SetItem(this);
         }
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        _itemIcon.transform.position = transform.position;
         _itemIcon.transform.parent = transform;
+        _itemIcon.transform.position = transform.position;        
     }
 }
