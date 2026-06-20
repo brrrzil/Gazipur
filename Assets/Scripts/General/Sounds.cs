@@ -20,13 +20,16 @@ public class Sounds : MonoBehaviour
         if (ChooseSound == null)
         {
             ChooseSound = this;
+            DontDestroyOnLoad(gameObject);
         }
-        else if(ChooseSound == this)
+        else if (ChooseSound == this)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
+        else
         {
             Destroy(gameObject);
-        }           
-
-        DontDestroyOnLoad(gameObject);        
+        }
     }
     public void RandomPitch(AudioSource pitchedAudio, float spread)
     {
