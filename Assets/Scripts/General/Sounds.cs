@@ -20,13 +20,16 @@ public class Sounds : MonoBehaviour
         if (ChooseSound == null)
         {
             ChooseSound = this;
+            DontDestroyOnLoad(gameObject);
         }
-        else if(ChooseSound == this)
+        else if (ChooseSound == this)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
+        else
         {
             Destroy(gameObject);
-        }           
-
-        DontDestroyOnLoad(gameObject);        
+        }
     }
     public void RandomPitch(AudioSource pitchedAudio, float spread)
     {
@@ -43,11 +46,11 @@ public class Sounds : MonoBehaviour
     }
     public void SetMusicVolume(float volume)
     {
-        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(volume)*20);
+        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
     }
     public void SetSoundsVolume(float volume)
-    {        
-        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
+    {
+        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(volume) * 20);
     }
     public void Mute(bool mute)
     {

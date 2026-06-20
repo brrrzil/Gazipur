@@ -109,7 +109,7 @@ MonoBehaviour:
   _hungerPerSecond: 0.33
   _thirstPerSecond: 0.66
   _hungerForHealing: 50
-  _thristForHealing: 25
+  _thirstForHealing: 25
   _damagePerSecond: 3.33
   _healingPerSecond: 1.67
   _healthBar: {fileID: 0}

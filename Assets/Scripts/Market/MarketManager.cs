@@ -17,7 +17,7 @@ public class MarketManager : MonoBehaviour
     public void Exit()
     {
         TradePanel.gameObject.SetActive(false);
-        _modeManager.ChangeMode(EnumData.GameMode.market);
+        _modeManager.ChangeMode(EnumData.GameMode.home);
         _inventory.ShowPanel(false);
     }
 }

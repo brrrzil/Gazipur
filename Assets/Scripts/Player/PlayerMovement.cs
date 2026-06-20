@@ -25,6 +25,13 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ground Check")]
     [SerializeField] private float _groundCheckDistance = 0.2f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource _audioSource;
+    [SerializeField] private AudioClip _jumpClip;
+    [SerializeField] private AudioClip _landClip;
+    [SerializeField] [Range(0f, 1f)] private float _jumpVolume = 1f;
+    [SerializeField] [Range(0f, 1f)] private float _landVolume = 1f;
+
     private CharacterController _controller;
     private Vector3 _velocity = Vector3.zero;
     private float _currentSpeed;
@@ -33,6 +40,7 @@ public class PlayerMovement : MonoBehaviour
     private bool _wantsToCrouch = false;
     private float _currentCameraHeight;
     private bool _hasJumped = false;
+    private bool _wasInAir = false;
 
     private PlayerInputActions _inputActions;
     private Vector2 _moveInput;
@@ -48,16 +56,20 @@ public class PlayerMovement : MonoBehaviour
         _controller = GetComponent<CharacterController>();
         _inputActions = new PlayerInputActions();
 
-        _standingHeight = _controller.height;
+        if (_audioSource == null)
+            _audioSource = GetComponent<AudioSource>();
+        if (_audioSource != null)
+            _audioSource.playOnAwake = false;
+
         _currentCameraHeight = _cameraHeightNormal;
     }
 
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false; // �������� ������
+        Cursor.visible = false; // скрываем курсор 
 
-        // ���������� ������
+        // сбрасываем камеру
         _xRotation = 0f;
         _cameraHolder.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
@@ -80,8 +92,8 @@ public class PlayerMovement : MonoBehaviour
         _inputActions.Player.Look.performed += ctx => _lookInput = ctx.ReadValue<Vector2>();
         _inputActions.Player.Look.canceled += ctx => _lookInput = Vector2.zero;
 
-        _inputActions.Player.Run.performed += ctx => _isRunning = true;
-        _inputActions.Player.Run.canceled += ctx => _isRunning = false;
+        _inputActions.Player.Sprint.performed += ctx => _isRunning = true;
+        _inputActions.Player.Sprint.canceled += ctx => _isRunning = false;
     }
 
     private void OnDisable()
@@ -90,6 +102,8 @@ public class PlayerMovement : MonoBehaviour
         _inputActions.Player.Jump.canceled -= OnJumpCanceled;
         _inputActions.Player.Crouch.performed -= OnCrouchPerformed;
         _inputActions.Player.Crouch.canceled -= OnCrouchCanceled;
+        _inputActions.Player.Sprint.performed -= ctx => _isRunning = true;
+        _inputActions.Player.Sprint.canceled -= ctx => _isRunning = false;
 
         _inputActions.Player.Disable();
     }
@@ -103,7 +117,9 @@ public class PlayerMovement : MonoBehaviour
         HandleCameraRotation();
         UpdateCameraPosition();
 
-        _isGrounded = CheckIfGrounded();
+        bool grounded = CheckIfGrounded();
+        HandleLanding(grounded);
+        _isGrounded = grounded;
     }
 
     void HandleCameraRotation()
@@ -250,12 +266,30 @@ public class PlayerMovement : MonoBehaviour
         {
             _velocity.y = Mathf.Sqrt(_jumpHeight * 2f * _gravity);
             _hasJumped = true;
+            PlayClip(_jumpClip, _jumpVolume);
         }
 
         if (CheckIfGrounded() && _velocity.y <= 0)
         {
             _hasJumped = false;
         }
+    }
+
+    void HandleLanding(bool grounded)
+    {
+        // Звук приземления играем при переходе из воздуха на землю,
+        // а не в момент нажатия пробела.
+        if (grounded && _wasInAir)
+        {
+            PlayClip(_landClip, _landVolume);
+        }
+        _wasInAir = !grounded;
+    }
+
+    void PlayClip(AudioClip clip, float volume)
+    {
+        if (_audioSource == null || clip == null) return;
+        _audioSource.PlayOneShot(clip, volume);
     }
 
     void ApplyGravity()
