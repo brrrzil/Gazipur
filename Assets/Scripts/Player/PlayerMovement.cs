@@ -27,9 +27,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioSource _audioSource;
-    [SerializeField] private AudioClip _jumpClip;
     [SerializeField] private AudioClip _landClip;
-    [SerializeField] [Range(0f, 1f)] private float _jumpVolume = 1f;
     [SerializeField] [Range(0f, 1f)] private float _landVolume = 1f;
 
     private CharacterController _controller;
@@ -266,7 +264,8 @@ public class PlayerMovement : MonoBehaviour
         {
             _velocity.y = Mathf.Sqrt(_jumpHeight * 2f * _gravity);
             _hasJumped = true;
-            PlayClip(_jumpClip, _jumpVolume);
+            // Звук прыжка НЕ играем здесь — он должен играть при приземлении.
+            // См. HandleLanding.
         }
 
         if (CheckIfGrounded() && _velocity.y <= 0)
