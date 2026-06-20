@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -7,9 +8,9 @@ public class TradePanel : MonoBehaviour
     [SerializeField] private Image _itemIcon;
     [SerializeField] private Button _tradeButton;
     [SerializeField] private Button _exitButton;
-    [SerializeField] private Text _curCountText;
-    [SerializeField] private Text _sellCountText;
-    [SerializeField] private Text _priceText;
+    [SerializeField] private TMP_Text _curCountText;
+    [SerializeField] private TMP_Text _sellCountText;
+    [SerializeField] private TMP_Text _priceText;
     [SerializeField] private Slider _slider;
     [SerializeField] private GameObject _tradeCap;
 
@@ -57,9 +58,9 @@ public class TradePanel : MonoBehaviour
     {
         _tradeButton.interactable = _sellCount > 0;
         _slider.value = _sellCount;
-        _priceText.text = (_sellCount * _price).ToString();
-        _sellCountText.text = _sellCount.ToString();
-        _curCountText.text = (_count - _sellCount).ToString();
+        if (_priceText != null) _priceText.text = (_sellCount * _price).ToString();
+        if (_sellCountText != null) _sellCountText.text = _sellCount.ToString();
+        if (_curCountText != null) _curCountText.text = (_count - _sellCount).ToString();
     }
     public void Show()
     {
