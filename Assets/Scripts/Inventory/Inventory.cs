@@ -107,16 +107,20 @@ public class Inventory : MonoBehaviour
                 }
             }
         }
-        res = count > res ? count : res;
-        if (res < startCount)
+        // count — сколько осталось не размещено в ячейках,
+        // res — сколько не влезло по весу. Сумма — это то, что осталось
+        // в ItemObject (не подобранное игроком). Если 0 — Destroy в
+        // ItemObject.Intearct.
+        int totalUnpicked = count + res;
+        if (totalUnpicked < startCount)
         {
-            _picedItems[_picCounter % _picedItems.Length].Show(item, startCount-res);
+            _picedItems[_picCounter % _picedItems.Length].Show(item, startCount - totalUnpicked);
         }
         else
         {
             _dialog.Remarks.StartRemark(RemarksType.inventoryFool);
         }
-        return res;
+        return totalUnpicked;
     }
     public float GetWeight()
     {
