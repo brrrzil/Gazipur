@@ -43,11 +43,11 @@ public class Sounds : MonoBehaviour
     }
     public void SetMusicVolume(float volume)
     {
-        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(volume)*20);
+        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
     }
     public void SetSoundsVolume(float volume)
-    {        
-        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(volume) * 20);
+    {
+        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(volume) * 20);
     }
     public void Mute(bool mute)
     {
