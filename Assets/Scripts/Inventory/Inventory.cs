@@ -9,9 +9,17 @@ public class Inventory : MonoBehaviour
 
     private bool _isOpen;
     [Inject] DataManager _data;
-    private void Start()
+    private void OnEnable()
     {
-        Control.OnOpenInventory += () => ShowPanel(!_isOpen);
+        Control.OnOpenInventory += TogglePanel;
+    }
+    private void OnDisable()
+    {
+        Control.OnOpenInventory -= TogglePanel;
+    }
+    private void TogglePanel()
+    {
+        ShowPanel(!_isOpen);
     }
     public int AddItem(ItemData item, int count)
     {
@@ -65,7 +73,11 @@ public class Inventory : MonoBehaviour
     public void ShowPanel(bool isShow)
     {
         _isOpen = isShow;
-        _inventoryPanel.SetActive(isShow);
+        if (_inventoryPanel != null)
+        {
+            _inventoryPanel.SetActive(isShow);
+        }
         Cursor.lockState = isShow ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = isShow;
     }
 }
