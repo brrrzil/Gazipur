@@ -44,7 +44,11 @@ public class Inventory : MonoBehaviour
                 if (count == 0) break;
             }
         }
-        return count>res?count:res;
+
+        // count — сколько осталось не размещено в ячейках,
+        // res — сколько не влезло по весу. Сумма — это то, что осталось
+        // в ItemObject (не подобранное игроком).
+        return count + res;
     }
     public float GetWeight()
     {
