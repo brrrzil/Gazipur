@@ -23,6 +23,14 @@ public class Inventory : MonoBehaviour
     }
     public int AddItem(ItemData item, int count)
     {
+        // Сумки (CapacityUpgrade) не кладутся в ячейки, а просто увеличивают
+        // вместимость. Можно купить несколько — каждый даст бонус.
+        if (item != null && item.Type == ItemData.ItemType.CapacityUpgrade)
+        {
+            Capacity += item.CapacityBonus * count;
+            return 0;
+        }
+
         float weight = GetWeight();
         float cap = Capacity - weight;
         int res = 0;
@@ -32,7 +40,7 @@ public class Inventory : MonoBehaviour
             count = (int)(cap / item.Weight);
         }
         foreach (var c in _cells)
-        {            
+        {
             //if (!c.IsReady) continue;
 
             if (c.Item == item)
