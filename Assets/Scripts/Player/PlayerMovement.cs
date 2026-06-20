@@ -67,9 +67,9 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false; // �������� ������
+        Cursor.visible = false; // скрываем курсор 
 
-        // ���������� ������
+        // сбрасываем камеру
         _xRotation = 0f;
         _cameraHolder.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
