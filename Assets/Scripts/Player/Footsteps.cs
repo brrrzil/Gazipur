@@ -5,28 +5,28 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(AudioSource))]
 public class Footsteps : MonoBehaviour
 {
-    [Header("Звук в помещении")]
+    [Header("пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public AudioClip footstepsIndoor;
     public float stepDurationIndoor = 0.4f;
     public int totalStepsIndoor = 20;
 
-    [Header("Звук на улице")]
+    [Header("пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ")]
     public AudioClip footstepsGround;
     public float stepDurationGround = 0.4f;
     public int totalStepsGround = 20;
 
-    [Header("Настройки скорости")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public float minStepInterval = 0.3f;
     public float maxStepInterval = 0.8f;
     public float minSpeedForSteps = 0.1f;
     public float walkSpeed = 5f;
     public float runSpeed = 8f;
 
-    [Header("Определение поверхности")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public float groundCheckDistance = 1.5f;
     public LayerMask groundLayerMask = ~0;
 
-    [Header("Опционально")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public bool randomizePitch = true;
     public float pitchRange = 0.1f;
 
@@ -44,12 +44,12 @@ public class Footsteps : MonoBehaviour
     private bool isPlayingStep = false;
     private float stepEndTime;
 
-    // Input System переменные
+    // Input System пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     private PlayerInputActions inputActions;
     private Vector2 moveInput;
     private bool isRunning;
 
-    // Для проверки нахождения на земле (нужно связать с PlayerMovement)
+    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ PlayerMovement)
     private bool isGrounded = true;
 
     private enum SurfaceType
@@ -82,16 +82,16 @@ public class Footsteps : MonoBehaviour
         inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
 
-        inputActions.Player.Run.performed += ctx => isRunning = true;
-        inputActions.Player.Run.canceled += ctx => isRunning = false;
+        inputActions.Player.Sprint.performed += ctx => isRunning = true;
+        inputActions.Player.Sprint.canceled += ctx => isRunning = false;
     }
 
     private void OnDisable()
     {
         inputActions.Player.Move.performed -= ctx => moveInput = ctx.ReadValue<Vector2>();
         inputActions.Player.Move.canceled -= ctx => moveInput = Vector2.zero;
-        inputActions.Player.Run.performed -= ctx => isRunning = true;
-        inputActions.Player.Run.canceled -= ctx => isRunning = false;
+        inputActions.Player.Sprint.performed -= ctx => isRunning = true;
+        inputActions.Player.Sprint.canceled -= ctx => isRunning = false;
 
         inputActions.Player.Disable();
 
@@ -108,9 +108,9 @@ public class Footsteps : MonoBehaviour
     }
 
     /// <summary>
-    /// Проверяет, находится ли игрок на земле.
-    /// Этот метод должен вызываться извне или можно получать доступ к компоненту PlayerMovement.
-    /// Альтернатива: сделать isGrounded публичным свойством в PlayerMovement.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+    /// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ PlayerMovement.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ isGrounded пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ PlayerMovement.
     /// </summary>
     private bool IsPlayerGrounded()
     {
@@ -183,17 +183,17 @@ public class Footsteps : MonoBehaviour
 
     void CheckMovement()
     {
-        // Получаем направление движения из Input System
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Input System
         Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
         float currentSpeed = moveDirection.magnitude;
 
-        // Рассчитываем текущую скорость с учетом бега
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         if (isRunning)
             currentSpeed *= runSpeed;
         else
             currentSpeed *= walkSpeed;
 
-        // Проверяем, что игрок на земле и скорость выше порога
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         bool isMovingNow = currentSpeed > minSpeedForSteps && IsPlayerGrounded();
 
         if (isMovingNow != isMoving)
@@ -212,21 +212,21 @@ public class Footsteps : MonoBehaviour
     {
         if (!isMoving) return;
 
-        // Получаем текущее движение
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
         float currentSpeed = moveDirection.magnitude;
 
-        // Рассчитываем скорость с учетом бега
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         if (isRunning)
             currentSpeed *= runSpeed;
         else
             currentSpeed *= walkSpeed;
 
-        // Вычисляем интервал шагов на основе скорости
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         float speedRatio = Mathf.InverseLerp(minSpeedForSteps, runSpeed, currentSpeed);
         currentStepInterval = Mathf.Lerp(maxStepInterval, minStepInterval, speedRatio);
 
-        // Управление воспроизведением шага
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         if (isPlayingStep && Time.time >= stepEndTime)
         {
             if (audioSource.isPlaying)
@@ -234,7 +234,7 @@ public class Footsteps : MonoBehaviour
             isPlayingStep = false;
         }
 
-        // Воспроизведение следующего шага
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         if (!isPlayingStep && Time.time >= nextStepTime)
         {
             PlayRandomStep();

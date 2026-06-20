@@ -55,9 +55,9 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false; // Скрываем курсор
+        Cursor.visible = false; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
-        // Центрируем взгляд
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         _xRotation = 0f;
         _cameraHolder.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
@@ -80,8 +80,8 @@ public class PlayerMovement : MonoBehaviour
         _inputActions.Player.Look.performed += ctx => _lookInput = ctx.ReadValue<Vector2>();
         _inputActions.Player.Look.canceled += ctx => _lookInput = Vector2.zero;
 
-        _inputActions.Player.Run.performed += ctx => _isRunning = true;
-        _inputActions.Player.Run.canceled += ctx => _isRunning = false;
+        _inputActions.Player.Sprint.performed += ctx => _isRunning = true;
+        _inputActions.Player.Sprint.canceled += ctx => _isRunning = false;
     }
 
     private void OnDisable()
@@ -90,6 +90,8 @@ public class PlayerMovement : MonoBehaviour
         _inputActions.Player.Jump.canceled -= OnJumpCanceled;
         _inputActions.Player.Crouch.performed -= OnCrouchPerformed;
         _inputActions.Player.Crouch.canceled -= OnCrouchCanceled;
+        _inputActions.Player.Sprint.performed -= ctx => _isRunning = true;
+        _inputActions.Player.Sprint.canceled -= ctx => _isRunning = false;
 
         _inputActions.Player.Disable();
     }
