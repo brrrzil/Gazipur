@@ -35,6 +35,7 @@ public class Footsteps : MonoBehaviour
     private float nextStepTime;
     private bool isMoving;
     private SurfaceType currentSurface;
+    private PlayerMovement cachedPlayerMovement;
 
     private AudioClip currentClip;
     private float currentStepDuration;
@@ -64,6 +65,7 @@ public class Footsteps : MonoBehaviour
         controller = GetComponent<CharacterController>();
         audioSource = GetComponent<AudioSource>();
         inputActions = new PlayerInputActions();
+        cachedPlayerMovement = GetComponent<PlayerMovement>();
     }
 
     void Start()
@@ -114,12 +116,7 @@ public class Footsteps : MonoBehaviour
     /// </summary>
     private bool IsPlayerGrounded()
     {
-        PlayerMovement playerMovement = GetComponent<PlayerMovement>();
-        if (playerMovement != null)
-        {
-            return playerMovement.IsGrounded;
-        }
-        return false;
+        return cachedPlayerMovement != null && cachedPlayerMovement.IsGrounded;
     }
 
     void CheckSurface()
@@ -183,17 +180,9 @@ public class Footsteps : MonoBehaviour
 
     void CheckMovement()
     {
-        // �������� ����������� �������� �� Input System
-        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
-        float currentSpeed = moveDirection.magnitude;
+        // Реальная скорость CharacterController, а не magnitude от [-1, 1]
+        float currentSpeed = controller != null ? controller.velocity.magnitude : 0f;
 
-        // ������������ ������� �������� � ������ ����
-        if (isRunning)
-            currentSpeed *= runSpeed;
-        else
-            currentSpeed *= walkSpeed;
-
-        // ���������, ��� ����� �� ����� � �������� ���� ������
         bool isMovingNow = currentSpeed > minSpeedForSteps && IsPlayerGrounded();
 
         if (isMovingNow != isMoving)
@@ -208,25 +197,21 @@ public class Footsteps : MonoBehaviour
         }
     }
 
+
     void HandleFootsteps()
     {
         if (!isMoving) return;
 
-        // �������� ������� ��������
-        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
-        float currentSpeed = moveDirection.magnitude;
+        // Используем реальную скорость контроллера для расчёта темпа шагов.
+        // До этого currentSpeed вычислялся из magnitude(moveInput) и никогда не
+        // достигал runSpeed, поэтому speedRatio был близок к 0 и интервал
+        // оставался maxStepInterval — шаги 'не получалось сделать чаще'.
+        float currentSpeed = controller != null ? controller.velocity.magnitude : 0f;
 
-        // ������������ �������� � ������ ����
-        if (isRunning)
-            currentSpeed *= runSpeed;
-        else
-            currentSpeed *= walkSpeed;
-
-        // ��������� �������� ����� �� ������ ��������
         float speedRatio = Mathf.InverseLerp(minSpeedForSteps, runSpeed, currentSpeed);
         currentStepInterval = Mathf.Lerp(maxStepInterval, minStepInterval, speedRatio);
 
-        // ���������� ���������������� ����
+        // Завершение воспроизведения шага
         if (isPlayingStep && Time.time >= stepEndTime)
         {
             if (audioSource.isPlaying)
@@ -234,13 +219,14 @@ public class Footsteps : MonoBehaviour
             isPlayingStep = false;
         }
 
-        // ��������������� ���������� ����
+        // Воспроизведение следующего шага
         if (!isPlayingStep && Time.time >= nextStepTime)
         {
             PlayRandomStep();
             nextStepTime = Time.time + currentStepInterval;
         }
     }
+
 
     void PlayRandomStep()
     {
