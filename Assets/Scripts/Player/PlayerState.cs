@@ -10,7 +10,7 @@ public class PlayerState : MonoBehaviour
     [SerializeField] private float _hungerPerSecond;
     [SerializeField] private float _thirstPerSecond;
     [SerializeField] private float _hungerForHealing;
-    [SerializeField] private float _thristForHealing;
+    [SerializeField] private float _thirstForHealing;
     [SerializeField] private float _damagePerSecond;
     [SerializeField] private float _healingPerSecond;
     
@@ -38,7 +38,7 @@ public class PlayerState : MonoBehaviour
             {
                 _info.health -= _damagePerSecond;
             }
-            if(_info.hunger>=_hungerForHealing && _info.thirst >= _thirstPerSecond)
+            if (_info.hunger >= _hungerForHealing && _info.thirst >= _thirstForHealing)
             {
                 _info.health += _healingPerSecond;
             }
