@@ -191,8 +191,12 @@ public class Inventory : MonoBehaviour
     }
     public void ChangeCargoValue(float value)
     {
-        if (value < Capacity) return;
-        Capacity = value;
+        // Bags should add capacity, not replace it.
+        // Previously: if (value < Capacity) return; Capacity = value;
+        // That made small bags after big bags do nothing.
+        // See BagItem.Use() which calls this with the bag's cargo value.
+        if (value <= 0) return;
+        Capacity += value;
         var wgt = GetWeight();
         _weightText.text = wgt + "/" + Capacity;
         _weightBar.fillAmount = wgt / Capacity;

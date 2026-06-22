@@ -57,9 +57,9 @@ public class PlayerMovement : MonoBehaviour
 
         _gameMode.onChangeMode += SetMode;
         Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false; // Скрываем курсор
+        Cursor.visible = false; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
-        // Центрируем взгляд
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         _xRotation = 0f;
         _cameraHolder.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
@@ -253,12 +253,18 @@ public class PlayerMovement : MonoBehaviour
         {
             _velocity.y = Mathf.Sqrt(_jumpHeight * 2f * _gravity);
             _hasJumped = true;
-            _jumpSource.Play();
+            // NOTE: jump sound moved to landing (see HandleLanding) per design fix.
         }
 
         if (CheckIfGrounded() && _velocity.y <= 0)
         {
-            _hasJumped = false;
+            if (_hasJumped)
+            {
+                // First frame after touchdown following a jump: play the landing sound.
+                _hasJumped = false;
+                if (_jumpSource != null && _jumpSource.clip != null)
+                    _jumpSource.Play();
+            }
         }
     }
 

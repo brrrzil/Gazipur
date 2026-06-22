@@ -6,38 +6,38 @@ using UnityEngine.InputSystem;
 
 public class Footsteps : MonoBehaviour
 {
-    [Header("Звук по мусору")]
+    [Header("пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ")]
     public AudioClip footstepsLitter;
     public float stepDurationLitter = 0.4f;
     public int totalStepsLitter = 20;
 
-    [Header("Звук по земле")]
+    [Header("пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ")]
     public AudioClip footstepsDirt;
     public float stepDurationDirt = 0.4f;
     public int totalStepsDirt = 20;
 
-    [Header("Звук по воде")]
+    [Header("пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ")]
     public AudioClip footstepsWater;
     public float stepDurationWater = 0.4f;
     public int totalStepsWater = 8;
 
-    [Header("Изначальные настройки ")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ")]
     public AudioClip footstepsOld;
     public float stepDurationOld = 0.4f;
     public int totalStepsOld = 20;
 
-    [Header("Настройки скорости")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public float minStepInterval = 0.2f;
     public float maxStepInterval = 0.6f;
     public float minSpeedForSteps = 0.1f;
     public float walkSpeed = 4f;
     public float runSpeed = 8f;
 
-    [Header("Определение поверхности")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public float groundCheckDistance = 1.5f;
     public LayerMask groundLayerMask = ~0;
 
-    [Header("Опционально")]
+    [Header("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public bool randomizePitch = true;
     public float pitchRange = 0.1f;
 
@@ -55,12 +55,15 @@ public class Footsteps : MonoBehaviour
     private bool isPlayingStep = false;
     private float stepEndTime;
 
-    // Input System переменные
+    // Computed once per Update, consumed by CheckMovement + HandleFootsteps.
+    private float currentSpeed;
+
+    // Input System пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     private PlayerInputActions inputActions;
     private Vector2 moveInput;
     private bool isRunning;
 
-    // Для проверки нахождения на земле (нужно связать с PlayerMovement)
+    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ PlayerMovement)
     private bool isGrounded = true;
 
     private enum SurfaceType
@@ -115,14 +118,26 @@ public class Footsteps : MonoBehaviour
     void Update()
     {
         CheckSurface();
+        ComputeCurrentSpeed();
         CheckMovement();
         HandleFootsteps();
     }
 
     /// <summary>
-    /// Проверяет, находится ли игрок на земле.
-    /// Этот метод должен вызываться извне или можно получать доступ к компоненту PlayerMovement.
-    /// Альтернатива: сделать isGrounded публичным свойством в PlayerMovement.
+    /// Computes the player's world-space speed once per frame so we don't recompute
+    /// (and accidentally double-multiply by walk/run speed) in two places.
+    /// </summary>
+    void ComputeCurrentSpeed()
+    {
+        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
+        float magnitude = moveDirection.magnitude;
+        currentSpeed = magnitude * (isRunning ? runSpeed : walkSpeed);
+    }
+
+    /// <summary>
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+    /// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ PlayerMovement.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ isGrounded пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ PlayerMovement.
     /// </summary>
     private bool IsPlayerGrounded()
     {
@@ -205,17 +220,8 @@ public class Footsteps : MonoBehaviour
 
     void CheckMovement()
     {
-        // Получаем направление движения из Input System
-        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
-        float currentSpeed = moveDirection.magnitude;
-
-        // Рассчитываем текущую скорость с учетом бега
-        if (isRunning)
-            currentSpeed *= runSpeed;
-        else
-            currentSpeed *= walkSpeed;
-
-        // Проверяем, что игрок на земле и скорость выше порога
+        // currentSpeed is computed once in Update() so we don't accidentally
+        // double-multiply it here and in HandleFootsteps.
         bool isMovingNow = currentSpeed > minSpeedForSteps && IsPlayerGrounded();
 
         if (isMovingNow != isMoving)
@@ -234,21 +240,16 @@ public class Footsteps : MonoBehaviour
     {
         if (!isMoving) return;
 
-        // Получаем текущее движение
-        Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
-        float currentSpeed = moveDirection.magnitude;
-
-        // Рассчитываем скорость с учетом бега
-        if (isRunning)
-            currentSpeed *= runSpeed;
-        else
-            currentSpeed *= walkSpeed;
-
-        // Вычисляем интервал шагов на основе скорости
-        float speedRatio = Mathf.InverseLerp(minSpeedForSteps, runSpeed, currentSpeed);
+        // Map speed to a 0..1 ratio over the [walkSpeed, runSpeed] band.
+        // 0 = walking, 1 = running full tilt.
+        float speedRatio = Mathf.InverseLerp(walkSpeed, runSpeed, currentSpeed);
         currentStepInterval = Mathf.Lerp(maxStepInterval, minStepInterval, speedRatio);
 
-        // Управление воспроизведением шага
+        // Don't fire steps faster than one clip length allows.
+        if (currentStepInterval < currentStepDuration * 0.5f)
+            currentStepInterval = currentStepDuration * 0.5f;
+
+        // Stop a step sound once its clip has finished.
         if (isPlayingStep && Time.time >= stepEndTime)
         {
             if (audioSource.isPlaying)
@@ -256,7 +257,7 @@ public class Footsteps : MonoBehaviour
             isPlayingStep = false;
         }
 
-        // Воспроизведение следующего шага
+        // Play the next step if we're past the scheduled time.
         if (!isPlayingStep && Time.time >= nextStepTime)
         {
             PlayRandomStep();

@@ -32,9 +32,8 @@ public class CharacterRemarks : MonoBehaviour
         [HideInInspector] public bool hasBeen;
     }
     public bool StartRemark(RemarksType remark)
-    {       
-
-        var rem = System.Array.Find(_remarks,i => i.type == remark);
+    {
+        var rem = System.Array.Find(_remarks, i => i.type == remark);
 
         if (rem == null) return false;
 
@@ -45,11 +44,12 @@ public class CharacterRemarks : MonoBehaviour
 
         if (_isStarted && _currentType == remark)
             return false;
+
         _currentType = rem.type;
         _isStarted = true;
 
         if (rem.isOneTime)
-            rem.chance = 0;        
+            rem.chance = 0;
 
         if (!rem.isMultiRemark)
         {
@@ -58,20 +58,36 @@ public class CharacterRemarks : MonoBehaviour
         }
         else
         {
-            _remarkText.text = rem.hasBeen?rem.remarkAnyTime:rem.remark;
-            PlayVoice(rem.hasBeen ? rem.voiceAnyTime:rem.voice);
+            _remarkText.text = rem.hasBeen ? rem.remarkAnyTime : rem.remark;
+            PlayVoice(rem.hasBeen ? rem.voiceAnyTime : rem.voice);
         }
         rem.hasBeen = true;
         _tween?.Kill();
         _tween = _cGroup.DOFade(1, 0.5f).OnComplete(() =>
-         {
-             _tween = _cGroup.DOFade(0, 0.5f).SetDelay(rem.showTime).OnComplete(()=>_isStarted =false);
-         });
+        {
+            _tween = _cGroup.DOFade(0, 0.5f).SetDelay(rem.showTime).OnComplete(() => _isStarted = false);
+        });
         return true;
     }
+
+    /// <summary>
+    /// Immediately hide any active remark bubble and stop its voice. Used when the
+    /// context that triggered the remark is no longer valid (e.g. player walked away
+    /// from the trader who was speaking).
+    /// </summary>
+    public void ForceHide()
+    {
+        _tween?.Kill();
+        if (_cGroup != null)
+            _cGroup.alpha = 0;
+        _isStarted = false;
+        if (_speaker != null && _speaker.isPlaying)
+            _speaker.Stop();
+    }
+
     private void PlayVoice(AudioClip clip)
     {
-        if (!clip ) return;
+        if (!clip) return;
 
         if (_speaker.isPlaying)
         {

@@ -12,6 +12,9 @@ public class GameSettings : MonoBehaviour
     [Inject] SoundControl _sounds;
     public void Start()
     {
+        // Lock framerate to 60. Disable VSync so targetFrameRate is honored.
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 60;
         _musicVoloumeSlider.value = _sounds.MusicVolume == 0? 1: _sounds.MusicVolume;
         _soundVoloumeSlider.value = _sounds.SoundVolume == 0? 1 : _sounds.SoundVolume;
         _muteToggle.isOn = _sounds.IsMute;

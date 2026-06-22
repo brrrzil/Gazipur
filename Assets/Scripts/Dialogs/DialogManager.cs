@@ -29,6 +29,21 @@ public class DialogManager : MonoBehaviour
     private AudioClip _curQuestClip;
     private void Start()
     {
+        // Center-align the question text and every answer button's label.
+        // Using legacy Text (not TMP) per current migration status — see AUDIT-PLAN.
+        if (_questionText != null)
+            _questionText.alignment = TextAnchor.MiddleCenter;
+        if (_ansverButtons != null)
+        {
+            foreach (var btn in _ansverButtons)
+            {
+                if (btn == null) continue;
+                var t = btn.GetComponentInChildren<Text>();
+                if (t != null)
+                    t.alignment = TextAnchor.MiddleCenter;
+            }
+        }
+
         StartDialog(DialogType.motherStart);
         _modManager.onChangeMode += m =>
         {

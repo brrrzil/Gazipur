@@ -11,12 +11,12 @@ public class SoundControl : MonoBehaviour
     public void ChangeMusicVolume(float value)
     {
         MusicVolume = value;
-        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(value) * 20);    
+        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
     }
     public void ChangeSoundVolume(float value)
     {
         SoundVolume = value;
-        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
+        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(value) * 20);
     }
     public void Mute(bool isMute)
     {
