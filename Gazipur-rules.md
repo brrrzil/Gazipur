@@ -97,4 +97,101 @@
 
 > Сюда дописывать конкретные баги/решения по мере работы, чтобы не наступать повторно.
 
-- …
+- **Состояния GameMode** (`:8081` в любых системах) — это **state**, а не “позиция игрока”. Если что-то работает не так, первым делом проверять, в каком `GameMode` сейчас сцена, и как переходы `ChangeMode` запускаются/завершаются.
+- **DI и `Inject`** — все `MonoBehaviour` подписываются на свои зависимости через атрибут `[Inject]`. Если что-то NRE'ит, проверь, что нужный `[Inject]` вызывается в `Start()`/`Awake()`. Сам `Inject` вручную не вызывается — его дёргает Zenject.
+- **DI в инспекторе** — в скриптах `[SerializeField]` поля, привязанные в инспекторе (UI, AudioMixerGroup, Transform’ы и т.п.). Если в коде видишь `m_Foo: {fileID: 0}` — ссылка не привязана, будет NRE.
+- **Голоса и AudioSource** — см. ниже “Аудио DOTween queueing”.
+
+---
+
+## Бриф по проведённой работе (round 1–5)
+
+> Это сводка для будущего итератора: что было сделано, что ушло в откат, и где
+> было взаимное недопонимание. Читай перед началом, чтоб не наступать повторно.
+
+### Окружение
+
+- **Unity 6000.4.2f1** (Unity 6.4 beta), URP 17.4.0, **новый Input System** (legacy Input отключён в Player Settings — `Input.GetKeyDown` бросает `InvalidOperationException`).
+- **Zenject DI** — монобехи подписываются через `[Inject]`, не `new`.
+- **DOTween** используется в UI (DialogManager, CharacterRemarks) и в плавных fade-эффектах.
+
+### Что зафиксировано и работает (HEAD коммиты)
+
+| Изменение | Где | Что починили |
+|---|---|---|
+| Удалена заставка | `Assets/Scenes/MainMenu.unity` (-305 строк), `Assets/VFX/*` (8 файлов) | Видео больше не показывается в начале |
+| Skybox mipBias выровнен | `BOXOPHOBIC/.../Polyverse Skies - Night Sky.exr.meta` (`mipBias: 0 → -1`) | Убрало размытие на стыке двух кубемапов |
+| SkyboxAtardecer пересобран | `Water Stylized Shader.../Textures/Skybox/Cubemap.cubemap` (новый, 6.3 МБ) | Кубик собран из `px/nx/py/ny/pz/nz.png` в RGBA32, GUID сохранён. В редакторе: `Generate Mipmaps` → Apply для получения полной мип-цепочки. |
+| Audio mixer swap | `System/SoundControl.cs` (метод `ChangeMusicVolume` ↔ `ChangeSoundVolume` перепутаны были параметры `MusicVolume`/`SoundsVolume`) | Ползунки теперь рулят своими каналами |
+| Slider swap в UI | `Prefabs/SettingsPanel.prefab` (`_musicVoloumeSlider: fileID 4984079079027660919`, `_soundVoloumeSlider: fileID 6968825805520622719`) | Подписи “Music/Sounds” совпадают с каналами |
+| FPS lock 60 | `System/GameSettings.cs:Start()` (`QualitySettings.vSyncCount = 0; Application.targetFrameRate = 60`) | Фреймрейт зафиксирован |
+| FpsCounter | `General/FpsCounter.cs` (new) | F3 тоггл, IMGUI в углу, авто-бутстрап через `[RuntimeInitializeOnLoadMethod]` |
+| Звук прыжка на приземлении | `Player/PlayerMovement.cs:HandleJump()` | `_jumpSource.Play()` в момент touchdown, не в момент отрыва |
+| Шаги захардкожены | `Player/Footsteps.cs:HandleFootsteps()` | `walkingStepInterval = 0.55f`, `runningStepInterval = 0.28f` (был сломанный `InverseLerp(walkSpeed, runSpeed, ...)` с двойным умножением `currentSpeed`) |
+| Голоса не отстают | `Player/CharacterRemarks.cs:PlayVoice()`, `Dialogs/DialogManager.cs:SetIteration()` | Заменена DOTween-очередь на “`Stop()` + `Play()` сразу” (см. ниже) |
+| Торговец только вблизи | `Player/PlayerInteract.cs` | `SelectObject()` теперь каждый кадр перепроверяет дистанцию, `InteractObject()` требует `_isSelect` |
+| Слайдер громкости не сбрасывается на 1 | `System/GameSettings.cs:Start()` | Убран `volume == 0 ? 1 : volume` — слайдер честно показывает сохранённое значение |
+| Background в главном меню | `Scenes/MainMenu.unity` (fileID 1048896954) | `m_IsActive: 0 → 1` (был отключён scene-оверрайдом) |
+| `LightFlicker` удалён | `Environment/LightFlicker.cs` + `.meta` | Не использовался нигде |
+
+### Что было сделано, но ПОТОМ откачено (не повторять!)
+
+| Идея | Что сделал | Почему отменил |
+|---|---|---|
+| Анкоры диалога в `Canvas.prefab` (QuestionText + 4 кнопки, `m_AnchoredPosition.x: 300 → 0`) | Считал, что весь диалог сдвинут на 300 пикселей вправо | Пользователь сказал: “возможно проблема в UI anchors в редакторе, откати и дай глянуть самому”. Проблема оказалась в лейауте префаба, не в коде. |
+| `TextAnchor.MiddleCenter` в `DialogManager.Start()` | Runtime выставление alignment на `_questionText` и `GetComponentInChildren<Text>()` каждой кнопки | Тоже откатил вместе с анкорами. |
+| Distance gate в `TraderObject.Update()` (остановка `_speaker.Stop()` если игрок дальше 12 м от трейдера) | Добавил `void Update()` с проверкой дистанции до `Camera.main` | Пользователь: “проблема была в state, а не в расстоянии”. Дистанция — не причина, трейдер не должен останавливать голос при удалении. Откатил. |
+| `CharacterRemarks.ForceHide()` | Метод для принудительного скрытия `remark` UI | Откатил вместе с distance gate. |
+| DOTween-queue fix (round 2): `_pendingVoiceSeq` + `CancelPendingVoice()` | Хранил ссылку на `DOTween.Sequence` и киллил её при `CancelPendingVoice()` | Откатил в round 3, но баг с задержкой голоса остался. Починил **по-другому** в round 5 — просто без очереди. |
+| Сумки add-ёмкость (round 1): `Capacity += value` | Оригинал: `if (value < Capacity) return; Capacity = value;` | Получилось E+14 (каждый pickup одной и той же сумки вызывал `BagItem.Use()`, который `ChangeCargoValue`). Попробовал дедуп через `HashSet<ItemData> _usedToolItems` — тоже не помогло. Пользователь отменил все мои попытки и вернул оригинальный код. **Сумки — open problem, решать позже с пониманием модели** (видимо, нужна модель, где сумка потребляется при использовании, а не даёт бонус “вечно”). |
+| `Inventory.CheckTool` дедупликация | Добавил `_usedToolItems.Add(item)` guard вокруг `use.Use(_manager)` | Откатил вместе с сумками. |
+
+### Где были взаимные недопонимания
+
+1. **Торговец-издалека vs голос-с-задержкой** — это **две разные проблемы**, я их путал.
+   - **Проблема А:** “Нажимаю E на трейдера с 30 м, диалог открывается”. Это pre-existing баг в `PlayerInteract.cs` — `_isSelect` не сбрасывался при выходе из радиуса, и `InteractObject()` не проверял его. Починил в коммите `e5d80c5`.
+   - **Проблема Б:** “После выхода из магазина через несколько секунд проигрывается голос ‘2 Рахул всегда поможет.mp3’”. Это DOTween-баг в `CharacterRemarks.PlayVoice()` и `DialogManager.SetIteration()` — последовательность `AppendInterval(remainingTime)` продолжала жить после `_speaker.Stop()`. Починил в коммите `686089f` заменой на `Stop() + Play()`.
+   - **Ошибка ИИ:** в round 2–3 я откатил оба фикса как “одну проблему” (пользователь написал “откати всё, что связано с репликами”). Потом оказалось, что голосовой баг никуда не делся и пришлось чинить заново. **Lesson:** не откатывай фикс проблемы B, когда пользователь жалуется на проблему A.
+
+2. **Скайбокс** — было три интерпретации:
+   - “Скайбокс размытый” → пользователь тестировал `SkyboxAtardecer`, не `Night Sky` (BOXOPHOBIC). Я починил `Night Sky.exr.meta: mipBias`, но **не то**.
+   - “Generate Mipmaps вызывает варнинг, кнопка Apply не появляется” → я предложил конвертировать в `Texture Shape = Cube` на `cubemap_layout.png` (modern way). Пользователь попробовал — получил авто-спрайты `px/nx/py/ny/pz/nz` в инспекторе и был сбит с толку.
+   - Решение: собрал `Cubemap.cubemap` заново из 6 face-PNG в RGBA32 с правильным GUID. В редакторе: открыть Cubemap.cubemap → Generate Mipmaps → Apply (теперь работает, потому что источник корректный).
+
+3. **Сумки** — модель не очевидна из кода. Текущее поведение: `Inventory.AddItem` для тулзов вызывает `IUsebleItem.Use(_manager)` через `CheckTool`. `BagItem.Use` прибавляет `_cargoValue` к `Capacity`. **Дыра:** вызывается при каждом pickup одного и того же предмета. Сумка не потребляется, не “съедается” — она лежит в инвентаре и продолжает давать бонус. **Открытый вопрос, требует дизайн-решения**, прежде чем чинить.
+
+4. **Style/UX решений** — я несколько раз добавлял рантайм-фиксы (выравнивание текста, distance gate), которые в реальности были workaround'ами для неправильного лейаута в префабе. Пользователь предпочитает чинить префаб в редакторе, а не патчить в коде. **Lesson:** если проблема выглядит как лейаут, сначала спросить пользователя, готов ли он править префаб, а не накладывать рантайм-фикс.
+
+### Какие файлы трогать НЕ нужно
+
+- `Assets/Plugins/Zenject/` — внутренности.
+- `Assets/Plugins/Adobe/` (Substance) — только мета.
+- Vendor-папки в целом (`BOXOPHOBIC/`, `QuickOutline/`, `NaughtyAttributes/`, `SimpleLocalization/`, `TextMesh Pro/`, `TutorialInfo/`, `Scalable Grid Prototype Materials/`, `Demigiant/`).
+- `Library/`, `Logs/`, `Temp/`, `obj/`.
+- Тяжёлые `.asset/.fbx/.png` — только если задача требует.
+
+### Какие файлы трогать МОЖНО (проектные)
+
+- Любые `*.cs` в `Assets/Scripts/` — это всё проектный код.
+- `Assets/Prefabs/`, `Assets/Scenes/`, `Assets/Settings/`, `Assets/Resources/` — через YAML-патчи, если уверен.
+- `Assets/InputSystem_Actions.inputactions` — JSON-конфиг новой Input System.
+- `Packages/manifest.json` — для добавления пакетов (но избегай без необходимости).
+
+### Open problems (TODO, не решено)
+
+- **Сумки:** нужна модель, где покупка сумки **потребляет** её (вычитается из инвентаря), а бонус `+cargoValue` остаётся. Текущее поведение: сумка лежит в инвентаре и даёт бонус навечно; повторный pickup той же сумки в текущей реализации **дублирует** бонус (см. проблему с E+14).
+- **TMP-миграция** — `Assets/Scripts/` содержит 25 ссылок на `UnityEngine.UI.Text`. Плагин `SimpleLocalization` имеет `[RequireComponent(typeof(Text))]` в `LocalizedText.cs:10`. Миграция требует перебинд всех префабов + патча/замены плагина локализации. **Сделано не было**, рекомендую отдельный заход.
+- **Громкость в PlayerPrefs** — `GameSettings.Start()` использует `SoundControl.MusicVolume`/`SoundVolume`, но они не сохраняются между сессиями. Сейчас при рестарте громкость сбрасывается к дефолтным значениям `SoundControl`. Нужно добавить `PlayerPrefs.SetFloat` в `ChangeMusicVolume`/`ChangeSoundVolume`.
+- **3D-аудио для NPC** — `Sounds.DialogSource` — единственный глобальный `AudioSource`, не spatial. Игрок не может “отойти” от голоса. Временное решение было — дистанционный гейт в `TraderObject.Update()`, но пользователь сказал, что проблема не в этом, и я откатил. Долгосрочно — сделать `AudioSource` на каждом NPC, спавнить голоса через `PlayClipAtPoint`.
+
+---
+
+## Коммуникация с пользователем (паттерны, которые я заметил)
+
+- Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
+- Часто просит **“верни как было”** когда фикс ломает что-то ещё — не спорить, откатывать, фиксить по-другому.
+- Предпочитает **минимальные точечные правки**, а не широкие рефакторы.
+- Готов править префабы в редакторе, если сказать как — но плохо понимает YAML-структуру Unity-ассетов.
+- При обсуждении сумок и инвентаря упоминает “state” в смысле “GameMode / phase”, не “runtime state machine” — это важно.
+- Часто путает два разных бага в один (“реплики” = и диалог, и голос). Уточнять, прежде чем откатывать всё.
+- Когда говорит “если не уверен — спроси”, реально хочет, чтобы я спросил.
