@@ -207,11 +207,11 @@ public class Footsteps : MonoBehaviour
 
             case SurfaceType.Wet:
                 currentClip = footstepsWater;
-                // BUGFIX: was using stepDurationDirt / totalStepsDirt (copy-paste from
-                // the Ground case). Water steps have a different clip length and
-                // step count, so the timing was wrong.
-                currentStepDuration = stepDurationWater;
-                currentTotalSteps = totalStepsWater;
+                // REVERTED to the original "Dirt" timings per user feedback —
+                // the Water timings made steps sound worse in practice. The
+                // Dirt values are a deliberate crutch; leave as is.
+                currentStepDuration = stepDurationDirt;
+                currentTotalSteps = totalStepsDirt;
                 break;
 
             default:

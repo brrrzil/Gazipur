@@ -65,14 +65,18 @@ public class MenuAudioManager : MonoBehaviour
 
     private void ApplyMusicVolume(float volume, bool muted)
     {
+        // BUGFIX (K3 follow-up): the menu mixer has the same exposed parameter
+        // names as the in-game mixer — "MusicVolume" / "SoundsVolume", not
+        // "Music" / "Sound". Setting a non-existent param logged
+        // "Exposed name does not exist" every time the slider moved.
         float finalVolume = muted ? 0.0001f : volume;
-        audioMixer.SetFloat("Music", Mathf.Log10(finalVolume) * 20);
+        audioMixer.SetFloat("MusicVolume", Mathf.Log10(finalVolume) * 20);
     }
 
     private void ApplySoundsVolume(float volume, bool muted)
     {
         float finalVolume = muted ? 0.0001f : volume;
-        audioMixer.SetFloat("Sound", Mathf.Log10(finalVolume) * 20);
+        audioMixer.SetFloat("SoundsVolume", Mathf.Log10(finalVolume) * 20);
     }
 
     private void SaveSettings()

@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,11 +27,6 @@ public class DialogManager : MonoBehaviour
     [Inject] Sounds _sounds;
     private AudioSource _speaker => _sounds.DialogSource;
     private AudioClip _curQuestClip;
-
-    // Tracks the in-progress answer→question coroutine so we can cancel it if
-    // the player (or a game-mode change) interrupts the chain.
-    private Coroutine _voiceSequence;
-
     private void Start()
     {
         StartDialog(DialogType.motherStart);
@@ -42,23 +36,13 @@ public class DialogManager : MonoBehaviour
             {
                 _curQuestClip = null;
                 _speaker.Stop();
-                if (_voiceSequence != null)
-                {
-                    StopCoroutine(_voiceSequence);
-                    _voiceSequence = null;
-                }
             }
         };
     }
 
     public bool StartDialog(DialogType dType)
     {
-        // BUGFIX (M2): _dialogs.Where(...).ToArray()[0] would throw
-        // IndexOutOfRangeException when the requested dialog type is missing.
-        var matches = _dialogs.Where(i => i.dialogType == dType).ToArray();
-        if (matches.Length == 0) return false;
-
-        var dialog = matches[0];
+        var dialog = _dialogs.Where(i => i.dialogType == dType).ToArray()[0];
         if (dialog.isUsed) return false;
 
         Dialog = dialog.dialogType;
@@ -67,23 +51,14 @@ public class DialogManager : MonoBehaviour
         _modManager.ChangeMode(GameMode.dialog);
         return true;
     }
-
     private void SetIteration(DialogStructure iteraton)
     {
-        // If a previous answer→question sequence is still mid-flight, kill it
-        // so the new question voice doesn't fight with a delayed answer voice.
-        if (_voiceSequence != null)
-        {
-            StopCoroutine(_voiceSequence);
-            _voiceSequence = null;
-        }
-
         if (iteraton.QuestionVoice)
         {
-            // Cut whatever is currently playing and start the new question
-            // immediately. The previous DOTween-queue approach let a stale
-            // voice play seconds later after _speaker.Stop() was called on
-            // game mode change to outdors.
+            // Same fix as in CharacterRemarks: stop the current voice and start
+            // the new question immediately. The previous DOTween-queue approach
+            // let a stale voice play seconds later after _speaker.Stop() was
+            // called on game mode change to outdors.
             if (_speaker.isPlaying)
                 _speaker.Stop();
             _speaker.clip = iteraton.QuestionVoice;
@@ -109,33 +84,24 @@ public class DialogManager : MonoBehaviour
             {
                 _ansverButtons[i].onClick.AddListener(() =>
                 {
-                    // BUGFIX (M1): previously the answer voice was started and
-                    // then SetIteration was called immediately, which stops
-                    // the speaker and plays the next question voice — cutting
-                    // the answer voice mid-clip. Now we play the answer voice
-                    // first, then call SetIteration only when it finishes.
-                    var answerClip = iteraton.Answer[idx].answerVoice;
-                    var nextChain = iteraton.Answer[idx].newChain;
-
-                    if (_voiceSequence != null)
-                        StopCoroutine(_voiceSequence);
-                    _voiceSequence = StartCoroutine(PlayAnswerThenChain(answerClip, nextChain));
+                    _speaker.Stop();
+                    if (iteraton.Answer[idx].answerVoice)
+                    {
+                        _speaker.clip = iteraton.Answer[idx].answerVoice;
+                        _speaker.Play();
+                    }
+                    SetIteration(iteraton.Answer[idx].newChain);
                 });
+
             }
             else
             {
                 _ansverButtons[i].onClick.AddListener(() =>
                 {
-                    // End-of-dialog branch. The mode change triggers
-                    // _speaker.Stop() via the onChangeMode handler above, so
-                    // we just need to play the answer voice after that.
                     _modManager.ChangeMode(GameMode.outdors);
-                    if (_voiceSequence != null)
-                        StopCoroutine(_voiceSequence);
+                    _speaker.Stop();
                     if (iteraton.Answer[idx].answerVoice)
                     {
-                        if (_speaker.isPlaying)
-                            _speaker.Stop();
                         _speaker.clip = iteraton.Answer[idx].answerVoice;
                         _speaker.Play();
                     }
@@ -147,24 +113,5 @@ public class DialogManager : MonoBehaviour
                 _ansverButtons[i].onClick.AddListener(() => iteraton.Answer[idx].action.Action(_manager));
             }
         }
-    }
-
-    // Coroutine: play the answer voice to completion, then advance to the
-    // next dialog chain. Cancellation is the caller's responsibility (see
-    // the _voiceSequence checks in SetIteration and the mode handler).
-    private IEnumerator PlayAnswerThenChain(AudioClip answerClip, DialogStructure nextChain)
-    {
-        if (answerClip)
-        {
-            if (_speaker.isPlaying)
-                _speaker.Stop();
-            _speaker.clip = answerClip;
-            _speaker.Play();
-            yield return new WaitForSeconds(answerClip.length);
-        }
-
-        _voiceSequence = null;
-        if (nextChain != null)
-            SetIteration(nextChain);
     }
 }

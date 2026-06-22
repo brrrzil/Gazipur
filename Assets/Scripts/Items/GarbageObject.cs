@@ -49,7 +49,10 @@ public class GarbageObject : InteractObject
     {
         if (isDown)
         {
-            _holdBar.StartHold(_holdTaime);
+            // loop: true so the player can keep E held and loot multiple items
+            // from the same prefab without releasing. Without this the progress
+            // bar disappears after the first loot.
+            _holdBar.StartHold(_holdTaime, loop: true);
             _holdBar.OnHoldComplete += PicItem;
             _sounds.PlayerPlay(_pickSound, true);
         }
