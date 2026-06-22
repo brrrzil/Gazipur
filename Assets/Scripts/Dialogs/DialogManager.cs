@@ -36,11 +36,6 @@ public class DialogManager : MonoBehaviour
             {
                 _curQuestClip = null;
                 _speaker.Stop();
-                // Cancel any voice that CharacterRemarks had queued via DOTween,
-                // otherwise a leftover voice can play several seconds after the
-                // player has already left the trader.
-                if (Remarks != null)
-                    Remarks.CancelPendingVoice();
             }
         };
     }
