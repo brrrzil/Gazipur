@@ -14,13 +14,10 @@ public class MenuAudioManager : MonoBehaviour
     private void Start()
     {
         // ��������� ����������� ���������
-        // BUGFIX: was reading "MenuMusicVolume"/"MenuSoundsVolume" but writing
-        // "MusicVolume"/"SoundsVolume" — the read keys never had values, so the
-        // menu always reset to 0.75 on every launch. Use the same keys both ways.
-        float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 0.75f);
-        float savedSounds = PlayerPrefs.GetFloat("SoundsVolume", 0.75f);
-        int musicMuted = PlayerPrefs.GetInt("MusicMuted", 0);
-        int soundsMuted = PlayerPrefs.GetInt("SoundsMuted", 0);
+        float savedMusic = PlayerPrefs.GetFloat("MenuMusicVolume", 0.75f);
+        float savedSounds = PlayerPrefs.GetFloat("MenuSoundsVolume", 0.75f);
+        int musicMuted = PlayerPrefs.GetInt("MenuMusicMuted", 0);
+        int soundsMuted = PlayerPrefs.GetInt("MenuSoundsMuted", 0);
 
         // ������������� UI
         musicSlider.value = savedMusic;
@@ -65,18 +62,14 @@ public class MenuAudioManager : MonoBehaviour
 
     private void ApplyMusicVolume(float volume, bool muted)
     {
-        // BUGFIX (K3 follow-up): the menu mixer has the same exposed parameter
-        // names as the in-game mixer — "MusicVolume" / "SoundsVolume", not
-        // "Music" / "Sound". Setting a non-existent param logged
-        // "Exposed name does not exist" every time the slider moved.
         float finalVolume = muted ? 0.0001f : volume;
-        audioMixer.SetFloat("MusicVolume", Mathf.Log10(finalVolume) * 20);
+        audioMixer.SetFloat("Music", Mathf.Log10(finalVolume) * 20);
     }
 
     private void ApplySoundsVolume(float volume, bool muted)
     {
         float finalVolume = muted ? 0.0001f : volume;
-        audioMixer.SetFloat("SoundsVolume", Mathf.Log10(finalVolume) * 20);
+        audioMixer.SetFloat("Sound", Mathf.Log10(finalVolume) * 20);
     }
 
     private void SaveSettings()
