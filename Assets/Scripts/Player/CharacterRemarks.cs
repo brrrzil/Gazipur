@@ -74,21 +74,16 @@ public class CharacterRemarks : MonoBehaviour
     {
         if (!clip) return;
 
+        // Cut off whatever is currently playing and start the new clip right
+        // away. The previous implementation used a DOTween sequence to wait for
+        // the current clip to finish, but that left a "queued" voice alive
+        // even after _speaker.Stop() was called externally (e.g. on game mode
+        // change to outdors) — so a leftover voice could fire several seconds
+        // after the player already left the context. Stopping and starting
+        // immediately avoids that without needing to track sequences.
         if (_speaker.isPlaying)
-        {
-            Sequence sequence = DOTween.Sequence();
-            float remainingTime = _speaker.clip.length - _speaker.time;
-            sequence.AppendInterval(remainingTime);
-            sequence.OnComplete(() =>
-            {
-                _speaker.clip = clip;
-                _speaker.Play();
-            });
-        }
-        else
-        {
-            _speaker.clip = clip;
-            _speaker.Play();
-        }
+            _speaker.Stop();
+        _speaker.clip = clip;
+        _speaker.Play();
     }
 }

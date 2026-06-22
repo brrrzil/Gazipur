@@ -52,28 +52,17 @@ public class DialogManager : MonoBehaviour
         return true;
     }
     private void SetIteration(DialogStructure iteraton)
-    {    
+    {
         if (iteraton.QuestionVoice)
         {
+            // Same fix as in CharacterRemarks: stop the current voice and start
+            // the new question immediately. The previous DOTween-queue approach
+            // let a stale voice play seconds later after _speaker.Stop() was
+            // called on game mode change to outdors.
             if (_speaker.isPlaying)
-            {
-                Sequence sequence = DOTween.Sequence();
-                float remainingTime = _speaker.clip.length - _speaker.time;
-                sequence.AppendInterval(remainingTime);
-                sequence.OnComplete(() =>
-                {
-                    if (_curQuestClip != _speaker.clip)
-                    {
-                        _speaker.clip = iteraton.QuestionVoice;
-                        _speaker.Play();
-                    }
-                });
-            }
-            else
-            {
-                _speaker.clip = iteraton.QuestionVoice;
-                _speaker.Play();
-            }
+                _speaker.Stop();
+            _speaker.clip = iteraton.QuestionVoice;
+            _speaker.Play();
             _curQuestClip = iteraton.QuestionVoice;
         }
 
