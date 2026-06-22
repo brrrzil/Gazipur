@@ -25,6 +25,11 @@ public class Inventory : MonoBehaviour
     private bool _isOpen;
     private int _picCounter;
     private int _cargoPrice;
+    // Tracks which specific ItemData items have already had their IUsebleItem.Use() called.
+    // Without this, buying the same bag twice would double its cargoValue contribution
+    // (because CheckTool fires every time the item is added, and the previous version of
+    // ChangeCargoValue was a no-op for smaller bags, which masked the issue).
+    private HashSet<ItemData> _usedToolItems = new HashSet<ItemData>();
     [Inject] DataManager _data;
     [Inject] GameModeManager _gameMode;
     [Inject] GameManager _manager;
@@ -172,7 +177,9 @@ public class Inventory : MonoBehaviour
             _toolsImages[(int)ti.ToolType].sprite = item.Icon;
             IUsebleItem use = ti as IUsebleItem;
 
-            if (use!=null)
+            // Only call Use() the FIRST time we see this specific ItemData.
+            // Otherwise buying the same bag twice would double its cargoValue contribution.
+            if (use != null && _usedToolItems.Add(item))
                 use.Use(_manager);
 
             return true;
@@ -198,11 +205,12 @@ public class Inventory : MonoBehaviour
         if (value <= 0) return;
         Capacity += value;
         var wgt = GetWeight();
-        _weightText.text = wgt + "/" + Capacity;
-        _weightBar.fillAmount = wgt / Capacity;
+        // F1 forces decimal notation, prevents the HUD from showing E+14 for big numbers.
+        _weightText.text = wgt.ToString("F1") + "/" + Capacity.ToString("F1");
+        _weightBar.fillAmount = Capacity > 0 ? wgt / Capacity : 0;
         _inventoryWeightText.text = _weightText.text;
         _cargoPriceText.text = _cargoPrice.ToString();
-       _inventoryCargoPriceText.text = _cargoPrice.ToString();
+        _inventoryCargoPriceText.text = _cargoPrice.ToString();
     }
     public InventoryCell CheckMedeicine()
     {

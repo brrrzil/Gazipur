@@ -27,8 +27,11 @@ public class Footsteps : MonoBehaviour
     public int totalStepsOld = 20;
 
     [Header("��������� ��������")]
-    public float minStepInterval = 0.2f;
-    public float maxStepInterval = 0.6f;
+    [Tooltip("Seconds between steps while walking. Hard-coded per speed state (see HandleFootsteps).")]
+    public float walkingStepInterval = 0.55f;
+    [Tooltip("Seconds between steps while running. Hard-coded per speed state (see HandleFootsteps).")]
+    public float runningStepInterval = 0.28f;
+    [Tooltip("Below this world-space speed the player is considered idle (no footsteps).")]
     public float minSpeedForSteps = 0.1f;
     public float walkSpeed = 4f;
     public float runSpeed = 8f;
@@ -240,14 +243,17 @@ public class Footsteps : MonoBehaviour
     {
         if (!isMoving) return;
 
-        // Map speed to a 0..1 ratio over the [walkSpeed, runSpeed] band.
-        // 0 = walking, 1 = running full tilt.
-        float speedRatio = Mathf.InverseLerp(walkSpeed, runSpeed, currentSpeed);
-        currentStepInterval = Mathf.Lerp(maxStepInterval, minStepInterval, speedRatio);
+        // Hard-coded intervals per speed state — the user asked for this because
+        // the inspector-tunable ranges (min/maxStepInterval, stepDuration*) were
+        // confusing and the previous InverseLerp formula always clamped to the
+        // fastest band due to a duplicate speed multiplier.
+        float targetInterval = isRunning ? runningStepInterval : walkingStepInterval;
 
-        // Don't fire steps faster than one clip length allows.
-        if (currentStepInterval < currentStepDuration * 0.5f)
-            currentStepInterval = currentStepDuration * 0.5f;
+        // Don't fire steps faster than one clip length allows (avoids overlapping audio).
+        float clipFloor = currentStepDuration * 0.5f;
+        if (targetInterval < clipFloor) targetInterval = clipFloor;
+
+        currentStepInterval = targetInterval;
 
         // Stop a step sound once its clip has finished.
         if (isPlayingStep && Time.time >= stepEndTime)

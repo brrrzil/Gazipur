@@ -1,12 +1,10 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
-/// Lightweight runtime FPS counter. Toggle with F3 (or the bound key).
+/// Lightweight runtime FPS counter. Toggle with F3.
 /// Renders via IMGUI in the top-left corner so it doesn't depend on any
-/// scene Canvas. Sits in General/ because it's a small global utility.
-///
-/// Auto-bootstraps on play so the user doesn't need to attach it manually
-/// in the editor. To disable globally, comment out RuntimeInitialize.
+/// scene Canvas. Auto-bootstraps on play.
 /// </summary>
 public class FpsCounter : MonoBehaviour
 {
@@ -18,7 +16,8 @@ public class FpsCounter : MonoBehaviour
         DontDestroyOnLoad(go);
         go.AddComponent<FpsCounter>();
     }
-    [SerializeField] private KeyCode _toggleKey = KeyCode.F3;
+
+    [SerializeField] private Key _toggleKey = Key.F3;
     [SerializeField] private bool _visibleAtStart = false;
     [SerializeField] private float _updateInterval = 0.5f;
 
@@ -35,7 +34,8 @@ public class FpsCounter : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(_toggleKey))
+        var kb = Keyboard.current;
+        if (kb != null && kb[_toggleKey].wasPressedThisFrame)
             _visible = !_visible;
 
         _frames++;
@@ -60,7 +60,6 @@ public class FpsCounter : MonoBehaviour
                 fontStyle = FontStyle.Bold
             };
         }
-        // Solid background so it stays readable over any scene
         var rect = new Rect(8, 8, 160, 28);
         GUI.color = new Color(0, 0, 0, 0.55f);
         GUI.DrawTexture(rect, Texture2D.whiteTexture);

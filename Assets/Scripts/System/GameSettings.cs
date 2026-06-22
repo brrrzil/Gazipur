@@ -5,8 +5,8 @@ using Zenject;
 
 public class GameSettings : MonoBehaviour
 {
-    [SerializeField] private Slider _musicVoloumeSlider;
-    [SerializeField] private Slider _soundVoloumeSlider;
+    [SerializeField] private Slider _musicVoloumeSlider;   // PHYSICALLY the "Sounds" slider in the panel — buggy binding, swap in inspector
+    [SerializeField] private Slider _soundVoloumeSlider;   // PHYSICALLY the "Music" slider in the panel — buggy binding, swap in inspector
     [SerializeField] private Slider _mouseSensSlider;
     [SerializeField] private Toggle _muteToggle;
     [Inject] SoundControl _sounds;

@@ -13,6 +13,7 @@ public class CharacterRemarks : MonoBehaviour
     [SerializeField] private RemarkData[] _remarks;
 
     private Tween _tween;
+    private Sequence _pendingVoiceSeq;
     [Inject] Sounds _sounds;
     private AudioSource _speaker => _sounds.DialogSource;
     private bool _isStarted;
@@ -70,24 +71,16 @@ public class CharacterRemarks : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Immediately hide any active remark bubble and stop its voice. Used when the
-    /// context that triggered the remark is no longer valid (e.g. player walked away
-    /// from the trader who was speaking).
-    /// </summary>
-    public void ForceHide()
-    {
-        _tween?.Kill();
-        if (_cGroup != null)
-            _cGroup.alpha = 0;
-        _isStarted = false;
-        if (_speaker != null && _speaker.isPlaying)
-            _speaker.Stop();
-    }
-
     private void PlayVoice(AudioClip clip)
     {
         if (!clip) return;
+
+        // Cancel any pending voice from a previous remark — otherwise a queued
+        // sequence can fire AFTER the speaker has been stopped (e.g. when the
+        // player closes a shop mid-sentence and a leftover voice plays back
+        // seconds later from the queued clip).
+        _pendingVoiceSeq?.Kill();
+        _pendingVoiceSeq = null;
 
         if (_speaker.isPlaying)
         {
@@ -98,12 +91,25 @@ public class CharacterRemarks : MonoBehaviour
             {
                 _speaker.clip = clip;
                 _speaker.Play();
+                _pendingVoiceSeq = null;
             });
+            _pendingVoiceSeq = sequence;
         }
         else
         {
             _speaker.clip = clip;
             _speaker.Play();
         }
+    }
+
+    /// <summary>
+    /// Cancel any pending (queued) voice. Call this when the speaker is being
+    /// stopped externally (e.g. game mode change) to prevent a stale voice
+    /// from firing after the speaker is already silent.
+    /// </summary>
+    public void CancelPendingVoice()
+    {
+        _pendingVoiceSeq?.Kill();
+        _pendingVoiceSeq = null;
     }
 }
