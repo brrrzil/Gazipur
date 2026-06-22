@@ -178,7 +178,6 @@ public class Inventory : MonoBehaviour
             return true;
         }
         return false;
-    }        
     }
     public bool CheckFilterBlueprint(ItemData item)
     {
