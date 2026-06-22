@@ -52,9 +52,10 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (!Item) return;        
+        if (!Item) return;
         _itemIcon.transform.SetParent(transform.parent);
-        _itemIcon.transform.position = transform.position;
+        // (Removed redundant `transform.position = transform.position` line that
+        // was immediately overwritten by the next statement.)
         _itemIcon.transform.position = eventData.position;
     }
     public void OnDrag(PointerEventData eventData)
@@ -65,26 +66,38 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
 
     public void OnDrop(PointerEventData eventData)
     {
-        InventoryCell target;
-        if (target = eventData.pointerDrag.GetComponent<InventoryCell>())
+        InventoryCell source;
+        if (source = eventData.pointerDrag.GetComponent<InventoryCell>())
         {
-            if (target.Item == null) 
+            if (source.Item == null)
                 return;
 
-            int cnt = target.Count;
-            var itm = target.Item;
-            int rem;
-            if (Item == itm || !Item)
+            int sourceCount = source.Count;
+            var sourceItem = source.Item;
+
+            if (Item == sourceItem || !Item)
             {
-                rem = AddItem(target.Item, target.Count);
-                target.RemoveItem(cnt - rem);
+                // Stack or move: fill this cell from the source.
+                int rem = AddItem(sourceItem, sourceCount);
+                // rem = items that didn't fit in this cell. Leave them in the
+                // source cell so nothing is lost.
+                source.RemoveItem(sourceCount - rem);
             }
             else
             {
-                target.RemoveItem();
-                target.AddItem(Item, Count);
-                RemoveItem();
-                AddItem(itm, cnt);
+                // Swap: only proceed if BOTH items fit in the other cell.
+                // BUGFIX (M3): the old code unconditionally moved the contents
+                // of one cell into the other via AddItem, which silently drops
+                // any overflow past MaxInInventoryCell. If a swap would lose
+                // items, refuse it.
+                if (Count <= sourceItem.MaxInInventoryCell
+                    && sourceCount <= Item.MaxInInventoryCell)
+                {
+                    source.RemoveItem();
+                    source.AddItem(Item, Count);
+                    RemoveItem();
+                    AddItem(sourceItem, sourceCount);
+                }
             }
         }
     }

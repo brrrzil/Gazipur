@@ -5,10 +5,10 @@ using UnityEngine.InputSystem;
 
 public class Control : MonoBehaviour
 {
-    public Action<Vector2> OnMouseDownInObject;
+    // (m5) Removed the unused `OnMouseDownInObject` delegate вЂ” no one subscribed to it.
     public Action<InteractObject> OnSelectObject;
-    public Action OnInteractObject;        // Короткое нажатие E (Tap)
-    public Action<bool> OnHoldInteract;   // Длинное нажатие E (Hold)
+    public Action OnInteractObject;        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ E (Tap)
+    public Action<bool> OnHoldInteract;   // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ E (Hold)
     public Action OnOpenInventory;
     public Action OnEsc;
     public Action<int> OnFastSlotUse;
@@ -26,8 +26,10 @@ public class Control : MonoBehaviour
         inputActions.Enable();
 
         inputActions.Player.Interact.performed += OnInteractPerformed;
-        inputActions.Player.HoldInteract.started += cnt => OnHoldInteract?.Invoke(true); 
-        inputActions.Player.HoldInteract.canceled += cnt => OnHoldInteract?.Invoke(false);
+        // (m1) Replaced lambda subscriptions with named methods so OnDisable
+        // can unsubscribe cleanly. Lambdas cannot be unsubscribed by reference.
+        inputActions.Player.HoldInteract.started += OnHoldInteractStart;
+        inputActions.Player.HoldInteract.canceled += OnHoldInteractCancel;
 
         inputActions.Player.Inventory.performed += OnInventoryButtonPressed;
         inputActions.Player.Escape.performed += OnEscape;
@@ -39,22 +41,26 @@ public class Control : MonoBehaviour
         inputActions.Player.Slot5.performed += OnSlot5Performed;
     }
 
-    //private void OnDisable()
-    //{
-    //    inputActions.Player.Interact.performed -= OnInteractPerformed;
-    //    inputActions.Player.HoldInteract.performed -= OnHoldInteractPerformed;
+    // (m1) Previously commented out вЂ” without this, disabling the Control
+    // GameObject (or reloads) leaks subscriptions and leads to double-firing
+    // of input callbacks on the next OnEnable.
+    private void OnDisable()
+    {
+        inputActions.Player.Interact.performed -= OnInteractPerformed;
+        inputActions.Player.HoldInteract.started -= OnHoldInteractStart;
+        inputActions.Player.HoldInteract.canceled -= OnHoldInteractCancel;
 
-    //    inputActions.Player.Inventory.performed -= OnInventoryButtonPressed;
-    //    inputActions.Player.Escape.performed -= OnEscape;
+        inputActions.Player.Inventory.performed -= OnInventoryButtonPressed;
+        inputActions.Player.Escape.performed -= OnEscape;
 
-    //    inputActions.Player.Slot1.performed -= OnSlot1Performed;
-    //    inputActions.Player.Slot2.performed -= OnSlot2Performed;
-    //    inputActions.Player.Slot3.performed -= OnSlot3Performed;
-    //    inputActions.Player.Slot4.performed -= OnSlot4Performed;
-    //    inputActions.Player.Slot5.performed -= OnSlot5Performed;
+        inputActions.Player.Slot1.performed -= OnSlot1Performed;
+        inputActions.Player.Slot2.performed -= OnSlot2Performed;
+        inputActions.Player.Slot3.performed -= OnSlot3Performed;
+        inputActions.Player.Slot4.performed -= OnSlot4Performed;
+        inputActions.Player.Slot5.performed -= OnSlot5Performed;
 
-    //    inputActions.Disable();
-    //}
+        inputActions.Disable();
+    }
 
     private void Update()
     {
@@ -62,7 +68,7 @@ public class Control : MonoBehaviour
         OnSelectObject?.Invoke(iObject);
     }
 
-    // Отправляет луч из камеры под курсор мыши, игнорируя UI
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ UI
     private InteractObject GetInteractObjectUnderCursor()
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
@@ -79,56 +85,40 @@ public class Control : MonoBehaviour
         return null;
     }
 
+    private void OnHoldInteractStart(InputAction.CallbackContext context)
+    {
+        isHoldInProgress = true;
+        OnHoldInteract?.Invoke(true);
+    }
 
-    private void OnHoldInteractStart(InputAction.CallbackContext context) => OnHoldInteract(true);
+    private void OnHoldInteractCancel(InputAction.CallbackContext context)
+    {
+        isHoldInProgress = false;
+        OnHoldInteract?.Invoke(false);
+    }
 
-    private void OnHoldInteractCancel(InputAction.CallbackContext context) => OnHoldInteract(false);
-
-
-    // Короткое нажатие игнорируется, если игрок в процессе удержания
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     private void OnInteractPerformed(InputAction.CallbackContext context)
     {
-       // if (isHoldInProgress) return;
-
-        //Debug.Log("Control: Вызвано короткое нажатие Е");
+        // (m2) Re-enable the hold-guard: while the player is holding E, don't
+        // also fire the tap-E event. Without this, both OnInteractObject and
+        // OnHoldInteract fire for a single press-and-hold, and the gameplay
+        // path that's supposed to be tap-only (e.g. trader dialog start) ends
+        // up triggering the hold path (trade mode).
+        if (isHoldInProgress) return;
         OnInteractObject?.Invoke();
     }
 
     private void OnInventoryButtonPressed(InputAction.CallbackContext context)
     {
-        //Debug.Log("Control: Вызвано открытие инвентаря");
         OnOpenInventory?.Invoke();
     }
 
     private void OnEscape(InputAction.CallbackContext context) => OnEsc?.Invoke();
 
-    private void OnSlot1Performed(InputAction.CallbackContext context)
-    {
-        //Debug.Log("Control: Выбран слот инвентаря 1");
-        OnFastSlotUse?.Invoke(1);
-    }
-
-    private void OnSlot2Performed(InputAction.CallbackContext context)
-    {
-        //Debug.Log("Control: Выбран слот инвентаря 2");
-        OnFastSlotUse?.Invoke(2);
-    }
-
-    private void OnSlot3Performed(InputAction.CallbackContext context)
-    {
-        //Debug.Log("Control: Выбран слот инвентаря 3");
-        OnFastSlotUse?.Invoke(3);
-    }
-
-    private void OnSlot4Performed(InputAction.CallbackContext context)
-    {
-        //Debug.Log("Control: Выбран слот инвентаря 4");
-        OnFastSlotUse?.Invoke(4);
-    }
-
-    private void OnSlot5Performed(InputAction.CallbackContext context)
-    {
-        //Debug.Log("Control: Выбран слот инвентаря 5");
-        OnFastSlotUse?.Invoke(5);
-    }
+    private void OnSlot1Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(1);
+    private void OnSlot2Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(2);
+    private void OnSlot3Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(3);
+    private void OnSlot4Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(4);
+    private void OnSlot5Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(5);
 }

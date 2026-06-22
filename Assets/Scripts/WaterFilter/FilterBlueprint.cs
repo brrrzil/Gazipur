@@ -17,7 +17,11 @@ public class FilterBlueprint : MonoBehaviour
     public void AddPart(FilterParts part)
     {
         var prt = System.Array.Find(_parts, i => i.part == part);
-        
+
+        // BUGFIX (M7): if the part isn't in our _parts array, Find returns
+        // null and the next line throws NullReferenceException.
+        if (prt == null) return;
+
         if(prt.partImage)
             prt.partImage.enabled = true;
 

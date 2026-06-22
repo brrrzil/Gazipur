@@ -13,23 +13,26 @@ public class MenuAudioManager : MonoBehaviour
 
     private void Start()
     {
-        // Загружаем сохранённые настройки
-        float savedMusic = PlayerPrefs.GetFloat("MenuMusicVolume", 0.75f);
-        float savedSounds = PlayerPrefs.GetFloat("MenuSoundsVolume", 0.75f);
-        int musicMuted = PlayerPrefs.GetInt("MenuMusicMuted", 0);
-        int soundsMuted = PlayerPrefs.GetInt("MenuSoundsMuted", 0);
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        // BUGFIX: was reading "MenuMusicVolume"/"MenuSoundsVolume" but writing
+        // "MusicVolume"/"SoundsVolume" вЂ” the read keys never had values, so the
+        // menu always reset to 0.75 on every launch. Use the same keys both ways.
+        float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 0.75f);
+        float savedSounds = PlayerPrefs.GetFloat("SoundsVolume", 0.75f);
+        int musicMuted = PlayerPrefs.GetInt("MusicMuted", 0);
+        int soundsMuted = PlayerPrefs.GetInt("SoundsMuted", 0);
 
-        // Устанавливаем UI
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ UI
         musicSlider.value = savedMusic;
         soundsSlider.value = savedSounds;
         musicToggle.isOn = musicMuted == 0;
         soundsToggle.isOn = soundsMuted == 0;
 
-        // Применяем настройки
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         ApplyMusicVolume(savedMusic, musicMuted == 1);
         ApplySoundsVolume(savedSounds, soundsMuted == 1);
 
-        // Подписываемся на события
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         musicSlider.onValueChanged.AddListener(OnMusicSlider);
         soundsSlider.onValueChanged.AddListener(OnSoundsSlider);
         musicToggle.onValueChanged.AddListener(OnMusicToggle);

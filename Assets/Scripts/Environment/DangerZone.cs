@@ -13,7 +13,7 @@ public class DangerZone : MonoBehaviour
     private bool _inZone;
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.GetComponent<PlayerMovement>())
+        if (!other.GetComponentInParent<PlayerMovement>())
             return;
 
         if (!_inventory.HaveTools.Contains(EnumData.ToolsType.mask))
@@ -30,7 +30,7 @@ public class DangerZone : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         if (!_inventory.HaveTools.Contains(EnumData.ToolsType.mask) &&
-            other.GetComponent<PlayerMovement>())
+            other.GetComponentInParent<PlayerMovement>())
         {
             _inZone = false;
         }
@@ -40,8 +40,15 @@ public class DangerZone : MonoBehaviour
         while (_inZone)
         {
             yield return new WaitForSeconds(1f);
+            // BUGFIX (M4): the player could pick up a mask while inside the
+            // zone (or the inventory could change for any other reason), and
+            // the old code would keep damaging them. Re-check every tick.
+            if (_inventory.HaveTools.Contains(EnumData.ToolsType.mask))
+            {
+                _inZone = false;
+                yield break;
+            }
             _player.TakeDamage(_damagePerSecond);
         }
-        
     }
 }

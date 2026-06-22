@@ -213,13 +213,18 @@ public class Inventory : MonoBehaviour
     }
     public void OnEnable()
     {
+        // BUGFIX (M6): the `return` was inside the loop body but outside the
+        // `if`, so it always fired after the first iteration — the fallback
+        // `ShowInfoPanel(_cells[0])` was unreachable and the panel never
+        // updated for the first non-empty cell. Restructure so we find the
+        // first non-empty cell and bail, otherwise fall back to cell 0.
         for (int i = 0; i < _cells.Length; i++)
         {
             if (_cells[i].Item)
             {
                 ShowInfoPanel(_cells[i]);
+                return;
             }
-            return;
         }
         ShowInfoPanel(_cells[0]);
     }
