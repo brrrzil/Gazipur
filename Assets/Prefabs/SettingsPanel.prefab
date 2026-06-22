@@ -1444,8 +1444,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff59dbc6d152990408fdd1a4e720da69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameSettings
-  _musicVoloumeSlider: {fileID: 6968825805520622719}
-  _soundVoloumeSlider: {fileID: 4984079079027660919}
+  _musicVoloumeSlider: {fileID: 4984079079027660919}
+  _soundVoloumeSlider: {fileID: 6968825805520622719}
   _mouseSensSlider: {fileID: 0}
   _muteToggle: {fileID: 4135324774259642900}
 --- !u!1 &3402507848306818819
