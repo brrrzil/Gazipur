@@ -4,6 +4,16 @@
 > на Unity-проект **Gazipur**. Скидываю, чтобы в другом чате сэкономить время
 > и не делать аудит заново. Файл живёт рядом с проектом: `/workspace/Gazipur-rules.md`.
 
+> **⏰ ВАЖНО для будущих итераторов:** этот файл — живой документ. После каждого
+> существенного раунда правок **обновляй разделы, которые устарели**:
+> - "Open problems" — закрытые проблемы удаляй, новые дописывай
+> - "Бриф по проведённой работе" — добавляй новый раунд (round 6, round 7, ...)
+> - "Какие файлы трогать НЕ нужно" — пополняй, если нашёл новое
+> - "Куда смотреть в коде" — добавляй новые системы, если появились
+>
+> Если забыл — следующий итератор будет работать по устаревшим данным и наплодит
+> уже починенных багов. **Не ленись обновлять!**
+
 ---
 
 ## Контекст проекта (зафиксировать сразу)
@@ -181,8 +191,47 @@
 
 - **Сумки:** нужна модель, где покупка сумки **потребляет** её (вычитается из инвентаря), а бонус `+cargoValue` остаётся. Текущее поведение: сумка лежит в инвентаре и даёт бонус навечно; повторный pickup той же сумки в текущей реализации **дублирует** бонус (см. проблему с E+14).
 - **TMP-миграция** — `Assets/Scripts/` содержит 25 ссылок на `UnityEngine.UI.Text`. Плагин `SimpleLocalization` имеет `[RequireComponent(typeof(Text))]` в `LocalizedText.cs:10`. Миграция требует перебинд всех префабов + патча/замены плагина локализации. **Сделано не было**, рекомендую отдельный заход.
-- **Громкость в PlayerPrefs** — `GameSettings.Start()` использует `SoundControl.MusicVolume`/`SoundVolume`, но они не сохраняются между сессиями. Сейчас при рестарте громкость сбрасывается к дефолтным значениям `SoundControl`. Нужно добавить `PlayerPrefs.SetFloat` в `ChangeMusicVolume`/`ChangeSoundVolume`.
 - **3D-аудио для NPC** — `Sounds.DialogSource` — единственный глобальный `AudioSource`, не spatial. Игрок не может “отойти” от голоса. Временное решение было — дистанционный гейт в `TraderObject.Update()`, но пользователь сказал, что проблема не в этом, и я откатил. Долгосрочно — сделать `AudioSource` на каждом NPC, спавнить голоса через `PlayClipAtPoint`.
+- **Двойная аудиосистема (menu + game)** — `MenuAudioManager` (главное меню) и `SoundControl` (игра) используют **разные** `AudioMixer` ассеты с **разными** именами параметров (`Music`/`Sound` vs `MusicVolume`/`SoundsVolume`/`MasterVolume`). После раунда 6 оба читают/пишут одинаковые `PlayerPrefs` ключи, но **применяются они к разным миксерам** — настройки в меню не влияют на игру и наоборот. Долгосрочно: унифицировать на один AudioMixer + один набор параметров.
+
+---
+
+## Бриф по проведённой работе (round 6 — аудит репозитория)
+
+> Запустил сплошной grep-аудит по всему `Assets/Scripts/`. Нашёл 13 багов разной
+> тяжести. 11 починил одним коммитом `8168b75`. 2 оставил как design-decision.
+
+### Что починили (commit `8168b75`)
+
+| ID | Файл | Что | Критичность |
+|---|---|---|---|
+| K1 | `UI/HoldProgressBar.cs` | `CompleteHold()` зацикливал удержание — при держании E у WaterFilter фильтр пересобирался бесконечно | 🔴 critical |
+| K2 | `Player/Footsteps.cs` | Wet case использовал `stepDurationDirt`/`totalStepsDirt` (copy-paste) | 🔴 critical |
+| K3 | `General/MenuAudioManager.cs` | Читал `MenuMusicVolume`, писал `MusicVolume` — настройки никогда не сохранялись | 🔴 critical |
+| K4 | `System/SoundControl.cs` | `Mathf.Log10(0) = -Infinity` ломал `AudioMixer.SetFloat` со спамом warning'ов | 🔴 critical |
+| K5 | `System/SoundControl.cs` | Громкость не персистилась в `PlayerPrefs` (см. Open problems) | 🔴 critical |
+| M1 | `Dialogs/DialogManager.cs` | `SetIteration` обрезал голос ответа в `newChain` ветке | 🟡 medium |
+| M2 | `Dialogs/DialogManager.cs` | `.ToArray()[0]` бросал `IndexOutOfRangeException` для неизвестного dialog type | 🟡 medium |
+| M3 | `Inventory/InventoryCell.cs` | `OnDrop` в swap-ветке тихо терял overflow предметов | 🟡 medium |
+| M4 | `Environment/DangerZone.cs` | `Tic()` не проверял наличие маски каждый тик | 🟡 medium |
+| M5 | `Environment/DangerZone.cs` | `GetComponent<PlayerMovement>()` не находил PlayerMovement на дочерних коллайдерах | 🟡 medium |
+| M6 | `Inventory/Inventory.cs` | `OnEnable` — ранний `return` делал fallback недостижимым | 🟡 medium |
+| M7 | `WaterFilter/FilterBlueprint.cs` | `AddPart` бросал NRE если `part` не найден в `_parts` | 🟡 medium |
+| m1 | `General/Control.cs` | `OnDisable` закомментирован — утечка подписок | 🟢 minor |
+| m2 | `General/Control.cs` | `isHoldInProgress` guard закомментирован — tap и hold стреляли одновременно | 🟢 minor |
+| m3 | `Inventory/InventoryCell.cs` | Лишний `transform.position = transform.position` в `OnBeginDrag` | 🟢 minor |
+| m5 | `General/Control.cs` | Удалён неиспользуемый `OnMouseDownInObject` delegate | 🟢 minor |
+
+### Что НЕ трогали (design decisions)
+
+- **m4 `MedecineItem.Use` возвращает `false`.** По дизайну: медицина лечит **маму** при передаче (`MotherCollider.OnTriggerEnter` вызывает `_inventory.CheckMedeicine()` → `medCell.RemoveItem()` → `_quest.HealMother(true)`), а не игрока при использовании. Use-функция игрока остаётся no-op.
+- **Двойная аудиосистема (menu + game)** — упомянуто в Open problems. В этом раунде только починили K3–K5 (persistence каждой системы по отдельности), но не объединяли микшеры.
+
+### Архитектурные заметки
+
+- **Два AudioMixer'а**: `MenuAudioManager.audioMixer` (отдельный ассет, параметры `Music`/`Sound`) и `SoundControl.mixer.audioMixer` (отдельный ассет, параметры `MusicVolume`/`SoundsVolume`/`MasterVolume`). Проверить в редакторе, если нужно объединить.
+- **Багфиксы M1 и m2 могут менять UX:** tap-E больше не срабатывает во время hold-E, и голос ответа теперь полностью проигрывается перед следующим вопросом. Если окажется, что в диалоге нужна старая логика “быстрый skip”, скажи — верну как было.
+- **HoldProgressBar больше не рестартит hold.** Если в каком-то месте проекта была многошаговая прогрессия (например, “зажать E 3 раза подряд”), нужно явно вызывать `StartHold()` повторно из обработчика. Сейчас в проекте только один потребитель — `WaterFilter`, и он одношаговый.
 
 ---
 
