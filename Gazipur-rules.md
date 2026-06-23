@@ -522,6 +522,43 @@
 
 ---
 
+## Бриф по проведённой работе (round 15 — миграция скайбокса + git add)
+
+> Три замечания от юзера:
+> 1. «Ты всё это время путал Cubemap.cubemap и cubemap_layout.png» — признаю свою ошибку, это два **разных** файла.
+> 2. «Но сейчас я всё сделал и это не помогло» — мой round 11 совет про Streaming Mipmaps/Read-Write не помог, потому что проблема в **другом**.
+> 3. «Запушил свои последние изменения» + «git add Cubemap.cubemap не проходит» — файл в подпапке с пробелами в имени, нужен полный путь в кавычках.
+>
+> Коммит `e7e2806`.
+
+### Что сделал
+
+**SkyboxAtardecer.mat: `Cubemap.cubemap` (legacy) → `cubemap_layout.png` (modern Cube texture).**
+- `Cubemap.cubemap` — это **Legacy Cubemap** (отдельный ассет, файл `.cubemap`). Unity 6 / URP 17 имеет известный баг: в билде legacy кубемап показывает только +X face.
+- `cubemap_layout.png` — это **2D текстура** с `textureShape: 2` (Cube) в `.meta`. Современный подход, работает в редакторе и в билде одинаково.
+- **Предупреждение в самом Inspector'е** `Cubemap.cubemap`: *«It's preferable to use Cubemap texture import type instead of Legacy Cubemap assets.»* — Unity сам говорит, что legacy не надо использовать, но я это проигнорировал в round 11. Признаю.
+- Файл `Cubemap.cubemap` оставил в репе (это исходные данные, можно регенерировать из 6 face PNG). Если билд с новым материалом выглядит ок — можно удалить отдельным коммитом.
+
+**`git add` — файл в подпапке с пробелами.**
+- Команда `git add Cubemap.cubemap` не находит файл, потому что он в `Assets/Water Stylized Shader Orto & Perspective Camera/Textures/Skybox/`.
+- Решение: `git add "Assets/Water Stylized Shader Orto & Perspective Camera/Textures/Skybox/Cubemap.cubemap"` (с кавычками).
+- Или `git add -A` чтобы добавить всё.
+
+### Файлы (чтоб не путаться)
+
+- `Cubemap.cubemap` — **Legacy Cubemap** (`.cubemap` ассет, fileID 8900000, guid `3cd3fe...`). Глючит в билде Unity 6. **Больше не используется материалом.**
+- `cubemap_layout.png` — **2D текстура с Texture Shape = Cube** (fileID 2800000, guid `85c7499f...`). Современный формат, работает в билде. **Теперь используется материалом.**
+- `px/nx/py/ny/pz/nz.png` — 6 отдельных face-PNG, исходники для обоих форматов.
+- `SkyboxAtardecer.mat` — материал скайбокса, теперь ссылается на `cubemap_layout.png`.
+
+### Lesson
+
+- **Не игнорировать предупреждения Unity Inspector.** В round 11 я восстановил `Cubemap.cubemap` несмотря на warning *"It's preferable to use Cubemap texture import type"*. Это было правильно по восстановлению (юзер просил), но я должен был сразу упомянуть warning и предложить миграцию на Cube texture, а не просто восстанавливать legacy формат.
+- **Путаница Cubemap.cubemap vs cubemap_layout.png** — моя системная ошибка. Они действительно легко путаются: оба в одной папке Skybox, оба выглядят как «кубемап». **Файлы `.cubemap` и `.png`** — это совершенно разные ассеты с разной механикой. Сейчас задокументировано в round 15 brief, но мне самому стоит быть внимательнее.
+- **«Build показывает только +X» — это сигнал legacy .cubemap в Unity 6.** Если юзер столкнётся с этим снова — сразу проверять, не использует ли материал legacy кубемап, и предлагать миграцию.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
