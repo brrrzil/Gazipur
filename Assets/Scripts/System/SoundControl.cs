@@ -5,8 +5,8 @@ using Zenject;
 public class SoundControl : MonoBehaviour
 {
     [SerializeField] private AudioMixerGroup mixer;
-    public float MusicVolume { get; private set; }
-    public float SoundVolume { get; private set; }
+    public float MusicVolume { get; private set; } = 0.75f;
+    public float SoundVolume { get; private set; } = 0.75f;
     public bool IsMute { get; private set; }
 
     private const string MusicKey = "MusicVolume";
@@ -15,10 +15,20 @@ public class SoundControl : MonoBehaviour
 
     private void Awake()
     {
+        // BUGFIX (round 14): if the player has never opened the settings
+        // panel (no PlayerPrefs key), MusicVolume/SoundVolume used to stay
+        // at the C# default of 0. The slider then showed 0, but the AudioMixer
+        // param was at Unity's default 0 dB (full volume) — the player heard
+        // full-volume audio while the slider said "muted". Force the mixer
+        // to the same default the slider shows.
         if (PlayerPrefs.HasKey(MusicKey))
             ChangeMusicVolume(PlayerPrefs.GetFloat(MusicKey));
+        else
+            ChangeMusicVolume(0.75f);
         if (PlayerPrefs.HasKey(SoundKey))
             ChangeSoundVolume(PlayerPrefs.GetFloat(SoundKey));
+        else
+            ChangeSoundVolume(0.75f);
         if (PlayerPrefs.HasKey(MuteKey))
             Mute(PlayerPrefs.GetInt(MuteKey) == 1);
     }
