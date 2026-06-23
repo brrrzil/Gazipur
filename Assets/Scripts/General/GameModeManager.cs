@@ -15,7 +15,26 @@ public class GameModeManager : MonoBehaviour
     public UnityEvent<bool> OnMenu = new UnityEvent<bool>();
     public UnityEvent<bool> OnDie = new UnityEvent<bool>();
     public UnityEvent<bool> OnOtherPanels = new UnityEvent<bool>();
+    public UnityEvent<bool> OnWin = new UnityEvent<bool>();
     public System.Action<GameMode> onChangeMode;
+
+    // Explicit list of modes where the player cannot move/look and the cursor
+    // is shown. Use IsUIMode() to check, not the implicit `mode != outdors`
+    // trick — the new `win` mode is UI too.
+    private static readonly HashSet<GameMode> UIModes = new HashSet<GameMode>
+    {
+        GameMode.trade,
+        GameMode.inventory,
+        GameMode.dialog,
+        GameMode.craft,
+        GameMode.storage,
+        GameMode.menu,
+        GameMode.die,
+        GameMode.otherPanels,
+        GameMode.win,
+    };
+
+    public static bool IsUIMode(GameMode mode) => UIModes.Contains(mode);
 
     private Dictionary<GameMode, UnityEvent<bool>> _mods;
     [Inject] DataManager _data;
@@ -26,9 +45,9 @@ public class GameModeManager : MonoBehaviour
     private void InitMods()
     {
         Time.timeScale = 1;
-        _mods = new Dictionary<GameMode, UnityEvent<bool>> 
-        { 
-            [GameMode.outdors] = OnOutdors, 
+        _mods = new Dictionary<GameMode, UnityEvent<bool>>
+        {
+            [GameMode.outdors] = OnOutdors,
             [GameMode.trade] = OnTrade,
             [GameMode.inventory] = OnInventory,
             [GameMode.craft] = OnCraft,
@@ -36,7 +55,8 @@ public class GameModeManager : MonoBehaviour
             [GameMode.dialog] = OnDialog,
             [GameMode.menu] = OnMenu,
             [GameMode.die] = OnDie,
-            [GameMode.otherPanels] = OnOtherPanels
+            [GameMode.otherPanels] = OnOtherPanels,
+            [GameMode.win] = OnWin,
         };
         _control.OnEsc += () =>
         {

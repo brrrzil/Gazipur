@@ -276,14 +276,20 @@ public class PlayerMovement : MonoBehaviour
     }
     private void SetMode(EnumData.GameMode mode)
     {
-        _isUIMode = mode != EnumData.GameMode.outdors;
-        if (mode != EnumData.GameMode.outdors)
+        // Use the explicit IsUIMode helper from GameModeManager so that any
+        // future UI mode added to the enum is automatically considered a UI
+        // mode (just add it to the UIModes set in GameModeManager.cs).
+        _isUIMode = GameModeManager.IsUIMode(mode);
+        if (_isUIMode)
         {
+            // UI modes (inventory, trade, dialog, die, win, etc.):
+            // release cursor so the player can click UI.
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
         else
         {
+            // Back in the game world: hide and lock cursor, return control.
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }

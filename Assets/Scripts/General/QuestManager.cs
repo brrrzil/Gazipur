@@ -75,7 +75,11 @@ public class QuestManager : MonoBehaviour
     }
     public void CompleteFilter()
     {
-        _mode.ChangeMode(GameMode.otherPanels);
+        // Use the dedicated `win` GameMode (added in round 10) so that
+        // PlayerMovement.SetMode treats this as a UI mode and the player
+        // can't move while the win panel is up. WinDiePanel.ContinueButton
+        // returns the game to outdors when the player clicks Continue.
+        _mode.ChangeMode(GameMode.win);
         winPanel.SetActive(true);
         _blueprintPanel.SetActive(false);
         _filterPlace.SetActive(true);

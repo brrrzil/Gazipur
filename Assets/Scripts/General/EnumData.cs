@@ -10,9 +10,10 @@ public static class EnumData
         dialog,
         craft,
         storage,
-        menu, 
-        die, 
-        otherPanels
+        menu,
+        die,
+        otherPanels,
+        win
     }
     public enum ToolsType
     {
