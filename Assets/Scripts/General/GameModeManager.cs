@@ -62,11 +62,25 @@ public class GameModeManager : MonoBehaviour
         {
             if (_data.gameMode == GameMode.outdors)
             {
+                // Open the pause menu.
                 ChangeMode(GameMode.menu);
                 Time.timeScale = 0;
                 return;
-            }            
-            if (_data.gameMode != GameMode.die) OutDors();            
+            }
+            if (_data.gameMode != GameMode.die)
+            {
+                // BUGFIX (round 12): when exiting any UI mode via Esc, make
+                // sure the cursor is actually hidden. PlayerMovement.SetMode
+                // usually handles this via the onChangeMode callback, but if
+                // a panel's OnOutdors handler re-shows the cursor (or if the
+                // player movement component is somehow not in the scene) the
+                // cursor stays visible. Hide it defensively right here.
+                OutDors();
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            // If we're in `die`, do nothing — the player needs to use the
+            // die panel to restart or quit.
         };
     }
     public void ChangeMode(GameMode mode)
