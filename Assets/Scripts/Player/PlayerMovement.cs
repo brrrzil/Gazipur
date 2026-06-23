@@ -98,6 +98,17 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // BUGFIX (round 13): enforce cursor visibility every frame based on
+        // the current _isUIMode flag. The previous behaviour was to set the
+        // cursor only in SetMode (which runs once on onChangeMode). If
+        // anything else afterwards flipped Cursor.visible=true — a panel's
+        // OnEnable, an EventSystem quirk, a third-party package — the
+        // cursor stayed visible after the player exited a UI mode via Esc.
+        // The defensive hide in GameModeManager's OnEsc handler wasn't
+        // enough because other code can run AFTER the handler. Enforce
+        // every frame as a final guarantee.
+        EnforceCursorState();
+
         if (_isUIMode) return;
         HandleCrouch();
         ApplyGravity();
@@ -107,6 +118,26 @@ public class PlayerMovement : MonoBehaviour
         UpdateCameraPosition();
 
         _isGrounded = CheckIfGrounded();
+    }
+
+    private void EnforceCursorState()
+    {
+        if (_isUIMode)
+        {
+            if (!Cursor.visible || Cursor.lockState != CursorLockMode.None)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+        }
+        else
+        {
+            if (Cursor.visible || Cursor.lockState != CursorLockMode.Locked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+        }
     }
 
     void HandleCameraRotation()
