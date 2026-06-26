@@ -15,6 +15,11 @@ public class BuyItemObject : MonoBehaviour, IPointerClickHandler
     private ItemData _item;
     private bool _isSingle;
     private int _price => (int)(_market.TraderPriceMultiplicator * _item.Price);
+
+    // BUGFIX (round 17): fired when this buy object sells a BagItem. Used
+    // by MarketManager to unlock the next bag in the sequence.
+    public System.Action OnBagPurchased;
+
     public void OnPointerClick(PointerEventData eventData)
     {
         _inventory.ItemInfoPanel.SetPurchasableItem(_item);
@@ -39,6 +44,11 @@ public class BuyItemObject : MonoBehaviour, IPointerClickHandler
         if (_isSingle) gameObject.SetActive(false);
         _data.ChangeMoney(-_price);
         _sound.UIPlay(EnumData.UISound.buy);
+
+        // BUGFIX (round 17): notify MarketManager so it can unlock the next
+        // bag in the sequence (only fires when this item is a BagItem).
+        if (_item.ItemPrefab is BagItem)
+            OnBagPurchased?.Invoke();
     }
-    
+
 }
