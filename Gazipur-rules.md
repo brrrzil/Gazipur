@@ -559,6 +559,56 @@
 
 ---
 
+## Бриф по проведённой работе (round 16 — disable answer buttons)
+
+> Три замечания от юзера:
+> 1. «Посмотри мой последний коммит» — `fb31731 ReImport`, 81 файл, assetPath обновился. Skybox юзер настроил сам, мой round 15 migration в `cubemap_layout.png` откатил обратно на legacy `Cubemap.cubemap` — и это ОК, потому что у юзера получилось сделать legacy-кубемап рабочим в билде.
+> 2. «Сделай в диалогах кнопку ответа неактивной на то время, пока звучит реплика гг» — фикс.
+> 3. «Я всё ещё не собственник своего репозитория. Можешь убрать привязку (форк) к исходному репозиторию?» — **нельзя через CLI**, см. ниже.
+>
+> Коммит `11bc78d`.
+
+### Что сделал
+
+**Диалоги: блокировка кнопок пока звучит ответ гг.**
+- `DialogManager.SetIteration()` теперь всегда выставляет `_ansverButtons[i].interactable = true` после создания/обновления кнопок. Это single source of truth для «кнопки готовы к вводу».
+- Новый `DisableAnswerButtons()` helper ставит `interactable = false` на всех кнопках. Вызывается в click handler'е в ветке `newChain`.
+- Корутина `PlayAnswerThenChain` вызывает `SetIteration` после проигрывания голоса → кнопки автоматически реактивируются.
+
+**Раньше (баг):** игрок мог спам-кликать кнопки ответа, каждый клик рестартовал корутину, голос обрывался, мог перейти на неправильную ветку диалога.
+
+### Про fork-binding (пункт 3)
+
+**Через CLI это сделать нельзя.** GitHub не предоставляет «unfork» endpoint в API и нет кнопки «Detach from upstream» в web UI. Варианты:
+
+**Вариант А: связаться с GitHub Support** (рекомендую)
+- Перейти: https://support.github.com/contact
+- Категория: «Repository management»
+- Запрос: «Please detach my fork brrrzil/Gazipur from its upstream GameDevAlexandr/Gazipur. I want to keep all the code, history, and settings but make it a standalone repo.»
+- Обычно делают за 1–3 рабочих дня.
+
+**Вариант Б: миграция на новый репо** (если не хочешь ждать)
+- Создать **новое** репо на GitHub (например, `brrrzil/GazipurGame` или другое имя, потому что `brrrzil/Gazipur` уже занято форком).
+- Сменить `origin`:
+  ```bash
+  git remote set-url origin https://github.com/brrrzil/GazipurGame.git
+  git push -u origin main
+  ```
+- В Settings → Danger Zone старого `brrrzil/Gazipur` → **Delete this repository**.
+- ⚠️ **Это удалит все issues, PR, wiki, releases.** Если что-то важное — сначала экспортируй.
+
+**Что я могу сделать прямо сейчас:**
+- Сменить `origin` URL на любой другой, который ты скажешь (если выберешь вариант Б).
+- **Не могу** создать новое репо на GitHub или обратиться в support за тебя.
+
+### Lesson
+
+- **UI-кнопки надо явно блокировать во время асинхронной работы**, иначе спам-клики ломают state. `interactable = false` — стандартный приём в Unity UI.
+- **Single source of truth для состояния кнопок.** Если кнопки реактивируются в разных местах, легко забыть одно и получить «застрявшие» disabled кнопки. Я делаю SetIteration «владельцем» состояния кнопок: оно всегда выставляет `interactable = true`, click handler временно гасит.
+- **GitHub fork — это метаданные, не git-конфиг.** `git remote remove upstream` отвязывает локальный git, но в GitHub UI репо по-прежнему «Forked from GameDevAlexandr/Gazipur». Полная отвязка — только через support или миграцию.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
