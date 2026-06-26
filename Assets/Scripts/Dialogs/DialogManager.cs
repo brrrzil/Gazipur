@@ -100,6 +100,11 @@ public class DialogManager : MonoBehaviour
             }
 
             _ansverButtons[i].gameObject.SetActive(true);
+            // BUGFIX (round 16): always re-enable buttons when a new
+            // question is shown. The click handler disables them while the
+            // answer voice plays; SetIteration is the single source of
+            // truth for "buttons are ready for input".
+            _ansverButtons[i].interactable = true;
             _ansverButtons[i].GetComponentInChildren<Text>().text = iteraton.Answer[i].answer;
             _ansverButtons[i].onClick.RemoveAllListeners();
 
@@ -114,6 +119,12 @@ public class DialogManager : MonoBehaviour
                     // cut off by SetIteration's Stop+Play of the new question
                     // voice — the user heard the NPC questions but not the
                     // protagonist's answers.
+                    //
+                    // BUGFIX (round 16): also disable every answer button
+                    // while the answer voice plays, so the player can't
+                    // spam-click and re-trigger the chain. SetIteration
+                    // re-enables them when the next question is shown.
+                    DisableAnswerButtons();
                     var answerClip = iteraton.Answer[idx].answerVoice;
                     var nextChain = iteraton.Answer[idx].newChain;
 
@@ -166,5 +177,19 @@ public class DialogManager : MonoBehaviour
         _voiceSequence = null;
         if (nextChain != null)
             SetIteration(nextChain);
+    }
+
+    // BUGFIX (round 16): disable every answer button while the protagonist's
+    // answer voice is playing. SetIteration re-enables them when the next
+    // question is shown, so this is just a temporary lock-out for the
+    // duration of the voice playback.
+    private void DisableAnswerButtons()
+    {
+        if (_ansverButtons == null) return;
+        for (int i = 0; i < _ansverButtons.Length; i++)
+        {
+            if (_ansverButtons[i] != null)
+                _ansverButtons[i].interactable = false;
+        }
     }
 }
