@@ -30,7 +30,7 @@ public class MotherCollider : MonoBehaviour
             }
             else if(_quest.QuestsState[Quests.healMother]!=2)
             {
-                if (!_inventory.HaveTools.Contains(ToolsType.crowbar))
+                if (!_inventory.HaveTools.Contains(ToolsType.cutter))
                 {
                     _dialog.Remarks.StartRemark(RemarksType.tooEarly);
                 }

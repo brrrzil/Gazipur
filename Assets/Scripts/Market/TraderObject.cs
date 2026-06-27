@@ -12,7 +12,7 @@ public class TraderObject : InteractObject
         _inventory.onTakeItem += itm =>
         {
             ToolItem tIt = itm.ItemPrefab as ToolItem;
-           if(tIt!=null && tIt.ToolType == EnumData.ToolsType.crowbar)
+           if(tIt!=null && tIt.ToolType == EnumData.ToolsType.cutter)
                 _dialog.StartDialog(EnumData.DialogType.traderAfterBuy);
         };
     }

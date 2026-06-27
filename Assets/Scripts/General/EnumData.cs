@@ -21,8 +21,8 @@ public static class EnumData
         wrench,
         hacksaw,
         mask,
-        crowbar,
-        glowes, 
+        cutter,
+        glowes,
         key
     }
     public enum DialogType
