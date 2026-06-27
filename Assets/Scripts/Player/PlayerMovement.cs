@@ -34,6 +34,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _fallDamagePerMeter = 10f;
     [Tooltip("Sound played once when the player lands from a damaging fall. Uses _jumpSource.PlayOneShot — doesn't interrupt other sounds.")]
     [SerializeField] private AudioClip _fallSound;
+    [Tooltip("Seconds of movement slowdown after a damaging fall. 0 disables the slowdown entirely.")]
+    [SerializeField] private float _fallSlowdownDuration = 1f;
+    [Tooltip("Movement speed multiplier during the slowdown. 0.5 = half speed, 0 = no movement. Default 0.5.")]
+    [SerializeField] private float _fallSlowdownFactor = 0.5f;
 
     private CharacterController _controller;
     private Vector3 _velocity = Vector3.zero;
@@ -47,6 +51,9 @@ public class PlayerMovement : MonoBehaviour
     // Fall damage tracking (round 18).
     private bool _wasGrounded;
     private float _fallStartY;
+    // Round 19: Time.time at which the post-fall slowdown ends. 0 = no
+    // active slowdown. Compare against Time.time in HandleMovement.
+    private float _slowdownEndTime;
 
     [Inject] private PlayerState _state;
 
@@ -279,6 +286,12 @@ public class PlayerMovement : MonoBehaviour
         else
             _currentSpeed = _walkSpeed;
 
+        // Round 19: post-fall slowdown. While _slowdownEndTime is in the
+        // future, scale the chosen speed down by _fallSlowdownFactor.
+        // Camera look is NOT slowed — the player can still rotate freely.
+        if (Time.time < _slowdownEndTime && _fallSlowdownFactor < 1f)
+            _currentSpeed *= _fallSlowdownFactor;
+
         Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
         moveDirection.y = 0;
         moveDirection.Normalize();
@@ -359,6 +372,11 @@ public class PlayerMovement : MonoBehaviour
                     _state.TakeDamage(damage);
                 if (_fallSound != null && _jumpSource != null)
                     _jumpSource.PlayOneShot(_fallSound);
+                // Round 19: arm the post-fall slowdown. HandleMovement
+                // checks _slowdownEndTime each frame and multiplies the
+                // chosen speed by _fallSlowdownFactor while active.
+                if (_fallSlowdownDuration > 0f && _fallSlowdownFactor < 1f)
+                    _slowdownEndTime = Time.time + _fallSlowdownDuration;
             }
         }
         _wasGrounded = _isGrounded;
