@@ -129,8 +129,14 @@ public class Inventory : MonoBehaviour
                 res += c.Item.Weight * c.Count;
                 _cargoPrice += c.Item.Price * c.Count;
             }
-        }        
-        return res;
+        }
+        // BUGFIX (round 21): weights are guaranteed multiples of 0.1, but
+        // float arithmetic (e.g. 0.1f * 29 = 2.9000000953674313) accumulates
+        // noise. Without rounding, AddItem sees cap = Capacity - res ≈
+        // 0.099999... and rejects a 0.1 item, even though display shows
+        // '2.9/3' and the player expects it to fit. Round to 1 decimal so
+        // the displayed value and the actual pickup logic match.
+        return Mathf.Round(res * 10f) / 10f;
     }
     public void ShowPanel(bool isShow)
     {
@@ -194,12 +200,11 @@ public class Inventory : MonoBehaviour
         if (value < Capacity) return;
         Capacity = value;
         var wgt = GetWeight();
-        // BUGFIX (round 20): weights are floats that get summed, so floating-
-        // point noise like 0.30000000000000004 leaks into the display. The
-        // user reports "вес предметов в сумке отображается как дробное число
-        // с большим количеством знаков". Force 1 decimal place — item weights
-        // are guaranteed to be multiples of 0.1 per user.
-        _weightText.text = wgt.ToString("F1") + "/" + Capacity.ToString("F1");
+        // BUGFIX (round 21): use '0.#' instead of 'F1' so whole numbers
+        // display as '3' instead of '3.0'. Round 20 used 'F1' which always
+        // added a trailing zero; user finds that noisy. '0.#' shows
+        // fractional digits only when present.
+        _weightText.text = wgt.ToString("0.#") + "/" + Capacity.ToString("0.#");
         _weightBar.fillAmount = wgt / Capacity;
         _inventoryWeightText.text = _weightText.text;
         _cargoPriceText.text = _cargoPrice.ToString();

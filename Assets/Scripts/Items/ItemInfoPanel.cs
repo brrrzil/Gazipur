@@ -77,10 +77,9 @@ public class ItemInfoPanel : MonoBehaviour
         _name.Text = item.Name;
         _description.Text = item.Description;
         _priceText.text = item.Price.ToString();
-        // BUGFIX (round 20): force 1 decimal place — user reports weights
-        // sometimes show as 0.30000000000000004 etc. Item weights are
-        // guaranteed multiples of 0.1.
-        _weightText.text = item.Weight.ToString("F1");
+        // BUGFIX (round 21): use '0.#' so whole numbers display as '3'
+        // instead of '3.0'. Fractional values like 0.3 still show as '0.3'.
+        _weightText.text = item.Weight.ToString("0.#");
         _icon.enabled = true;
         _icon.sprite = item.Icon;
     }
