@@ -81720,6 +81720,10 @@ PrefabInstance:
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      propertyPath: _fallSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 3eeb65bb1d56ad547922da67e4278bfd, type: 3}
+    - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
       propertyPath: _walkSpeed
       value: 4
       objectReference: {fileID: 0}
@@ -81729,6 +81733,14 @@ PrefabInstance:
       objectReference: {fileID: 1683994751}
     - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
       propertyPath: _crouchSpeed
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      propertyPath: _fallDamagePerMeter
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      propertyPath: _fallDamageThreshold
       value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
