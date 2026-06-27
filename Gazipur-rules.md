@@ -780,6 +780,37 @@
 
 ---
 
+## Бриф по проведённой работе (round 22 — crowbar → cutter)
+
+> Юзер: «Предмет crowbar по факту является кусачками. Это неправильный перевод. Можешь переименовать его в clipper или cutter (как правильно называются кусачки для проволоки)?»
+>
+> Коммит `208ebec`.
+
+### Что сделал
+
+**Правильный термин — `cutter` (wire cutter).** В ассете уже было Russian display name `n_cutters` (кусачки) — оно правильное. Неправильным был **code-identifier / prefab / asset name** `crowbar` (другое значение — рычаг-гвоздодёр).
+
+**Переименовано:**
+- `Assets/Scripts/General/EnumData.cs`: `ToolsType.crowbar` → `ToolsType.cutter`
+- `Assets/Scripts/Environment/MotherCollider.cs`: `ToolsType.crowbar` → `ToolsType.cutter`
+- `Assets/Scripts/Market/TraderObject.cs`: `ToolsType.crowbar` → `ToolsType.cutter`
+- `Assets/Prefabs/Items/Tools/Crowbar.prefab` → `Cutter.prefab` (git mv сохраняет GUID)
+- `Assets/Resources/Items/Tools/Crowbar.asset` → `Cutter.asset`
+- `m_Name: Crowbar` → `m_Name: Cutter` внутри обоих переименованных файлов
+
+**Важно:**
+- **Enum-позиция сохранена** (всё ещё индекс 4: `bag, wrench, hacksaw, mask, cutter, glowes, key`). Если где-то сохранены int-значения из enum (например, в PlayerPrefs/save-файлах), они остаются совместимыми.
+- Russian display name `n_cutters` не менял — он был правильный.
+- Scene-ссылок на Crowbar.prefab нет (проверил grep'ом), поэтому сцены править не пришлось.
+
+### Lesson
+
+- **Сверять code-identifier с тем, что он реально означает.** «Crowbar» и «кусачки для проволоки» — разные инструменты (один — рычаг-гвоздодёр, другой — режущие клещи). Имена в коде должны отражать фактический предмет, а не наивный перевод.
+- **Display name (локализованный) ≠ identifier в коде.** Asset имеет два поля: `m_Name` (английское имя для инспектора/логов) и `<Name>k__BackingField` (локализованное, типа `n_cutters`). Они могут расходиться, и это ОК. Но code-side enum и prefab name — должны совпадать с **фактическим смыслом**.
+- **`git mv` сохраняет GUID** Unity-ассета. Безопаснее, чем `mv` + ручное обновление meta.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
