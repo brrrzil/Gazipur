@@ -194,7 +194,12 @@ public class Inventory : MonoBehaviour
         if (value < Capacity) return;
         Capacity = value;
         var wgt = GetWeight();
-        _weightText.text = wgt + "/" + Capacity;
+        // BUGFIX (round 20): weights are floats that get summed, so floating-
+        // point noise like 0.30000000000000004 leaks into the display. The
+        // user reports "вес предметов в сумке отображается как дробное число
+        // с большим количеством знаков". Force 1 decimal place — item weights
+        // are guaranteed to be multiples of 0.1 per user.
+        _weightText.text = wgt.ToString("F1") + "/" + Capacity.ToString("F1");
         _weightBar.fillAmount = wgt / Capacity;
         _inventoryWeightText.text = _weightText.text;
         _cargoPriceText.text = _cargoPrice.ToString();

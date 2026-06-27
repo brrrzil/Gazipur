@@ -14,14 +14,12 @@ public class MarketManager : MonoBehaviour
     [Inject] private DiContainer _container;
     [field: SerializeField] public TradePanel TradePanel;
 
-    // BUGFIX (round 17): how many bags the player has already bought across
-    // all sessions. Persisted via PlayerPrefs because the trader sells bags
-    // in strict order — you can't see bag #2 until you buy bag #1, and the
-    // game needs to remember that between launches.
+    // BUGFIX (round 20): how many bags the player has already bought across
+    // all sessions. We use this as the index into the sorted bag list to
+    // decide which bag to show — only ONE bag is visible at a time.
     private const string BagsPurchasedKey = "BagsPurchased";
     private int _bagsPurchased;
-    // Buy objects whose ItemPrefab is a BagItem, in the order they were
-    // added to MarketManager._items. Index 0 is the first bag, etc.
+    // Buy objects whose ItemPrefab is a BagItem, sorted cheapest-first.
     private readonly List<BuyItemObject> _bagBuyObjects = new List<BuyItemObject>();
 
     [System.Serializable]
@@ -34,14 +32,32 @@ public class MarketManager : MonoBehaviour
     {
         _bagsPurchased = PlayerPrefs.GetInt(BagsPurchasedKey, 0);
 
-        for (int i = 0; i < _items.Length; i++)
+        // Pass 1: spawn non-bag items in inspector order.
+        foreach (var entry in _items)
         {
-            AddItem(_items[i].item, _items[i].isSingle);
+            if (entry.item == null) continue;
+            if (!(entry.item.ItemPrefab is BagItem))
+                AddItem(entry.item, entry.isSingle);
         }
 
-        // After all items are spawned, hide the bags that the player hasn't
-        // unlocked yet. Initially only bag[0] is visible; after the player
-        // buys it, bag[1] becomes visible, etc.
+        // Pass 2: collect bags, sort by price (cheapest first). The user's
+        // inspector order is ignored — we always show cheap → expensive so
+        // the progression makes sense for a new player.
+        var bagItems = new List<Item>();
+        foreach (var entry in _items)
+        {
+            if (entry.item != null && entry.item.ItemPrefab is BagItem)
+                bagItems.Add(entry);
+        }
+        bagItems.Sort((a, b) => a.item.Price.CompareTo(b.item.Price));
+
+        // Pass 3: spawn bags in sorted order, all marked isSingle=true so
+        // each disappears from the shop after purchase (BuyItemObject
+        // handles SetActive(false) on buy when isSingle is true).
+        foreach (var entry in bagItems)
+            AddItem(entry.item, isSingle: true);
+
+        // Show only the cheapest un-bought bag, hide the rest.
         RefreshBagVisibility();
     }
     public void StartTrade(bool isStart)
@@ -54,8 +70,6 @@ public class MarketManager : MonoBehaviour
         var obj = _container.InstantiatePrefabForComponent<BuyItemObject>(_buyItemPrefab, _buyItemsPanel);
         obj.SetItem(item, isSingle);
 
-        // BUGFIX (round 17): register bag purchases so we can unlock the
-        // next one in sequence. Non-bag items are unaffected.
         if (item.ItemPrefab is BagItem)
         {
             obj.OnBagPurchased += HandleBagPurchased;
@@ -65,20 +79,24 @@ public class MarketManager : MonoBehaviour
 
     private void HandleBagPurchased()
     {
+        // The bag itself is hidden by BuyItemObject.Buy() via isSingle.
+        // Just advance the counter so the NEXT bag becomes visible.
         _bagsPurchased++;
         PlayerPrefs.SetInt(BagsPurchasedKey, _bagsPurchased);
         PlayerPrefs.Save();
         RefreshBagVisibility();
     }
 
-    // Show only the first _bagsPurchased+1 bags (1, 2, 3...) and hide the
-    // rest. Once unlocked, a bag stays unlocked across sessions.
+    // BUGFIX (round 20): show ONLY the bag at index _bagsPurchased (the
+    // cheapest un-bought one). Earlier round 17 used `i <= _bagsPurchased`
+    // which made 2 bags visible after the first purchase — the user could
+    // skip ahead. Now it's strictly one-at-a-time.
     private void RefreshBagVisibility()
     {
         for (int i = 0; i < _bagBuyObjects.Count; i++)
         {
             if (_bagBuyObjects[i] != null)
-                _bagBuyObjects[i].gameObject.SetActive(i <= _bagsPurchased);
+                _bagBuyObjects[i].gameObject.SetActive(i == _bagsPurchased);
         }
     }
 }
