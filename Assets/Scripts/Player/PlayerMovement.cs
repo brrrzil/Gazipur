@@ -27,6 +27,14 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ground Check")]
     [SerializeField] private float _groundCheckDistance = 0.2f;
 
+    [Header("Fall Damage")]
+    [Tooltip("Minimum fall height (in meters) before any damage is taken. Falls shorter than this deal no damage. Default 3m so a normal jump (~2m) doesn't hurt.")]
+    [SerializeField] private float _fallDamageThreshold = 3f;
+    [Tooltip("Damage per meter fallen BEYOND the threshold. So a 5m fall with threshold 3 and per-meter 10 deals (5-3)*10 = 20 damage.")]
+    [SerializeField] private float _fallDamagePerMeter = 10f;
+    [Tooltip("Sound played once when the player lands from a damaging fall. Uses _jumpSource.PlayOneShot — doesn't interrupt other sounds.")]
+    [SerializeField] private AudioClip _fallSound;
+
     private CharacterController _controller;
     private Vector3 _velocity = Vector3.zero;
     private float _currentSpeed;
@@ -35,6 +43,12 @@ public class PlayerMovement : MonoBehaviour
     private bool _wantsToCrouch = false;
     private float _currentCameraHeight;
     private bool _hasJumped = false;
+
+    // Fall damage tracking (round 18).
+    private bool _wasGrounded;
+    private float _fallStartY;
+
+    [Inject] private PlayerState _state;
 
     private PlayerInputActions _inputActions;
     private Vector2 _moveInput;
@@ -118,6 +132,11 @@ public class PlayerMovement : MonoBehaviour
         UpdateCameraPosition();
 
         _isGrounded = CheckIfGrounded();
+
+        // BUGFIX (round 18): detect fall and apply damage on landing.
+        // Runs after _isGrounded is updated so we can compare to the
+        // previous frame's state.
+        HandleFallDamage();
     }
 
     private void EnforceCursorState()
@@ -304,6 +323,45 @@ public class PlayerMovement : MonoBehaviour
         _velocity.y -= _gravity * Time.deltaTime;
         Vector3 verticalMove = new Vector3(0, _velocity.y, 0) * Time.deltaTime;
         _controller.Move(verticalMove);
+    }
+
+    // BUGFIX (round 18): fall damage. Detects transitions between grounded
+    // and airborne. When the player lands after falling from above the
+    // threshold, applies damage scaled by excess distance and plays the
+    // configured fall sound.
+    //
+    // Edge cases:
+    //  - Normal jump (~_jumpHeight=2m) is below _fallDamageThreshold=3m,
+    //    so jumping doesn't hurt.
+    //  - Walking down a slope: player stays grounded, no fall registered.
+    //  - Teleport: fallStartY stays at the last grounded position; if the
+    //    next frame is also grounded, no fall is registered. Acceptable.
+    //  - Death/die mode: Update() still runs (we don't early-out unless
+    //    _isUIMode), so a fall while dying would still register. PlayerState
+    //    handles health <= 0 separately.
+    void HandleFallDamage()
+    {
+        if (_wasGrounded && !_isGrounded)
+        {
+            // Just left the ground — mark the start of the fall.
+            _fallStartY = transform.position.y;
+        }
+        else if (!_wasGrounded && _isGrounded)
+        {
+            // Just landed — compute fall distance from the highest point
+            // we recorded during the airborne phase.
+            float fallDistance = _fallStartY - transform.position.y;
+            if (fallDistance > _fallDamageThreshold)
+            {
+                float excess = fallDistance - _fallDamageThreshold;
+                int damage = Mathf.RoundToInt(excess * _fallDamagePerMeter);
+                if (_state != null)
+                    _state.TakeDamage(damage);
+                if (_fallSound != null && _jumpSource != null)
+                    _jumpSource.PlayOneShot(_fallSound);
+            }
+        }
+        _wasGrounded = _isGrounded;
     }
     private void SetMode(EnumData.GameMode mode)
     {
