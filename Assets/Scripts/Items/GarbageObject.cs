@@ -84,7 +84,5 @@ public class GarbageObject : InteractObject
     {
         RenderSettings.fogDensity -= 0.005f;
         if (RenderSettings.fogDensity < 0f) RenderSettings.fogDensity = 0f;
-        Debug.Log("--");
-        Debug.Log(RenderSettings.fogDensity);
     }
 }
