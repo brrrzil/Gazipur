@@ -63,13 +63,17 @@ public class MenuAudioManager : MonoBehaviour
     private void ApplyMusicVolume(float volume, bool muted)
     {
         float finalVolume = muted ? 0.0001f : volume;
-        audioMixer.SetFloat("Music", Mathf.Log10(finalVolume) * 20);
+        // BUGFIX: Resources/AudioMixer.mixer only exposes MasterVolume /
+        // SoundsVolume / MusicVolume. The pre-round-6 code wrote to
+        // "Music" / "Sound" which threw 'Exposed name does not exist' on
+        // every slider tick. Match the in-game SoundControl param names.
+        audioMixer.SetFloat("MusicVolume", Mathf.Log10(finalVolume) * 20);
     }
 
     private void ApplySoundsVolume(float volume, bool muted)
     {
         float finalVolume = muted ? 0.0001f : volume;
-        audioMixer.SetFloat("Sound", Mathf.Log10(finalVolume) * 20);
+        audioMixer.SetFloat("SoundsVolume", Mathf.Log10(finalVolume) * 20);
     }
 
     private void SaveSettings()

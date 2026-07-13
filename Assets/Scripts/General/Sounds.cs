@@ -21,7 +21,14 @@ public class Sounds : MonoBehaviour
     [Inject]
     private void Init()
     {
-        DontDestroyOnLoad(gameObject);
+        // BUGFIX: DontDestroyOnLoad only works on root GameObjects. The
+        // Sounds component lives on SoundManager.prefab, which is nested
+        // inside GameManager.prefab — so 'gameObject' is a CHILD, not a
+        // root, and the call throws 'DontDestroyOnLoad only works for
+        // root GameObjects' on every scene load. Use transform.root to
+        // grab the actual top of the hierarchy (GameManager itself,
+        // which IS a root in the scene).
+        DontDestroyOnLoad(transform.root.gameObject);
     }
 
     [System.Serializable]
