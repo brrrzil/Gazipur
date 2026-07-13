@@ -18661,6 +18661,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaterFilter
   _tooltipeText: "\u041D\u0430\u0436\u043C\u0438 \"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _makeTime: 6
+  _buildSound: 6
   _blueprint: {fileID: 1882184324}
 --- !u!114 &477143876
 MonoBehaviour:
@@ -22676,6 +22677,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaterFilter
   _tooltipeText: 
   _makeTime: 6
+  _buildSound: 0
   _blueprint: {fileID: 1882184324}
 --- !u!114 &580951472
 MonoBehaviour:
@@ -41082,7 +41084,7 @@ PrefabInstance:
       objectReference: {fileID: 2111595118}
     - target: {fileID: 7636581297020917832, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _startMoney
-      value: 0
+      value: 50000
       objectReference: {fileID: 0}
     - target: {fileID: 7636581297020917832, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _moneyToInventoryText
@@ -41187,7 +41189,7 @@ PrefabInstance:
     - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _playerSounds.Array.data[6].clip
       value: 
-      objectReference: {fileID: 8300000, guid: a1ca04f5baa59454d8955091138dd16f, type: 3}
+      objectReference: {fileID: 8300000, guid: 29ce970768912894997691fd4aaf29c4, type: 3}
     - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _playerSounds.Array.data[0].sound
       value: 0
@@ -41214,7 +41216,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _playerSounds.Array.data[6].sound
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: '<Background>k__BackingField.Array.data[0]'
@@ -79984,6 +79986,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -1.2404188
       objectReference: {fileID: 0}
+    - target: {fileID: 2538912273132392720, guid: 9ba9c4eee62b42b4e835a6e2426704b3, type: 3}
+      propertyPath: _medicine
+      value: 
+      objectReference: {fileID: 11400000, guid: 1150b05de0e51e5439be34c66823b17f, type: 2}
     - target: {fileID: 2721945184261671975, guid: 9ba9c4eee62b42b4e835a6e2426704b3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 45.860523
