@@ -923,6 +923,41 @@
 
 ---
 
+## Бриф по проведённой работе (round 26 — isReadable на всех .fbx)
+
+> Юзер: «При запуске игры через главное меню повылазили ошибки (на скрине). Это не все, а только те, что влезли на экран.»
+>
+> Скриншот: спам `Not allowed to access vertices/normals/uv4 on mesh 'Trash' / 'rahul4S_04' / 'Gate' / 'pCube1' / 'pCube2' / 'pCylinder4' / 'pCvCylinder4' ...` от `UnityEngine.Mesh:GetVertices / GetNormals / SetUVs`.
+>
+> Коммит `733c43a`.
+
+### Что сделал
+
+**Root cause:** все 129 `.fbx.meta` файлов в `Assets/Models/` имели `isReadable: 0`. Unity 6 блокирует CPU-доступ к mesh-данным (вершины/нормали/UV) если Read/Write не включен в import settings. Любая runtime-система, которой нужен этот доступ, кидает ошибку:
+- **NavMesh rebake при загрузке сцены** (`m_BuildHeightMesh: 1` в NavMeshSurface)
+- **Mesh collider** при триангуляции сложных мешей
+- **Процедурный mesh-код** (SetUVs, GetVertices для отладки и пр.)
+- **Debug / Editor scripting** в сборке
+
+**Фикс:** один `sed` проход — `s/^    isReadable: 0$/    isReadable: 1/g` по всем `.fbx.meta` в `Assets/Models/`. Тронута **только строка isReadable** в каждом .meta, остальное не тронуто. 127 файлов изменено.
+
+**Trade-off:** Unity теперь держит CPU-копию mesh-данных для каждого FBX. Для 129 мелких мешей это ~единицы мегабайт. Если конкретные меши нужны не-ридбл для asset bundling / экономии памяти — откатить точечно через .meta.
+
+### Что НЕ чинил (предэкзистующее)
+
+- **Adobe.Substance warning** — плагин, не блокирующий.
+- **EventSystem disabled audio source** — EventSystem пытается проиграть выключенный audio source.
+- **Missing script (Unknown)** — старые ссылки на удалённые скрипты в сцене (типа старый `LocationChanger`).
+- **«Exposed name does not exist»** — было в round 25, исправлено.
+
+### Lesson
+
+- **Unity 6 + isReadable по умолчанию** для импортированных mesh-ассетов = 0. Любой runtime-доступ к vertices/normals/UV = ошибка. Это глобальный настройка, которую легко забыть при импорте новых моделей.
+- **Глобальный sed по .meta — это нормально**, когда поле стандартное и встречается много раз. Один проход sed быстрее и надёжнее, чем скрипт на Python.
+- **Trade-off осознанный**: немного RAM за чистый error log — хороший обмен.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
