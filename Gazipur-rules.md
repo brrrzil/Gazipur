@@ -811,6 +811,40 @@
 
 ---
 
+## Бриф по проведённой работе (round 23 — звук сборки скиммера)
+
+> Юзер: «Во время сборки скиммера должен звучать звук. Я не нашёл в коде этой функции. Если она есть, скажи, куда добавить. Если нет, добавь в WaterFilter.cs сериализуемое поле для звука и метод, который будет проигрывать этот звук во время зажатой кнопки 'использовать' во время сборки.»
+>
+> Коммит `72f7ddd`.
+
+### Что сделал
+
+**До этого в WaterFilter не было звука вообще.** Никаких AudioClip/AudioSource, никаких вызовов `_sounds.PlayerPlay`. Следовал паттерну из `HoleInFance.cs` и `GarbageObject.cs` (PlayerSound enum + `_sounds.PlayerPlay(sound, loop)`).
+
+**Изменения:**
+- `Assets/Scripts/General/EnumData.cs`: добавил `build` в `PlayerSound` enum.
+- `Assets/Scripts/Environment/WaterFilter.cs`:
+  - `[SerializeField] private EnumData.PlayerSound _buildSound` — поле, которое пользователь заполнит в инспекторе.
+  - `[Inject] private Sounds _sounds` — DI аудио-сервиса (тот же, что в HoleInFance/GarbageObject).
+  - `PlayBuildSound()` — приватный метод, вызывает `_sounds.PlayerPlay(_buildSound, true)` с loop=true (потому что `_makeTime` — несколько секунд).
+  - `Intearct(isDown=true)`: вызывает `PlayBuildSound()` сразу после `StartHold` — звук стартует синхронно с прогресс-баром.
+  - `Intearct(isDown=false)`: `_sounds.PlayerStop()` рядом с `CancelHold` — звук останавливается при отпускании кнопки.
+  - `Finish()`: `_sounds.PlayerStop()` перед `CompleteFilter` — звук останавливается при успешной сборке.
+
+**Что нужно сделать в Unity Editor (не код):**
+1. Открыть проект, чтобы скрипт скомпилировался.
+2. В `Sounds` prefab добавить запись в массив `_playerSounds`: `sound=build`, `clip=<звук сборки>`.
+3. В сцене найти GameObject `WaterFilter`, в новом поле `_buildSound` выбрать `build` из дропдауна.
+
+### Lesson
+
+- **Перед добавлением новой фичи — grep существующие похожие фичи.** В этом проекте hold-progress + звук реализован в `HoleInFance.cs` (резка забора) и `GarbageObject.cs` (лут). Один и тот же паттерн, не изобретал велосипед.
+- **PlayerSound enum + Sounds service** — это by-design архитектура проекта. Не добавлял отдельный AudioSource на GameObject, не добавлял AudioClip напрямую — использовал существующий роутинг через AudioMixer.
+- **`isLoop=true` для hold-build** — логически правильно: звук должен крутиться, пока идёт сборка. Loop снимется при `PlayerStop` (cancel/finish).
+- **Звук не стопается при deselect** — это **известное ограничение**, не фиксил в этом раунде. `WaterFilter` не переопределяет `Select(false)`. Если игрок отвернётся во время сборки, звук продолжит играть (как и сейчас, без звука, прогресс-бар тоже не отменится). Сказал юзеру — если захочет, отдельным раундом добавлю override `Select(bool)` в стиле `GarbageObject.Select`.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
