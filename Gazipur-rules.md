@@ -880,6 +880,49 @@
 
 ---
 
+## Бриф по проведённой работе (round 25 — ошибки главного меню)
+
+> Юзер: «При запуске игры через главное меню повылазили ошибки (на скрине). Это не все, а только те, что влезли на экран.»
+>
+> Скриншот с ошибками:
+> - `Exposed name does not exist: Music / Sound` × несколько (AudioMixer.SetFloat)
+> - `Adobe.Substance.SubstanceInputInt2 is being serialized by [SerializeReference]` (плагин)
+> - `Can not play a disabled audio source` (EventSystem)
+> - `The referenced script (Unknown) on this Behaviour is missing!`
+> - `DontDestroyOnLoad only works for root GameObjects or components on root GameObjects`
+> - `Not allowed to access vertices/normals/uv4 on mesh 'Trash' / 'Gate' / 'pCube1' (isReadable is false)`
+>
+> Коммит `1f656ca`.
+
+### Что починил
+
+**1. `MenuAudioManager.cs` — неправильные имена параметров AudioMixer.**
+- `Resources/AudioMixer.mixer` экспортирует только `MasterVolume` / `SoundsVolume` / `MusicVolume`.
+- `MenuAudioManager.cs` вызывал `audioMixer.SetFloat("Music"/"Sound", ...)`, и Unity спамил ошибки на каждом тике слайдера в главном меню.
+- Это **регрессия из round 8**: round 7 (`f3bea5c`) фиксил именно mixer params, но round 8 (`5f0396a`) полностью откатил `MenuAudioManager`, утащив фикс обратно.
+- **Фикс**: `"Music"` → `"MusicVolume"`, `"Sound"` → `"SoundsVolume"`. Совпадает с тем, что использует in-game `SoundControl.cs` (и с реально экспортированными параметрами микшера).
+- **Поведение**: menu и game теперь делят живые параметры микшера, но **persisted state остаётся раздельный** (PlayerPrefs с префиксом `Menu*` — это by-design, как было до round 6).
+
+**2. `Sounds.cs` — `DontDestroyOnLoad` на дочернем объекте.**
+- `Sounds` компонент живёт на `SoundManager.prefab`, который **вложен** в `GameManager.prefab`. То есть `gameObject` (this) — **child**, не root.
+- `DontDestroyOnLoad` работает только на root, поэтому спамило ошибку на каждой загрузке сцены.
+- **Фикс**: `DontDestroyOnLoad(gameObject)` → `DontDestroyOnLoad(transform.root.gameObject)`. Реальный root — это `GameManager`, который в сцене root.
+
+### Что НЕ чинил (предэкзистующее / низкий приоритет)
+
+- **`Adobe.Substance.SubstanceInputInt2 ... [SerializeReference]`** — проблема Adobe Substance plugin, не блокирующая. Warning Unity.
+- **`Can not play a disabled audio source`** — EventSystem пытается проиграть audio source, который выключен. Не блокирует.
+- **`The referenced script (Unknown) on this Behaviour is missing!`** — есть старые ссылки на удалённые скрипты в сцене. Скрипты (например, какой-то `LocationChanger`) были удалены раньше, но scene всё ещё хранит m_Script GUID. Не блокирует.
+- **`isReadable is false` для `Trash`/`Gate`/`pCube1`** — Unity требует `Read/Write Enabled` в import settings для мешей, к которым идёт runtime доступ (`Mesh.GetVertices/Normals/SetUVs`). Если это нужно — фиксить в .meta файлах мешей (`isReadable: 1`). Не блокирует.
+
+### Lesson
+
+- **`DontDestroyOnLoad` на root, всегда.** Если компонент лежит в nested prefab (как Sounds в GameManager), `gameObject` — child. Использовать `transform.root.gameObject`.
+- **Имена параметров AudioMixer — single source of truth в самом mixer asset'е.** Если рефакторишь mixer (Music → MusicVolume), все `SetFloat` звонки надо обновлять синхронно. Иначе runtime-ошибки каждое касание слайдера.
+- **Откат раунда 8** в `MenuAudioManager` (полный, не частичный) утащил обратно рабочий фикс mixer params. В будущем: если фикс разнородный (PlayerPrefs keys vs mixer params), разнести на 2 коммита чтобы можно было откатить только одно.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
