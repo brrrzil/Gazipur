@@ -25,4 +25,4 @@ MonoBehaviour:
   - answer: "\u0423 \u043D\u0430\u0441 \u0432\u0441\u0435 \u0445\u043E\u0440\u043E\u0448\u043E!"
     answerVoice: {fileID: 8300000, guid: 46fee370d0b44674a8e8a9fdf7bcfe87, type: 3}
     newChain: {fileID: 11400000, guid: 0c4a0223596c3804a87aee579f9d5e44, type: 2}
-    action: {fileID: 7161553123835796657, guid: a86c41de15d65d740a0c49b108b9b4ce, type: 3}
+    action: {fileID: 0}
