@@ -15,15 +15,13 @@ public class Preloader : MonoBehaviour
 
     private void Awake()
     {
-        // The Preloader scene is intentionally minimal — just a Camera +
-        // EventSystem + this GameObject. We build the entire UI in code so
-        // the scene file stays small and the project doesn't need a hand-
-        // crafted .unity file with Canvas / Slider / Text wiring.
         BuildUI();
 
-        // If the main menu set a specific target scene (it always should),
-        // prefer that over the default field value. This way the same
-        // Preloader can be reused for any scene transition later.
+        // (round 32) Prefer the main-menu's choice over the default field
+        // value. If MainMenu wrote a target name into PlayerPrefs, use it.
+        // Otherwise fall back to _nextSceneName (which defaults to "MainMenu",
+        // so a cold start — Preloader is the boot scene and PlayerPrefs is
+        // empty — still routes the player into the menu).
         if (PlayerPrefs.HasKey(_nextScenePlayerPrefsKey))
         {
             string fromMenu = PlayerPrefs.GetString(_nextScenePlayerPrefsKey);
@@ -53,9 +51,14 @@ public class Preloader : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
 
         // Background — solid dark color, covers full screen
+        // (round 32) Image needs an explicit sprite to render at runtime;
+        // a fresh GameObject with typeof(Image) does not get the editor's
+        // default "UI/Skin/Background" sprite. We share a single 1x1 white
+        // sprite across all background/fill images we create here.
         var bgGO = new GameObject("Background", typeof(Image));
         bgGO.transform.SetParent(canvasGO.transform, false);
         var bgImage = bgGO.GetComponent<Image>();
+        bgImage.sprite = GetWhiteSprite();
         bgImage.color = new Color(0.05f, 0.05f, 0.05f, 1f);
         var bgRT = bgGO.GetComponent<RectTransform>();
         bgRT.anchorMin = Vector2.zero;
@@ -63,15 +66,16 @@ public class Preloader : MonoBehaviour
         bgRT.offsetMin = Vector2.zero;
         bgRT.offsetMax = Vector2.zero;
 
-        // Title text "Loading..."
+        // Title text — "Загрузка..." (round 32: was "Loading...")
         _statusText = CreateText("Status", canvasGO.transform,
-            "Loading...", 48, TextAnchor.MiddleCenter,
+            "Загрузка...", 48, TextAnchor.MiddleCenter,
             new Vector2(0, 80), new Vector2(600, 80));
 
         // Progress bar background
         var barBGGO = new GameObject("ProgressBarBG", typeof(Image));
         barBGGO.transform.SetParent(canvasGO.transform, false);
         var barBGImage = barBGGO.GetComponent<Image>();
+        barBGImage.sprite = GetWhiteSprite();
         barBGImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
         var barBGRT = barBGGO.GetComponent<RectTransform>();
         barBGRT.anchorMin = new Vector2(0.5f, 0.5f);
@@ -80,10 +84,11 @@ public class Preloader : MonoBehaviour
         barBGRT.sizeDelta = new Vector2(800, 30);
         barBGRT.anchoredPosition = new Vector2(0, -40);
 
-        // Progress bar fill — using a child Image with Filled type
+        // Progress bar fill — Filled Image, fillAmount driven by SliderProxy
         var fillGO = new GameObject("Fill", typeof(Image));
         fillGO.transform.SetParent(barBGGO.transform, false);
         var fillImage = fillGO.GetComponent<Image>();
+        fillImage.sprite = GetWhiteSprite();
         fillImage.color = new Color(0.3f, 0.7f, 1f, 1f);
         fillImage.type = Image.Type.Filled;
         fillImage.fillMethod = Image.FillMethod.Horizontal;
@@ -94,11 +99,33 @@ public class Preloader : MonoBehaviour
         fillRT.offsetMin = Vector2.zero;
         fillRT.offsetMax = Vector2.zero;
 
-        // Expose the fill image as the progress bar — we update fillAmount
-        // directly instead of value, because Filled Image doesn't have a
-        // Slider component to drive. (A Slider would also work; using Image
-        // here is simpler since we don't need interaction.)
+        // (round 32) Percent text below the bar — was missing entirely
+        // (only _statusText was created before). The progress percentage
+        // is informative and helps the player see something is happening
+        // when the fill bar is hard to read.
+        _progressText = CreateText("Progress", canvasGO.transform,
+            "0%", 32, TextAnchor.MiddleCenter,
+            new Vector2(0, -100), new Vector2(400, 60));
+
         _progressBar = CreateSliderProxy(fillImage);
+    }
+
+    // (round 32) Shared 1x1 white sprite. Unity's Image component doesn't
+    // render without a sprite, and a runtime-created Image has none assigned
+    // (the default UI/Skin sprite is added by the editor's Reset menu, not
+    // the constructor). We use Texture2D.whiteTexture (always present) and
+    // wrap it in a Sprite once.
+    private static Sprite _whiteSprite;
+    private static Sprite GetWhiteSprite()
+    {
+        if (_whiteSprite == null)
+        {
+            var tex = Texture2D.whiteTexture;
+            _whiteSprite = Sprite.Create(tex,
+                new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f));
+        }
+        return _whiteSprite;
     }
 
     private static Text CreateText(string name, Transform parent, string content,
@@ -143,7 +170,24 @@ public class Preloader : MonoBehaviour
             yield break;
         }
 
+        // (round 32) Guard: if the target IS the active scene (e.g. cold
+        // start with an empty PlayerPrefs and the Preloader scene is the
+        // boot scene and we somehow routed to "Preloader" again, or any
+        // other self-target), don't try to reload the active scene. Unity
+        // considers this undefined behaviour — the load can hang or assert.
+        if (_nextSceneName == SceneManager.GetActiveScene().name)
+        {
+            Debug.LogWarning($"[Preloader] Target '{_nextSceneName}' is already the active scene; skipping reload.");
+            yield break;
+        }
+
         AsyncOperation op = SceneManager.LoadSceneAsync(_nextSceneName);
+        if (op == null)
+        {
+            Debug.LogError($"[Preloader] LoadSceneAsync returned null for '{_nextSceneName}'. " +
+                           "Is the scene in Build Settings?");
+            yield break;
+        }
         op.allowSceneActivation = false;
 
         // LoadSceneAsync reports progress 0..0.9 while the scene loads,
