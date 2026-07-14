@@ -1054,6 +1054,80 @@ State **восстановлен к «сегодня утром»**. Если ю
 
 ---
 
+## Бриф по проведённой работе (round 38-39 — точечные fix'ы после full revert)
+
+> Юзер: «Сегодня утром и вчера я много тестил и этих проблем не было. Игрок всё ещё маленький он проходит там, где должен идти в приседе, со слайдерами проблемы не ушли (они появились). Что делают Player prefs? Может ты фиксил сумки и всё сломалось?»
+>
+> Юзер правильно подсказал направление: **round 27 cherry-pick** сломал.
+> Коммиты `ad3ff3d` (revert cherry-pick) + `109c016` (cherry-pick round 33).
+
+### Root cause: что я нашёл
+
+Юзер был прав — full revert к c9c58e1 (round 37) **не решил** проблемы, потому что они были **в коммитах до моих rounds 28-36**.
+
+**Проблема 1: "маленький игрок" / "проходит там где должен приседать"**
+
+Cherry-pick `3569a3c` (round 27) **удалил** строку:
+```csharp
+_standingHeight = _controller.height;
+```
+из `PlayerMovement.Init()`.
+
+**До cherry-pick'а**:
+- `_standingHeight` = `_controller.height` (prefab = 2) каждый Awake
+- HandleCrouch: `targetHeight = _standingHeight = 2`
+- CharacterController = 2m (нормальный размер)
+
+**После cherry-pick'а**:
+- `_standingHeight` = 1 (default + prefab override)
+- HandleCrouch: `targetHeight = 1`
+- CharacterController = 1m (вдвое меньше)
+- Игрок проходит под низкими объектами, которые раньше блокировали
+
+**Юзер тестил вчера и утром до round 27 в 10:16** — CharacterController = 2m, всё OK. Я round 27 cherry-pick'нул, и CharacterController стал 1m. Юзер заметил только сейчас.
+
+**Проблема 2: "слайдеры появились"**
+
+AudioMixer routing — round 33 (611c461) fix'ил swap (Music group → MusicVolume, Sound group → SoundsVolume). Round 37 (full revert) **отменил** round 33, и routing вернулся к инвертированному. Юзер сейчас видит:
+- Music slider → SetFloat("MusicVolume") → меняет Music group (правильно!)
+- Sound slider → SetFloat("SoundsVolume") → меняет Sound group (правильно!)
+
+Wait, после cherry-pick round 33 routing **правильный**! Music slider меняет Music. Это не проблема.
+
+Подожди, может быть юзер имеет в виду **PlayerPrefs** застрял на значениях, которые установились во время broken routing. Например, раньше юзер двигал «Music slider» чтобы выключить music, но на самом деле это был Sound slider. PlayerPrefs["MusicVolume"] = 0. Сейчас routing правильный, Music slider = Music group, PlayerPrefs["MusicVolume"] = 0 → Music group на -80dB → music silent.
+
+Если это так — **Clear All PlayerPrefs** починит. Или юзер заново выставит slider.
+
+### Fix
+
+**1. Revert cherry-pick `3569a3c`** (`ad3ff3d`):
+Восстановил строку `_standingHeight = _controller.height;` в `Init()`. CharacterController снова 2m, игрок нормального размера.
+
+**2. Cherry-pick round 33 `611c461`** (`109c016`):
+AudioMixer routing:
+- Music → MusicVolume ✓
+- Sound → SoundsVolume ✓
+- Master → MasterVolume ✓
+
+### Важно
+
+Cherry-pick `3569a3c` имел благое намерение (не затирать `_standingHeight` runtime). Но удалил строку без замены, что уменьшило CharacterController. **Восстановление строки = минимальный fix**. Реальный fix изначального бага `3569a3c` нужно делать по-другому (через prefab override, а не удаление Awake line).
+
+### Что проверить
+
+- [ ] Игрок нормального роста (2m, не проходит под низкими)
+- [ ] Music slider двигает music, Sound slider двигает SFX
+- [ ] Если music всё ещё silent — `Edit → Clear All PlayerPrefs` (stale 0 от broken-routing эры)
+
+### Lesson
+
+- **Не делай blind cherry-pick** без анализа что commit меняет. `3569a3c` выглядел как "fix" (1 line deletion), но эта строка была нужна для prefab value. Удаление = silent regression.
+- **PlayerPrefs — это не git state**. PlayerPrefs сохраняются в registry, не в git. Revert не отменяет PlayerPrefs. Если юзер установил "плохое" значение во время broken-routing — оно остаётся.
+- **Юзер — лучший источник правды о "что работало утром"**. Когда юзер говорит "проблем не было" — верь ему, ищи в более ранних commit'ах.
+- **Round 27 bags fix включал cherry-pick из старой ветки**. Это рискованно: старый commit может иметь side effects, которых не было видно в контексте старой ветки.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
