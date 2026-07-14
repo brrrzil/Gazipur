@@ -1148,6 +1148,91 @@ Fallback на MainMenu важен: если юзер в Editor открыл сц
 
 ---
 
+## Бриф по проведённой работе (round 32 — комплексные fix-ы Preloader)
+
+> Юзер поймал 5 связанных проблем:
+> 1. Прелоадер появляется не сразу (застывшая картинка)
+> 2. Полоса загрузки не двигается
+> 3. «Loading...» → «Загрузка...»
+> 4. После выхода в меню и повторного запуска — зависает
+> 5. Не слышно голосов персонажей в диалогах
+>
+> Коммит `1ec8db5`.
+
+### Root causes
+
+**#2 — Image без sprite не рендерится.** Я создавал `Image` через `new GameObject(name, typeof(Image))`. В editor у `Image` по умолчанию есть `UI/Skin/Background` sprite (через Reset menu), но runtime-конструктор НЕ ставит его. Без sprite `Image.Type.Filled` не рендерит fillAmount, а `Image` (default) не рендерит вообще ничего. То есть:
+- Background (тип default, без sprite) → не виден
+- ProgressBarBG (тип default, без sprite) → не виден
+- Fill (тип Filled, без sprite) → fillAmount тикает, но никто не видит
+
+**#1 и #4 — MainMenu = boot scene.** Round 31 я поставил `MainMenu` на index 0, думая что boot должен быть меню. Но это значит: юзер кликает «Играть» в MainMenu → `LoadScene("Preloader")` → пока грузится Preloader, юзер видит **застывший MainMenu** (старый кадр, скрипты не тикают). Это и есть «несколько секунд застывшей картинки».
+
+А на втором проходе (выход в меню → повторный клик) Preloader пытался сделать что-то, что Unity не любит (возможно, `LoadSceneAsync` на ту же сцену что и активна, или `op == null`).
+
+**#5 — AudioListener в Preloader.** GameScene и MainMenu имеют свои. Я round 30 добавил третий в Preloader. Unity при наличии 2+ listeners warning'ит и выбирает «победителя» в зависимости от scene order. Когда Preloader уничтожался при переходе в GameScene, активный listener менялся, и `AudioSource` с играющим голосом мог дропнуться в момент перехода.
+
+### Fix-ы
+
+**1+4. Preloader = boot scene (index 0)**:
+```yaml
+m_Scenes:
+  - Preloader.unity    # index 0 - boot, instant
+  - MainMenu.unity
+  - GameScene.unity
+```
++ Self-target guard в `LoadNextSceneRoutine`:
+```csharp
+if (_nextSceneName == SceneManager.GetActiveScene().name) {
+    Debug.LogWarning("[Preloader] target == active scene; skipping reload");
+    yield break;
+}
+```
++ Null-check на `op`:
+```csharp
+if (op == null) {
+    Debug.LogError("[Preloader] LoadSceneAsync returned null");
+    yield break;
+}
+```
+
+**2. Shared white sprite для Image**:
+```csharp
+private static Sprite _whiteSprite;
+private static Sprite GetWhiteSprite() {
+    if (_whiteSprite == null) {
+        var tex = Texture2D.whiteTexture;
+        _whiteSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+    }
+    return _whiteSprite;
+}
+```
+И в BuildUI: `bgImage.sprite = GetWhiteSprite();` для всех трёх Image.
+
+Заодно добавил `_progressText` для отображения процентов (раньше он был только в коде, но никогда не создавался — UI не отображал «X%»).
+
+**3. «Loading...» → «Загрузка...»** в BuildUI.
+
+**5. Убрал AudioListener** из `Preloader.unity` (fileID 200003) и reference на него из m_Component Main Camera. В Preloader не играет аудио, listener не нужен.
+
+### Lesson
+
+- **Runtime `Image` без sprite — невидимый.** Это типичная ловушка. Editor добавляет default sprite через Reset, конструктор — нет. Решение: всегда явно ставь sprite для runtime-создаваемых UI. 1×1 white из `Texture2D.whiteTexture` — стандартный workaround.
+- **Boot scene ≠ всегда MainMenu.** Если есть промежуточная сцена (Preloader, splash, loading), её надо ставить на index 0, чтобы юзер сразу видел loading UI, а не застывшую картинку предыдущей сцены.
+- **Self-target LoadSceneAsync — undefined behavior.** Если target == active scene, нужно пропускать reload. Unity может NRE, assert или hang.
+- **AudioListener должен быть ровно один на всю игру.** Создавать его в каждой сцене (через «Main Camera» template) — стандарт, но если ты создаёшь свою сцену с Camera, не добавляй AudioListener без необходимости.
+- **Процентный текст в Preloader — полезен.** Игрок видит что прогресс идёт, даже если fill bar тонкий или цвета сливаются.
+
+### Что осталось проверить
+
+- [ ] Cold start: Preloader сразу, progress bar виден, MainMenu появляется с прогрессом
+- [ ] MainMenu → Играть: Preloader моментально (он уже в памяти), прогресс, GameScene
+- [ ] Смерть → Exit to menu → Играть: всё работает без зависания
+- [ ] Диалоги: слышно голоса NPC
+- [ ] Текст «Загрузка...», не «Loading...»
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
