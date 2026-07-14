@@ -14,10 +14,12 @@ public class MarketManager : MonoBehaviour
     [Inject] private DiContainer _container;
     [field: SerializeField] public TradePanel TradePanel;
 
-    // BUGFIX (round 20): how many bags the player has already bought across
-    // all sessions. We use this as the index into the sorted bag list to
-    // decide which bag to show — only ONE bag is visible at a time.
-    private const string BagsPurchasedKey = "BagsPurchased";
+    // BUGFIX (round 27): bags are now SESSION-ONLY. Previously we persisted
+    // _bagsPurchased to PlayerPrefs which meant the cheapest bag stayed
+    // hidden across play sessions — the user had to do Edit → Clear All
+    // PlayerPrefs every time they wanted to test the bag sequence. Now
+    // every new game session starts with all bags available again. The
+    // one-at-a-time show logic still applies within a single session.
     private int _bagsPurchased;
     // Buy objects whose ItemPrefab is a BagItem, sorted cheapest-first.
     private readonly List<BuyItemObject> _bagBuyObjects = new List<BuyItemObject>();
@@ -30,7 +32,8 @@ public class MarketManager : MonoBehaviour
     }
     private void Start()
     {
-        _bagsPurchased = PlayerPrefs.GetInt(BagsPurchasedKey, 0);
+        // _bagsPurchased starts at 0 every session (session-only, no PlayerPrefs).
+        _bagsPurchased = 0;
 
         // Pass 1: spawn non-bag items in inspector order.
         foreach (var entry in _items)
@@ -82,8 +85,7 @@ public class MarketManager : MonoBehaviour
         // The bag itself is hidden by BuyItemObject.Buy() via isSingle.
         // Just advance the counter so the NEXT bag becomes visible.
         _bagsPurchased++;
-        PlayerPrefs.SetInt(BagsPurchasedKey, _bagsPurchased);
-        PlayerPrefs.Save();
+        // No PlayerPrefs — bag state resets every game session.
         RefreshBagVisibility();
     }
 
