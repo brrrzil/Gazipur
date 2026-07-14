@@ -1023,6 +1023,41 @@
 
 ---
 
+## Бриф по проведённой работе (round 29 — Preloader fixup)
+
+> Юзер поймал 2 бага в моём round 28:
+> 1. CS0029 в Preloader.cs (тип `Slider` vs `SliderProxy`)
+> 2. m_SceneGUID был `0000...0000`
+> 3. Side effect: NaughtyAttributes «target object is null»
+>
+> Коммит `7cf45d7`.
+
+### Что починил
+
+**1. CS0029 в Preloader.cs:101** — мой косяк: поле `_progressBar` объявлено как `UnityEngine.UI.Slider`, но `CreateSliderProxy()` возвращает мой собственный `SliderProxy` (private nested class). Тип mismatch.
+
+Фикс — одна строка: `private Slider _progressBar;` → `private SliderProxy _progressBar;`. Остальной код не сломался, т.к. `SliderProxy` имеет публичное свойство `value` (точно как у `Slider`).
+
+**2. m_SceneGUID = `0000...0000`** — невалидный GUID. Юзер заменил на GUID скрипта (`9a6417f...`), но в репе на моей стороне всё ещё нули (видимо, его edit не persist'нулся, или сцена открывалась из кеша).
+
+Фикс — `ff55dc98907c4f24a044c72b9590c37e` (новый уникальный GUID, не совпадает ни с GUID скрипта, ни с чем-то ещё).
+
+**3. «Target object is null»** — side-effect от #1. NaughtyAttributes использует reflection для inspector'а, и при compile error у скрипта inspector не может найти поле. После фикса #1 и recompile warning уйдёт.
+
+### Lesson
+
+- **Приватный nested class vs `using` alias типа** — легко промахнуться. Если хочешь «квази-Slider», объяви поле того же типа что и возвращает helper. Помогло бы: `var _progressBar = ...;` (type inference), но Unity serialize этого не любит.
+- **m_SceneGUID ≠ asset GUID** — scene имеет два GUID: 1) в .meta файле (для Build Settings и asset reference), 2) внутри .unity как `m_SceneGUID` (для cross-scene reference). Технически могут совпадать (Unity не проверяет), но чище держать их разными.
+- **При создании Unity-сцен руками** через YAML — внимательно с `m_SceneGUID`. Поставь реальный GUID, а не нули или чужой asset GUID.
+
+### Что нужно сделать в Editor
+
+1. Recompile проекта (Unity сам пересоберёт после изменений).
+2. Если сцена `Preloader.unity` не открывается — открой её, убедись что GameObject «Preloader» имеет прикреплённый `Preloader.cs`. Если script missing — перетащи.
+3. Play → MainMenu → «Играть» → должен увидеть Preloader с progress bar → переход в GameScene.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
