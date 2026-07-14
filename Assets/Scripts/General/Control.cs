@@ -74,6 +74,15 @@ public class Control : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return null;
 
+        // (round 30) Guard against the Preloader scene: Control.Update runs
+        // while the loading scene is up, and that scene has no Camera and
+        // no mouse activity. Without these null checks, Camera.main or
+        // Mouse.current can be null and we throw a NullReferenceException
+        // every frame. Returning null is the correct fallback — there's
+        // nothing to interact with on a loading screen.
+        if (Camera.main == null || Mouse.current == null)
+            return null;
+
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
         RaycastHit hit;
 
