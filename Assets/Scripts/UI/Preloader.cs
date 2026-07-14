@@ -8,7 +8,7 @@ public class Preloader : MonoBehaviour
     [SerializeField] private string _nextSceneName = "GameScene";
     [SerializeField] private string _nextScenePlayerPrefsKey = "Preloader.NextScene";
 
-    private Slider _progressBar;
+    private SliderProxy _progressBar;
     private Text _progressText;
     private Text _statusText;
     private Canvas _canvas;
