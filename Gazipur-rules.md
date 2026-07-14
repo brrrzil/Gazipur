@@ -1058,6 +1058,55 @@
 
 ---
 
+## Бриф по проведённой работе (round 30 — Preloader NRE fix)
+
+> Юзер поймал NRE в `Control.cs:77` при запуске через Preloader:
+> ```
+> NullReferenceException: Object reference not set to an instance of an object
+> Control.GetInteractObjectUnderCursor () (at Assets/Scripts/General/Control.cs:77)
+> Control.Update () (at Assets/Scripts/General/Control.cs:67)
+> ```
+>
+> Коммит `4a7db2d`.
+
+### Root cause
+
+Я round 28 создал `Preloader.unity` **без Camera**. Но `Control` — это singleton-компонент из `GameManager` (видимо живёт между сценами), и его `Update()` продолжает работать пока активна Preloader-сцена. Внутри `GetInteractObjectUnderCursor`:
+```csharp
+Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+```
+В Preloader сцене `Camera.main == null` (нет камеры с тегом `MainCamera`) и/или `Mouse.current == null` (touch-устройство или мышь не двигается) → NRE каждый кадр.
+
+### Fix — две части
+
+**1. Добавил Main Camera + AudioListener в `Preloader.unity`** (fileIDs 200000-200003):
+- GameObject `Main Camera`, тег `MainCamera`
+- `Camera` с clearFlags=SolidColor, чёрный фон
+- `AudioListener` (без него Unity warning, и для будущих SFX нужно)
+
+Сцена теперь «полноценная» — любой код, ожидающий `Camera.main`, работает.
+
+**2. Null-guard в `Control.cs`** — early-return если `Camera.main` или `Mouse.current` null:
+```csharp
+if (Camera.main == null || Mouse.current == null)
+    return null;
+```
+Возврат null корректен — на loading screen нечего подсвечивать, `OnSelectObject(null)` ничего не триггерит.
+
+### Lesson
+
+- **Каждая Unity-сцена должна иметь Main Camera**, иначе любой singleton в `Update()` с `Camera.main` упадёт.
+- **Cross-scene singletons продолжают работать между сценами** — `Control` (и `Sounds`) живут за счёт DontDestroyOnLoad (или вложенности в GameManager) и их Update крутится даже когда активна сцена без нужных компонентов.
+- **Defensive null-check на системные API** (`Camera.main`, `Mouse.current`, `Input.device`) — стандартная практика для кросс-устройств и кросс-сцен.
+- **Не полагайся на то что другая сцена уже инициализировалась** — у тебя есть только 1-2 кадра между `LoadScene("Preloader")` и `LoadSceneAsync("GameScene")`, и за это время все твои Update() успеют натикать NRE.
+
+### Что осталось проверить
+
+- [ ] Двойной клик на `Preloader.unity` — камера должна появиться в иерархии
+- [ ] Play → MainMenu → «Играть» — Preloader без NRE, переход в GameScene
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
