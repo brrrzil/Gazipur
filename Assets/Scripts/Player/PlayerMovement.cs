@@ -73,6 +73,7 @@ public class PlayerMovement : MonoBehaviour
         _controller = GetComponent<CharacterController>();
         _inputActions = new PlayerInputActions();
 
+        _standingHeight = _controller.height;
         _currentCameraHeight = _cameraHeightNormal;
 
         _gameMode.onChangeMode += SetMode;
