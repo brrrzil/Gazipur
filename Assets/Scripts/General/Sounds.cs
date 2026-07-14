@@ -46,12 +46,15 @@ public class Sounds : MonoBehaviour
 
     private void Start()
     {
+        // (round 35) Null-guards: Background[] may be empty / null if
+        // SoundManager.prefab wasn't fully wired.
+        if (Background == null) return;
         foreach (var bg in Background)
         {
-            bg.Stop();
+            if (bg != null) bg.Stop();
         }
-
-        Background[0].Play();
+        if (Background.Length > 0 && Background[0] != null)
+            Background[0].Play();
     }
 
     public void RandomPitch(AudioSource pitchedAudio, float spread)
@@ -111,20 +114,30 @@ public class Sounds : MonoBehaviour
     }
     public void PlayerPlay(PlayerSound sound, bool isLoop)
     {
-        var clip = System.Array.Find(_playerSounds, s => s.sound == sound).clip;
-        _playerSource.clip = clip;
+        // (round 35) Null-guards: _playerSource or _playerSounds may be
+        // unassigned if SoundManager.prefab wasn't fully wired in the
+        // editor. Without these checks every play call would throw
+        // NullReferenceException / ArgumentNullException.
+        if (_playerSource == null || _playerSounds == null) return;
+        var found = System.Array.Find(_playerSounds, s => s.sound == sound);
+        if (found.clip == null) return;
+        _playerSource.clip = found.clip;
         _playerSource.loop = isLoop;
         _playerSource.Play();
     }
     public void PlayerStop()
     {
+        if (_playerSource == null) return;
         _playerSource.loop = false;
         _playerSource.Stop();
     }
     public void UIPlay(UISound sound)
     {
-        var clip = System.Array.Find(_uiSound, s => s.sound == sound).clip;
-        _uiSource.clip = clip;
+        // (round 35) Same null-guards as PlayerPlay.
+        if (_uiSource == null || _uiSound == null) return;
+        var found = System.Array.Find(_uiSound, s => s.sound == sound);
+        if (found.clip == null) return;
+        _uiSource.clip = found.clip;
         _uiSource.Play();
     }
     public void OpenMenu()
