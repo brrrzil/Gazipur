@@ -1333,6 +1333,165 @@ _cameraHeightNormal: 0.8
 
 ---
 
+## Бриф по проведённой работе (round 35 — SoundManager + project audit)
+
+> Юзер: «Если я двигаю слайдер с музыкой, то музыка пропадает и появляется только если подвинуть ползунок со звуками. Возможно подобных ошибок вылезло много, просто я до них ещё не дошёл. Проверь и исправь. Так же сделай быстрый анализ всего проекта и скажи, что можно убрать или улучшить под капотом.»
+>
+> Коммит `098b607`.
+
+### Root cause найден
+
+Когда я в round 33 fix'ил AudioMixer routing, я на самом деле только fix'ил naming. Но **в SoundManager.prefab AudioSource'ы отсутствовали вообще** — у Sounds MonoBehaviour были пустые/null ссылки на `DialogSource`, `_playerSource`, `_uiSource`, `Background[]`. Плюс была typo: Unity писал в backing field `<BackGround>k__BackingField` (большая G), а в коде property называется `Background` (маленькая g). Result: Background.Length всегда 0 в runtime.
+
+При round 33 swap routing'а:
+- Music slider стал правильно управлять Music group (раньше — Sound group)
+- В GameScene 6 AudioSource'ов на Music group
+- В PlayerPrefs["MusicVolume"] = 0 (юзер двинул music slider в 0 во время broken-routing эры, чтобы music не играла)
+- После round 33 fix routing — этот 0 теперь действительно делает music silent
+
+«Sound slider возвращает music» — remnant из broken-routing: до round 33 sound slider на самом деле управлял Music group (через SoundsVolume exposed), и юзер использовал его чтобы music была громкая. Теперь это не работает — но в PlayerPrefs["SoundsVolume"] старое значение сохранилось.
+
+### Fix
+
+1. **SoundManager.prefab пересобран с правильной структурой**:
+   - Parent GameObject «SoundManager» (Transform + Sounds MonoBehaviour)
+   - 6 child GameObject'ов с AudioSource'ами:
+     - DialogSource → Sound group (для голосов NPC)
+     - `_playerSource` → Sound group
+     - `_uiSource` → Sound group
+     - `_background1/2/3` → Music group (looping, 3 штуки — соответствует `Array.size = 3` override в GameManager instance)
+   - Все AudioSource references в Sounds MonoBehaviour привязаны правильно
+
+2. **GameManager.prefab**: убрал obsolete `<BackGround>k__BackingField.Array.size` (большая G) modification. Оставил правильный `<Background>k__BackingField.Array.size` (маленькая g).
+
+3. **Sounds.cs**: null-guards в `Start()`, `PlayerPlay()`, `PlayerStop()`, `UIPlay()`. Если AudioSource или массив не привязан — bail silently, не NRE.
+
+4. **DialogManager.cs**: `_speaker => _sounds?.DialogSource` (null-conditional).
+
+### Что нужно сделать юзеру
+
+- Открыть `SoundManager.prefab` в Editor
+- Привязать AudioClip'ы к AudioSource'ам (DialogSource, _playerSource, _uiSource, _background1/2/3)
+- Если music всё ещё silent — `Edit → Clear All PlayerPrefs` (там застрял stale 0 от broken-routing эры)
+
+---
+
+## Обзор проекта
+
+### Метрики
+
+| Метрика | Значение |
+|---|---|
+| C# файлов | 988 |
+| Prefab'ов | 231 |
+| Scene'ов | 29 (3 основных + 26 в `_Recovery`) |
+| FBX | 137 |
+| Текстуры | 349 |
+| Размер `Assets/` | 3.7 GB |
+| BUGFIX comments | 24 |
+| TODO/FIXME/HACK | 0 (всё задокументировано в BUGFIX) |
+| Debug.Log в продакшене | 5 (мало) |
+| `print()` (Unity-style) | 3 |
+
+### Тяжёлые папки (size)
+
+| Папка | Размер | Комментарий |
+|---|---|---|
+| `Assets/Materials/` | **2.2 GB** | Много материалов, возможно дубликаты от Substance |
+| `Assets/Models/` | 951 MB | FBX модели, isReadable=1 (round 26 fix) |
+| `Assets/GazipuTerrain.asset/` | 77 MB | Single file, гигантский terrain |
+| `Assets/Adobe/` | 38 MB | Substance plugin |
+| `Assets/Plugins/` | 28 MB | Zenject (27M) + Demigiant/DOTween (767K) |
+| `Assets/Music/` | 25 MB | Background music |
+| `Assets/Sprites/` | 22 MB | Текстуры |
+| `Assets/Sound/` | 16 MB | SFX |
+| `Assets/BOXOPHOBIC/` | 16 MB | SVT (Stylized Grass) plugin |
+
+### Куча мусора
+
+| Что | Где | Что делать |
+|---|---|---|
+| `_Recovery/` | `Assets/_Recovery/` | 5.4 MB, 7 сцен с именами `0 (1).unity`...`0 (7).unity` — старые бэкапы, юзер не использует. Удалить. |
+| `Assets/_Recovery/0 (1).unity` ... `0 (7).unity` | — | Бэкапы предыдущих версий GameScene. Не в Build Settings. Можно удалить всё. |
+| `PLAYER_old.prefab` | `Assets/Prefabs/Characters/` | Бэкап Player prefab. Можно оставить как reference. |
+
+### Найденные реальные баги
+
+| Баг | Файл | Severity | Статус |
+|---|---|---|---|
+| AudioMixer routing инвертирован (Music ↔ Sound) | `Resources/AudioMixer.mixer` | Critical | ✅ Fixed (round 33) |
+| `Log10(0) = -Infinity` в SoundControl | `Scripts/System/SoundControl.cs` | Medium | ✅ Fixed (round 33) |
+| `_standingHeight` перезаписывался в Awake | `Scripts/Player/PlayerMovement.cs` | High | ✅ Fixed (cherry-pick round 27) |
+| Zenject SceneContext assertion на `LoadScene(sameIndex)` | `Prefabs/Canvas.prefab` | Critical | ✅ Fixed (round 27) |
+| `BagsPurchased` persisted, ожидался session-only | `Scripts/Market/MarketManager.cs` | Low | ✅ Fixed (round 27) |
+| `isReadable: 0` на всех FBX → NavMesh fail | `Assets/Models/*.fbx.meta` | High | ✅ Fixed (round 26) |
+| `MenuAudioManager.SetFloat("Music")` → param doesn't exist | `Scripts/General/MenuAudioManager.cs` | High | ✅ Fixed (round 25) |
+| `Sounds.DontDestroyOnLoad(gameObject)` (nested prefab) | `Scripts/General/Sounds.cs` | Critical | ✅ Fixed (round 25) |
+| `crowbar` → `cutter` rename, no GUID broken | `Prefabs/Items/Tools/*` | Low | ✅ Fixed (round 22) |
+| `ToString("F1")` показывал `2.9000000953674313` | `Scripts/Inventory.cs` etc | High | ✅ Fixed (round 21) |
+| **SoundManager AudioSource references null** | `Prefabs/SoundManager.prefab` | **Critical** | ✅ **Fixed (round 35)** |
+| **`PLAYER._cameraHeightNormal` = 0.5 (prefab override)** | `Prefabs/Characters/PLAYER.prefab` | High | ✅ Fixed (round 34) |
+| Image without sprite → invisible | `Scripts/UI/Preloader.cs` | Critical | ✅ Fixed (round 32) |
+| Preloader self-target LoadScene | `Scripts/UI/Preloader.cs` | Critical | ✅ Fixed (round 32) |
+| Preloader AudioListener conflict | `Scenes/Preloader.unity` | Medium | ✅ Fixed (round 32) |
+
+### Рекомендации по улучшению под капотом
+
+1. **Удалить `Assets/_Recovery/`** — 5.4 MB мёртвого веса, 7 копий старой GameScene. Если юзер боится — переместить в `/_Archive/` или в `~/Downloads/`. Сейчас они не в Build Settings, но захламляют проект.
+
+2. **Создать `SoundsConfig.cs` ScriptableObject** для `_playerSounds` и `_uiSound` массивов. Сейчас они hard-coded в prefab. ScriptableObject — это .asset файл, который можно редактировать без открытия prefab. Плюс: можно менять звуки без recompile, можно держать разные наборы для разных scenes.
+
+3. **Review `Mavis`-стиль BUGFIX comments** — в проекте 24 BUGFIX comment'а, описывающих **когда** и **почему** был сделан fix. Это хорошо для документации, но иногда избыточно. Можно переносить в `Gazipur-rules.md` если comment >5 строк.
+
+4. **Debug.Log в production** — есть 5 мест с `Debug.Log`. Они видны в release build (если `Development Build` не включён — нет, но всё равно overhead). Завернуть в `#if UNITY_EDITOR` или использовать custom logger.
+
+5. **Per-frame `EnforceCursorState()` в PlayerMovement** — round 13 fix для cursor visibility. Каждый кадр проверяет `Cursor.lockState` и `Cursor.visible`. Acceptable performance, но можно убрать если доверяем GameModeManager.
+
+6. **Дублирование PlayerPrefs ключей**: `MenuAudioManager` пишет в `MusicVolume`/`SoundsVolume`, `SoundControl` тоже в `MusicVolume`/`SoundsVolume`. Если юзер откроет Settings в MainMenu → изменит → потом запустит игру → SoundControl перезапишет. Возможна путаница. Можно разнести: `MenuMusicVolume` (для меню) vs `GameMusicVolume` (для игры).
+
+7. **Использовать `AudioMixer.SetFloat` через AudioMixerSnapshot** вместо runtime. Snapshots могут хранить preset'ы (normal/mute/headphones), и можно анимировать transitions.
+
+8. **Temp folders в `.gitignore`**: `Temp/`, `Library/`, `obj/`, `Build/` — убедиться что в `.gitignore`. Если их нет — большой repo size.
+
+9. **Materials 2.2 GB** — Substance генерирует много материалов с разными параметрами. Если используется только несколько — можно удалить неиспользуемые.
+
+10. **FBX 951 MB** — каждая модель теперь `isReadable: 1` (round 26). Это удвоило размер в build. Если модели **не используются** для NavMesh/runtime mesh access в build, можно selective'но отключить isReadable. Но это editor work.
+
+### Pre-existing issues (ещё не тронуты)
+
+- **Adobe.Substance.SubstanceInputInt2 [SerializeReference]** warning (round 8)
+- **EventSystem disabled audio source** warning (Unity Inspector issue)
+- **18 Missing script references** в scene — verified as non-issue (Unity built-in компоненты с non-matching GUIDs, but recognized at runtime)
+- **NaughtyAttributes** — есть в проекте, иногда показывает «target object is null» в Inspector (cosmetic)
+
+### Что НЕ делать (DON'T list из прошлых round'ов)
+
+- Не читать `Assets/Plugins/Zenject/` (27 MB)
+- Не пытаться unify menu/game AudioMixer (по design раздельные)
+- Не persistить `MasterMuted` из PlayerPrefs (round 7 — auto-mute был кошмаром)
+- Не путать `Cubemap.cubemap` (legacy) с `cubemap_layout.png` (2D)
+- Не добавлять `Mathf.Clamp01` к `SoundControl.ChangeMusicVolume` (round 7 revert)
+- Не добавлять `Mathf.Log10(0) = -Infinity` clamp (round 7 revert)
+- Не использовать DOTween после `_speaker.Stop()` (leaks)
+- Не предполагать что stale PlayerPrefs не виноват — `Clear All PlayerPrefs` first
+- Не добавлять bag dedup logic (round 17 revert)
+- Не вешать gameplay triggers на dialog answer buttons (round 24 lesson)
+- Не `LoadScene(sameIndex)` если scene has SceneContext (round 27)
+- Не `DontDestroyOnLoad(gameObject)` на nested prefab (round 25)
+- Не `SetFloat("Music")` — use `MusicVolume`/`SoundsVolume`/`MasterVolume`
+- Не rename mixer params без updating all callers (round 25)
+- Не спрашивать commit/push permission (round 24 rule)
+- Не cherry-pick несколько коммитов без pushing между ними (chat hang risk)
+
+### Bottom line
+
+- AudioMixer routing — fixed в round 33, подтверждено correct в round 35
+- SoundManager prefab — broken, **fixed в round 35** (теперь нужны AudioClip'ы)
+- Остальная audio-система — defensive null-guards добавлены
+- Проект в целом — 24 BUGFIX'а задокументированы, много `Material/Model` content для cleanup, мало hard bugs
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
