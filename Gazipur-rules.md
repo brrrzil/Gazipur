@@ -987,6 +987,73 @@
 
 ---
 
+## Бриф по проведённой работе (round 37 — full revert rounds 28-36)
+
+> Юзер: «Повторяю: проблемы появились после ошибки в github desktop. Возможно подтянулись старые/неправильные коммиты. Может стоит откатиться?»
+>
+> Юзер выбрал **Вариант A**: full revert моих rounds 28-36.
+>
+> Коммит `1e9e22a`.
+
+### Что сделал
+
+**1. Backup перед revert:**
+- Создал tag `backup-pre-revert-2026-07-14` (на commit `b0eb21d`, push на remote)
+- Если нужно восстановить — `git reset --hard backup-pre-revert-2026-07-14 && git push --force-with-lease origin main`
+
+**2. Batched revert (1 коммит):**
+```
+git revert --no-commit c9c58e1..HEAD
+git commit -m "Revert rounds 28-36 + 35 followup per user request..."
+git push origin main
+```
+
+Revert прошёл **без конфликтов** (batched revert в 1 commit вместо 19 отдельных).
+
+**3. State после revert = ровно то что было утром:**
+- `Assets/Scenes/Preloader.unity` (и .meta) — **удалены**
+- `Assets/Scripts/UI/Preloader.cs` (и .meta) — **удалены**
+- `Build Settings` — только MainMenu + GameScene
+- `GameManager.prefab` — оба instance override BackGround/Background восстановлены
+- `SoundManager.prefab` — broken state без AudioSource references
+- `AudioMixer.mixer` — **routing инвертирован** (Music group → SoundsVolume, Sound group → MusicVolume)
+- `PLAYER.prefab` — `Head scale = 0.1`, `_cameraHeightNormal = 0.5`
+- `Control.cs` — без Camera.main cache, без null-guards
+- `SoundControl.cs` — без `Mathf.Max` clamp
+- `MainMenuScript.cs` — `LoadSceneAsync(1)` без Preloader route
+- `Sounds.cs` — без null-guards
+
+### Важно
+
+State **восстановлен к «сегодня утром»**. Если юзер говорит, что утром работало — после revert должно работать.
+
+Но **pre-existing баги сохранены** (были утром, есть сейчас):
+- `Head scale = 0.1` (с 19 мая) — был всегда, юзер не замечал до сегодня
+- `_cameraHeightNormal = 0.5` (был до round 34) — то же
+- AudioMixer routing инвертирован — был до round 33
+- SoundManager без AudioSource — был до round 35
+
+Если после revert эти баги **всплывут** — они были и утром, юзер просто не замечал. Значит что-то ещё изменилось (mesh, PlayerPrefs, scene state), что **активировало** их эффект.
+
+### Что делать дальше
+
+1. **Pull в локальном clone** — `git pull origin main`
+2. **Открыть Unity, проверить**:
+   - Стартует ли игра (MainMenu → «Играть» → GameScene)
+   - Работают ли audio sliders как раньше
+   - Размер игрока — как утром
+3. **Если всё ОК** — продолжаем работу от этого state
+4. **Если проблемы остались** — что-то ещё, не из моих rounds 28-36
+
+Если хочется **отдельные fix-ы** из rounds 28-36 без полного rollback — можно cherry-pick из `backup-pre-revert-2026-07-14`:
+- `a288831` Round 36: fix PLAYER Head scale (0.1 → 1) + cache Camera.main
+- `611c461` Round 33: fix SFX slider routing
+- `098b607` Round 35: fix SoundManager AudioSource references
+
+Каждый — отдельный коммит, можно применить выборочно.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
