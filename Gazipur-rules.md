@@ -1492,6 +1492,70 @@ _cameraHeightNormal: 0.8
 
 ---
 
+## Бриф по проведённой работе (round 36 — ретроспектива и минимальные fix-ы)
+
+> Юзер: «Слайдеры в меню и игре тупят. Размер игрока меньше (не камера, а сам персонаж). Обеих проблем не было сегодня утром. В какой момент расхождения? Что откатить?»
+>
+> Коммит `a288831`.
+
+### Ретроспектива
+
+Прошёлся по сегодняшним коммитам (rounds 28-35), искал что могло сломать:
+
+| Round | Что менял | Мог сломать? |
+|---|---|---|
+| 28-32 | Preloader scene + script | Нет — не трогал Player |
+| 33 | AudioMixer routing swap | Нет — не трогал Player |
+| 34 | PLAYER.prefab `_cameraHeightNormal: 0.5 → 0.8` | Только камера, не размер |
+| 35 | SoundManager prefab + null-guards | Только audio, не размер |
+
+**Но!** В `PLAYER.prefab` я нашёл **Head Transform с scale = (0.1, 0.1, 0.1)**. Должно быть (1, 1, 1). В `PLAYER_old.prefab` (бэкап) Head scale = (1, 1, 1). 
+
+Этот баг был **с 19 мая 2026** (создание prefab), но юзер не замечал. Возможно, до сегодня mesh на Head имел свой override scale=10, который компенсировал. Или mesh был не на Head, а где-то ещё.
+
+### Почему это ломает «размер игрока»
+
+`_cameraHolder` в PlayerMovement ссылается на Head Transform (fileID 7221630474262317011). Camera localPos.y = `_currentCameraHeight` (0.8 normal) **множится на parent localScale (0.1)**. World Y = 0.08. Камера почти у земли.
+
+Mesh renderer на Head тоже scaled by 0.1. Персонаж 1.7m → 17cm. Юзер видит «маленький персонаж» — потому что камера сидит у ног персонажа, а не на уровне глаз. «Не камера, а тело» — body маленький, потому что камера на уровне ступней, и кажется что весь персонаж крошечный.
+
+### Fix
+
+1. **`PLAYER.prefab` Head scale: 0.1 → 1.0** (одна строка). Camera world Y теперь правильный 0.8. Mesh на Head (если есть) — нормального размера.
+
+2. **`Control.cs` кэширует `Camera.main`** в `_cachedMainCamera` поле. Раньше вызывал `Camera.main` дважды за frame. Unity 6 cached, но cache invalidates на scene change + при появлении новой tagged камеры (Preloader с Main Camera). Кэширование + on-demand refresh — eliminates per-frame lookup.
+
+### Про «слайдеры тупят»
+
+**Честно: я не нашёл очевидной причины в своих изменениях.** Возможные источники:
+- `Control.Update` → `Camera.main` дважды за frame (round 30 null-check + ScreenPointToRay). Fix: caching (см. выше)
+- 6 AudioSource в SoundManager (round 35) — но пустые клипы, не должны нагружать frame
+- AudioMixer parameter writes (round 33 `Mathf.Max(0.0001f)`) — O(1), не проблема
+
+**Возможно «тупят» = audio feedback lag, а не input lag.** Когда двигаешь slider:
+- Input system: instant 1:1 (slider value = mouse position)
+- AudioMixer.SetFloat: instant
+- Audio engine: smoothing parameter transitions internally (особенно с `-80 dB` clamp). Это by design, не bug
+
+**Как проверить**: открой Inspector на slider во время drag — если `m_Value` tracking'ит мышь 1:1, slider работает. «Задержка» — audio engine smoothing, не input.
+
+Если после моих fix'ов всё ещё тупит — нужна дополнительная диагностика. Возможно Unity 6 + новый Input System + Editor lag.
+
+### Lesson
+
+- **Prefab override scale — невидимый, но разрушительный.** scale=0.1 на 5 месяцев прятался потому что mesh override компенсировал. Lesson: периодически проверять `_old` версии prefab'ов на отличия.
+- **Camera attached к scaled Transform** — double whammy: camera position AND mesh size оба уменьшаются. Юзер видит «маленькое тело» когда камера на 0.08 = сидит у ног.
+- **Cache Camera.main в MonoBehaviour** — стандартная практика, особенно если Update() вызывает его часто. Unity кэш не 100% надёжен.
+- **«Тупят» ≠ «не работает»**. Если value tracking 1:1 — это audio engine lag, не input lag. Не путать symptom с root cause.
+
+### Что осталось проверить
+
+- [ ] Игрок нормального размера (camera на уровне глаз, mesh если есть — нормальный)
+- [ ] Слайдеры в Settings — двигаются плавно
+- [ ] Если слайдеры всё ещё тупят — расскажи какие именно и в каком меню
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
