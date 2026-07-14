@@ -987,6 +987,42 @@
 
 ---
 
+## Бриф по проведённой работе (round 28 — Preloader scene)
+
+> Юзер выбрал Вариант A: отд. сцена `Preloader` с UI + async load.
+>
+> Коммит `0a790fe`.
+
+### Что добавил
+
+- **`Assets/Scripts/UI/Preloader.cs`** — скрипт, который в `Awake` строит Canvas + Slider + Status text программно (без YAML-канвы в .unity-файле). `LoadNextSceneRoutine` использует `allowSceneActivation = false`, ждёт `op.progress >= 0.9`, показывает 100% 0.25s, активирует сцену. Целевая сцена передаётся через PlayerPrefs-ключ `Preloader.NextScene`.
+- **`Assets/Scenes/Preloader.unity`** — минимальная сцена: один GameObject «Preloader» со скриптом. Без камеры и без EventSystem (Canvas в ScreenSpaceOverlay, UI display-only).
+- **`Assets/Scenes/Preloader.unity.meta`** — GUID сцены.
+- **`Assets/Scripts/UI/Preloader.cs.meta`** — GUID скрипта.
+- **`Assets/Scripts/UI/MainMenuScript.cs`** — `OnStartGame` теперь ставит `Preloader.NextScene = "GameScene"` и грузит `Preloader` по имени.
+- **`ProjectSettings/EditorBuildSettings.asset`** — Preloader добавлен в m_Scenes, индекс 0. Build order: 0=Preloader, 1=MainMenu, 2=GameScene.
+
+### Lesson
+
+- **Строить UI в коде, а не в .unity-файле**, если сцена маленькая (preloader, splash). Сцена — это просто файл с GameObject и ссылкой на скрипт. Canvas/Button/Slider создаются в `Awake`. Преимущества: меньше YAML, проще поддерживать, не ломается на апгрейдах Unity, легко менять стиль.
+- **`LoadScene("Name")` устойчивее чем `LoadScene(1)`** — при добавлении новой сцены в Build Settings не придётся пересчитывать индексы.
+- **`op.progress` в Unity async load: 0..0.9 при загрузке, 0.9 при готовности к активации, 1.0 после активации.** Чтобы дождаться полной готовности — `allowSceneActivation = false`, ждать пока 0.9, активировать вручную.
+- **Brief 100% пауза (0.25s) перед активацией** — иначе кадр 100% не видно: активация слишком быстрая. Юзер видит «что-то загрузилось», а не «дёрнулось».
+
+### Что нужно сделать в Unity Editor (минимум)
+
+1. Открыть проект — скрипт компилируется, сцена открывается.
+2. Проверить что `Assets/Scenes/Preloader.unity` открывается (двойной клик).
+3. Если Unity просит «Missing script» — перетащить `Preloader.cs` на GameObject «Preloader».
+4. Play → MainMenu → нажать «Играть» → увидеть Preloader «Loading...» с прогресс-баром → автоматически загрузится GameScene.
+
+### TODO (если захочешь дополнительно)
+
+- Добавить Camera в Preloader (на случай если потом захочешь background image / 3D-эффект).
+- Progress callback из GameScene (когда она полностью готова, не только десериализована). Полезно если GameScene делает долгий `Awake` (NavMesh, asset bundles). Сейчас активация происходит когда async говорит «готово», а не когда GameScene реально проинициализировалась.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
