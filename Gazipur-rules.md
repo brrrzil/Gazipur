@@ -958,6 +958,35 @@
 
 ---
 
+## Бриф по проведённой работе (round 27 — Zenject + bags)
+
+> Юзер: «Опять пропадают сумки из продажи. Я каждый раз должен скидывать player prefs? Раньше такого не было.» Plus: ZenjectException при «Начать заново» после прохождения. Plus: попросил описание прелоадера.
+>
+> Коммит `d9cb40c`.
+
+### Что починил (2 из 3)
+
+**1. ZenjectException на «Начать заново»** — TryAgainButton в WinPanel и DiePanel был привязан к `SceneLoader.LoadScene(1)`. При клике Unity перезагружал game scene (1), пока у неё уже был активный SceneContext. `SceneContextRegistry.Add` → assertion failed.
+
+Фикс: sed-ом `m_IntArgument: 1` → `0` в `Canvas.prefab` (затронуты оба TryAgainButton — Win и Die). Теперь «Начать заново» ведёт в главное меню (scene 0), оттуда Start запускает новую игру. Zenject-конфликт уходит потому что scene разные.
+
+**Trade-off**: вместо мгновенного рестарта — экран главного меню. Это by-design в большинстве игр. Если хочешь настоящий same-scene restart — нужен `ZenjectSceneLoader` (handles context lifecycle). Зафиксировал как открытый TODO в коммите.
+
+**2. Сумки сессионные** — убрал `PlayerPrefs.GetInt("BagsPurchased", 0)` / `SetInt / Save` в `MarketManager.cs`. Теперь `_bagsPurchased` стартует с 0 каждую сессию. Round 20-логика (одна сумка за раз внутри сессии) сохранена.
+
+**Юзер больше не должен делать Edit → Clear All PlayerPrefs** между тестами.
+
+### Lesson
+
+- **Zenject SceneContext = one per scene.** Любой `LoadScene(sameSceneName)` (или `LoadScene(sameIndex)`) вызовет assertion в `SceneContextRegistry.Add`. Чтобы рестартить — нужно сначала уйти на другую сцену (например, главное меню), либо использовать `ZenjectSceneLoader`.
+- **`PlayerPrefs.Save()` для одного-двух int'ов — overkill.** Если стейт нужен только в текущей сессии (bags), не персистить вообще. Если нужно кросс-сессионно — но тогда юзер должен иметь способ сбросить (debug menu / «новая игра»).
+
+### Что НЕ сделал (проблема 2 — прелоадер)
+
+Юзер попросил описание подхода, а не реализацию. Ниже мои рекомендации.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
