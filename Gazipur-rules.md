@@ -1107,6 +1107,47 @@ if (Camera.main == null || Mouse.current == null)
 
 ---
 
+## Бриф по проведённой работе (round 31 — Preloader не должен быть boot-сценой)
+
+> Юзер: «Почему после загрузки прелоадера сразу начинается игра? Где главное меню?»
+>
+> Коммит `c1863b9`.
+
+### Что было сломано
+
+Я в round 28 допустил **две** связанные ошибки:
+
+1. **`Preloader` стоял в `EditorBuildSettings.m_Scenes[0]`** — Unity при старте приложения сначала грузит сцену 0. То есть Preloader был boot-сценой → сразу же шёл в LoadSceneAsync → GameScene, минуя MainMenu.
+2. **`Preloader._nextSceneName` дефолт = `"GameScene"`** — если PlayerPrefs пуст (первый запуск, или сцену открыли в Editor и нажали Play), fallback-цель была GameScene. Поэтому даже если бы Preloader НЕ был boot-сценой, при пустом PlayerPrefs всё равно сразу игра.
+
+### Fix — оба сразу
+
+**1. Build Settings переупорядочены**:
+- 0 = `MainMenu` (теперь boot-сцена, юзер сразу видит меню)
+- 1 = `Preloader` (промежуточная, грузится только по требованию из MainMenu)
+- 2 = `GameScene` (без изменений)
+
+**2. Дефолт `_nextSceneName = "MainMenu"`** (вместо `"GameScene"`) в двух местах для консистентности:
+- `Preloader.cs:8` — значение по умолчанию в коде
+- `Preloader.unity` — serialized value на MonoBehaviour
+
+Логика теперь:
+- При старте приложения → MainMenu (юзер видит меню)
+- Юзер кликает «Играть» → MainMenu.OnStartGame: `PlayerPrefs["Preloader.NextScene"] = "GameScene"` → `LoadScene("Preloader")`
+- Preloader читает `GameScene` из PlayerPrefs, async-грузит, показывает progress
+- GameScene активна → игра
+
+Fallback на MainMenu важен: если юзер в Editor открыл сцену Preloader и нажал Play (минуя MainMenu), он попадёт в MainMenu, а не в GameScene.
+
+### Lesson
+
+- **Boot-сцена (index 0) ≠ промежуточная сцена** — это разные роли. Boot видит юзер при старте приложения. Промежуточная — только при явном переходе.
+- **Default value в скрипте и serialized value в сцене должны быть синхронны** — иначе при первом открытии сцены в Editor Unity подставит serialized value и default в коде не сработает. Поменял оба.
+- **Промежуточные Preloader-сцены должны быть НЕ первыми в Build Settings**, иначе они становятся boot-сценой случайно.
+- **Fallback в Preloader должен вести в «безопасное» место** (MainMenu), а не в самую тяжёлую сцену (GameScene). Если что-то пошло не так с PlayerPrefs — юзер попадёт в меню, а не сразу в игру.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
