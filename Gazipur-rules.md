@@ -1233,6 +1233,60 @@ private static Sprite GetWhiteSprite() {
 
 ---
 
+## Бриф по проведённой работе (round 33 — SFX slider routing fix)
+
+> Юзер: «Что-то не так с ползунком sfx. Он влияет на музыку, а в значении 0 включает её на полную.»
+>
+> Коммит `611c461`.
+
+### Что было сломано
+
+**Два независимых бага** в аудио-системе:
+
+**#1 — AudioMixer routing инвертирован.** Mixer имеет 3 группы (Master, Music, Sound) и 3 exposed parameters (MasterVolume, MusicVolume, SoundsVolume). Каждая группа через `m_Volume` ссылается на exposed parameter, который ей управляет. В этом проекте они были перепутаны:
+- Group "Music" → `m_Volume: f172539...` (= exposed "SoundsVolume")
+- Group "Sound" → `m_Volume: 469b7d2...` (= exposed "MusicVolume")
+
+То есть когда код вызывает `SetFloat("SoundsVolume", ...)` — на самом деле меняется attenuation группы **Music**, а не Sound. SFX slider двигает музыку, Music slider двигает SFX.
+
+**#2 — `Log10(0) = -Infinity` плохо обрабатывается AudioMixer'ом.** В SoundControl:
+```csharp
+mixer.audioMixer.SetFloat("X", Mathf.Log10(value) * 20);
+```
+При `value = 0` → `Log10(0) = -Infinity`. AudioMixer в зависимости от версии Unity либо игнорирует такой write, либо clip'ает до 0dB, либо оставляет предыдущее значение. В этом проекте — похоже что оставляет предыдущее. Из-за #1 «предыдущее значение» для Music group было ~0 dB (default), и при SFX slider на 0 музыка оставалась на полной.
+
+### Fix
+
+**#1 — Swap `m_Volume` GUID'ов в `AudioMixer.mixer`**:
+- Group "Music" → `m_Volume: 469b7d2...` (MusicVolume)
+- Group "Sound" → `m_Volume: f172539...` (SoundsVolume)
+
+Routing теперь корректен: имя параметра в коде совпадает с группой.
+
+**#2 — Clamp перед Log10** в SoundControl:
+```csharp
+float safe = Mathf.Max(value, 0.0001f);
+mixer.audioMixer.SetFloat("X", Mathf.Log10(safe) * 20f);
+```
+
+`0.0001` → `Log10(0.0001) * 20 = -80 dB`, что ниже `m_SuspendThreshold = -80` и является effectively-silent floor. Юзер слышит тишину.
+
+### Lesson
+
+- **AudioMixer routing — single source of truth.** Имя exposed parameter должно соответствовать группе, на которую он подключен. Если меняешь routing в editor'е (правая кнопка → "Expose 'Volume (of Music)' to script"), убедись что drag-and-drop в mixer view привязал к правильной группе.
+- **Log10(0) = -Infinity — типичная ловушка в AudioMixer.** Всегда clamp значение перед Log10. `Mathf.Max(value, 0.0001f)` — стандартный workaround, даёт -80 dB (silent floor).
+- **Когда два бага маскируют друг друга, их сложно диагностировать.** Routing баг (#1) + Log10 баг (#2) дают контринтуитивный симптом: «slider в 0 → полная громкость». Если бы я только починил routing — SFX slider всё равно не заглушил бы звук на 0. Если бы только починил Log10 — SFX slider управлял бы Music group, что тоже плохо. Надо чинить оба.
+- **При редактировании AudioMixer YAML напрямую — проверять routing визуально** (хотя бы скриптом). `m_Volume: <guid>` в каждой group block, и сверить с `m_ExposedParameters` списком в AudioMixerController.
+
+### Что проверить
+
+- [ ] Music slider двигает музыку, SFX slider двигает звуки (голоса, footsteps, и т.д.)
+- [ ] SFX slider в 0 → тишина в звуках, музыка не меняется
+- [ ] Music slider в 0 → тишина в музыке, звуки не меняются
+- [ ] После перезапуска игры настройки сохранились
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
