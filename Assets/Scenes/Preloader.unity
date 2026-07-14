@@ -142,7 +142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a6417f6f34e48d9bbb3cf9220b30e04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Preloader
-  _nextSceneName: GameScene
+  _nextSceneName: MainMenu
   _nextScenePlayerPrefsKey: Preloader.NextScene
 --- !u!1 &200000
 GameObject:

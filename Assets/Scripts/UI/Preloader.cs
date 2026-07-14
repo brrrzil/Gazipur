@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class Preloader : MonoBehaviour
 {
-    [SerializeField] private string _nextSceneName = "GameScene";
+    [SerializeField] private string _nextSceneName = "MainMenu";
     [SerializeField] private string _nextScenePlayerPrefsKey = "Preloader.NextScene";
 
     private SliderProxy _progressBar;
