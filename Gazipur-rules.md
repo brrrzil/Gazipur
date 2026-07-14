@@ -1287,6 +1287,52 @@ mixer.audioMixer.SetFloat("X", Mathf.Log10(safe) * 20f);
 
 ---
 
+## Бриф по проведённой работе (round 34 — камера игрока на 0.5 вместо 0.8)
+
+> Юзер: «ГГ стал ниже ростом. Теперь он всё время как бы в приседе, но при этом может бегать.»
+>
+> Коммит `ba91d00`.
+
+### Root cause
+
+`PLAYER.prefab` имел override `_cameraHeightNormal: 0.5` (вместо правильного `0.8`). Сравнение:
+
+| Поле | PLAYER (багнутый) | PLAYER_old (бэкап) | Default в коде |
+|---|---|---|---|
+| `_standingHeight` | 1 | 1 | 1 |
+| `_crouchHeight` | 0.5 | 0.5 | 0.5 |
+| **`_cameraHeightNormal`** | **0.5** | 0.8 | 0.8 |
+| `_cameraHeightCrouch` | 0.4 | 0.4 | 0.4 |
+
+Кто-то когда-то поменял `_cameraHeightNormal` в prefab через inspector (drag slider или ручной edit). 0.5 — это высота камеры в crouch, а 0.4 — почти то же самое. Поэтому юзер видит камеру низко (как при crouch), но `_isCrouching = false` → может бегать на полной скорости.
+
+Почему симптомы именно такие:
+- `HandleCrouch()` каждый кадр обновляет `_controller.height`. При `_wantsToCrouch = false` и `CanStandUp() = true` → `targetHeight = _standingHeight = 1.0`. То есть CharacterController тело в правильном размере.
+- `_isCrouching = false` → `_currentSpeed = _runSpeed` (полная скорость бега).
+- Но `_currentCameraHeight = 0.5` (prefab override) → камера в локальной позиции y=0.5, как у присевшего.
+
+Итого: тело нормальное, скорость нормальная, только камера низко. Юзер видит «присевший» вид, но играет как стоя.
+
+### Fix
+
+Одна строка в `PLAYER.prefab`:
+```yaml
+_cameraHeightNormal: 0.5
+# →
+_cameraHeightNormal: 0.8
+```
+
+Восстанавливает правильную высоту камеры (0.8 = 80% от `_standingHeight = 1.0`, грубо на уровне глаз для 1-метрового персонажа). Теперь разница между normal (0.8) и crouch (0.4) чёткая — юзер видит когда присел.
+
+### Lesson
+
+- **Prefab override на serialized fields держится «вечно»** — пока кто-то явно не сбросит через inspector "Reset" или не отредактирует YAML. Даже если default в коде правильный, prefab перекрывает. Всегда проверяй prefab serialized values, если runtime state не совпадает с ожиданиями.
+- **PLAYER_old.prefab — золото.** Хорошо что юзер (или я когда-то) сохранил бэкап prefab'а как `PLAYER_old.prefab`. Когда в prefab что-то непонятно, сравни с `_old` версией — часто сразу видно diff.
+- **Камера у CharacterController — это `localPosition` внутри `cameraHolder`**. Если `_cameraHeightNormal` и `_cameraHeightCrouch` слишком близки, разницу crouch/stand не видно. Design value: 0.8/0.4 (ratio 2:1) даёт чёткий visual difference.
+- **Симптом «присел но бегает» = камера отдельно от логики crouch**. Если бы `_isCrouching` true и `_controller.height = _crouchHeight`, игрок бы бегал медленно. Тут тело большое, скорость нормальная — значит `_isCrouching = false`. Проверяй камеру отдельно.
+
+---
+
 ## Коммуникация с пользователем (паттерны, которые я заметил)
 
 - Пользователь **тестирует в редакторе** после моих правок и присылает список “работает / не работает / откати это”.
