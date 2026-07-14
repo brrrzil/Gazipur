@@ -36,13 +36,23 @@ public class SoundControl : MonoBehaviour
     public void ChangeMusicVolume(float value)
     {
         MusicVolume = value;
-        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(value) * 20);
+        // (round 33) Clamp to a tiny positive value before Log10: with
+        // value == 0 the formula gives -Infinity, which AudioMixer handles
+        // inconsistently (it can keep the previous dB, clip to 0, or ignore
+        // the call entirely — behaviour depended on Unity version). Use a
+        // small epsilon so the slider's 0 still maps to the AudioMixer's
+        // effectively-silent floor of -80 dB.
+        float safe = Mathf.Max(value, 0.0001f);
+        mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(safe) * 20f);
         SaveSettings();
     }
     public void ChangeSoundVolume(float value)
     {
         SoundVolume = value;
-        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(value) * 20);
+        // (round 33) Same fix as ChangeMusicVolume: clamp to 0.0001
+        // before Log10 so the 0-slider position is silence, not -Infinity.
+        float safe = Mathf.Max(value, 0.0001f);
+        mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(safe) * 20f);
         SaveSettings();
     }
     public void Mute(bool isMute)
