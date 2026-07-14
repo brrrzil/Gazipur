@@ -1095,6 +1095,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1242473395473882805}
     m_Modifications:
     - target: {fileID: 2962537972588476959, guid: b14fd8ae38d131d479b10fc8777a153c, type: 3}
+      propertyPath: <BackGround>k__BackingField.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2962537972588476959, guid: b14fd8ae38d131d479b10fc8777a153c, type: 3}
       propertyPath: <Background>k__BackingField.Array.size
       value: 3
       objectReference: {fileID: 0}

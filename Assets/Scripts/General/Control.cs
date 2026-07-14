@@ -16,15 +16,6 @@ public class Control : MonoBehaviour
     private PlayerInputActions inputActions;
     private bool isHoldInProgress = false;
 
-    // (round 36) Cached reference to the main camera. We previously
-    // called Camera.main twice per frame from GetInteractObjectUnderCursor
-    // — once for the null check, once for ScreenPointToRay. Camera.main
-    // is cached in Unity 6, but the cache can be invalidated on scene
-    // changes and on any new tagged camera. Holding a direct reference
-    // removes any per-frame cost and removes the indirection through the
-    // tag manager. Refreshed on demand when null.
-    private Camera _cachedMainCamera;
-
     private void Awake()
     {
         inputActions = new PlayerInputActions();
@@ -83,26 +74,7 @@ public class Control : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return null;
 
-        // (round 30) Guard against the Preloader scene: Control.Update runs
-        // while the loading scene is up, and that scene has no Camera and
-        // no mouse activity. Without these null checks, Camera.main or
-        // Mouse.current can be null and we throw a NullReferenceException
-        // every frame. Returning null is the correct fallback — there's
-        // nothing to interact with on a loading screen.
-        if (Mouse.current == null)
-            return null;
-
-        // (round 36) Use cached camera reference. Refresh on demand if
-        // the cached one is null (Unity nulls C# references when an
-        // object is destroyed, which happens on scene change).
-        if (_cachedMainCamera == null)
-        {
-            _cachedMainCamera = Camera.main;
-            if (_cachedMainCamera == null)
-                return null;
-        }
-
-        Ray ray = _cachedMainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit))

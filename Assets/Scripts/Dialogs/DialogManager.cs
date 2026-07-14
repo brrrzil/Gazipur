@@ -26,7 +26,7 @@ public class DialogManager : MonoBehaviour
     [Inject] GameManager _manager;
     [Inject] GameModeManager _modManager;
     [Inject] Sounds _sounds;
-    private AudioSource _speaker => _sounds?.DialogSource;
+    private AudioSource _speaker => _sounds.DialogSource;
     private AudioClip _curQuestClip;
 
     // Tracks the in-progress answer→question coroutine so we can cancel it if
