@@ -1126,6 +1126,39 @@ Cherry-pick `3569a3c` имел благое намерение (не затир�
 
 ---
 
+## Бриф по проведённой работе (round 51 — MainMenu-side preload, без отдельной Preloader сцены)
+
+### Контекст
+Юзер: "Мы уже начинали делать preloader и откатили. Сможем сделать снова, учитывая наш предыдущий опыт?" Юзер выбрал ответы:
+1. Где freeze'ит: A (MainMenu → GameScene)
+2. UX: C (preload в фоне, кнопка старт неактивна, спиннер)
+3. Глубина: A (только для одного перехода)
+
+### Что сделал
+**Не отдельная Preloader.unity, а preload прямо в `MainMenu.unity`** — потому что round 28-32 Preloader страдал от:
+- AudioListener дубль (Preloader + MainMenu) → routing flips
+- NRE в `Control.GetInteractObjectUnderCursor` когда нет Main Camera в Preloader сцене
+- Лишняя сцена в Build Settings, лишний Canvas, лишний MonoBehaviour
+- 4 раунда fix'ов (29-32) только чтобы починить side-effects отдельной сцены
+
+**Round 51** (`cc58194`) — `MainMenuScript.cs`:
+- `Start()`: `startButton.interactable = false` + show spinner + `StartCoroutine(LoadGameSceneAsync())`
+- `LoadGameSceneAsync()` coroutine: `SceneManager.LoadSceneAsync("GameScene", Single)` + `allowSceneActivation = false` + `while (progress < 0.9) yield null` → `interactable = true` + hide spinner
+- `OnStartGame()`: `_gameSceneOp.allowSceneActivation = true` → мгновенный cut
+- `BuildRuntimeSpinner()`: `Resources.GetBuiltinResource<Sprite>("UI/Skin/Knob.psd")` + `SpinnerRotator` companion class (180°/sec)
+- `[SerializeField] private GameObject spinner` — опциональный Inspector hook для кастомного спиннера (если runtime-вариант не подходит)
+
+### Результат
+Юзер: "Спиннер появляется на долю секунды, исчезает. Сцена с игрой запускается быстро. Всё очень хорошо." — GameScene маленькая, async load <1 сек, переход мгновенный.
+
+### Lesson
+- **Preload в существующей сцене > новая Preloader сцена**, если проблема только в single transition. Отдельная сцена имеет цену: AudioListener conflicts, Camera.main NREs, лишний build slot, дублирование UI.
+- **`allowSceneActivation = false` + flip on click** — стандартный async load pattern в Unity 6. 0.9 = asset loading done, 0.9→1.0 = activation (single frame).
+- **Runtime UI creation** — жизнеспособный fallback когда нет prefab. Built-in UISprite (Knob.psd) работает в Unity 6 без asset references.
+- **Spinner as separate MonoBehaviour** (SpinnerRotator) — лучше чем rotation в основном скрипте, потому что separation of concerns + `Update()` per-frame work не загрязняет MainMenuScript.
+
+---
+
 ## Бриф по проведённой работе (round 40-43 — audio routing + PersistentAudio)
 
 ### Что починил
