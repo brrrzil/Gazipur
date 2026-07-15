@@ -1123,6 +1123,83 @@ Cherry-pick `3569a3c` имел благое намерение (не затир�
 
 - **Не делай blind cherry-pick** без анализа что commit меняет. `3569a3c` выглядел как "fix" (1 line deletion), но эта строка была нужна для prefab value. Удаление = silent regression.
 - **PlayerPrefs — это не git state**. PlayerPrefs сохраняются в registry, не в git. Revert не отменяет PlayerPrefs. Если юзер установил "плохое" значение во время broken-routing — оно остаётся.
+
+---
+
+## Бриф по проведённой работе (round 40-43 — audio routing + PersistentAudio)
+
+### Что починил
+- **Round 40** (`d87e62e`): вернул SoundManager rebuild из round 35, переключил 6 environment zones (Danger, Rich, Village + их Zone-варианты) с Music group на Sound group. Исторически Music group был присвоен environment zones, не самой music. Naming было нелогичным.
+- **Round 41** (`d8e5d28`): ещё 9 null AudioSources в GameScene (Main, GarbageTruck, 4× Birds, JumpSound, 2 unnamed) переключены на Sound group. Music group стал реально только для music.
+- **Round 42** (`e59eeb1`): MenuAudioManager mute fix — 2 бага:
+  - PlayerPrefs key mismatch: `Start()` читал "MenuMusicMuted", `SaveSettings()` писал "MusicMuted". Сохранённое состояние не подхватывалось при старте.
+  - `Log10(0)` clamp: `muted ? 0.0001f : volume` → `muted ? 0.0001f : Mathf.Max(volume, 0.0001f)`. Если volume был сохранён как 0, unmuted state давал -Infinity dB.
+- **Round 43** (`af80bdd`): move AudioSource с `ButtonPanel` (с `m_IsActive: 0`) на dedicated root GameObject `PersistentAudio` в `MainMenu.unity`. AudioSource на disabled GameObject = silent даже при правильном mixer routing. По аналогии с тем, как GameSettings/ProjectInstaller должны жить на root, не на disabled панелях.
+
+### Lesson
+- **AudioSource на disabled GameObject** (m_IsActive=0) — молчаливый silent. Visual state важнее mixer routing.
+- **PlayerPrefs keys — single source of truth.** MenuAudioManager и SoundControl используют разные key namespaces (Menu* vs без префикса). Не пытайся "унифицировать" — это by-design, две независимые системы.
+- **Naming convention в mixer ≠ naming convention в коде.** Mixer "Music" group был для environment zones, не music. Код использует "Sounds" для всего кроме music. Переименовывать mixer groups без переименования в коде = silent mismatch.
+
+---
+
+## Бриф по проведённой работе (round 44-50 — финал audio chain: exposed names + DI + label swap)
+
+### Round 44 (`8130114`) — fix exposed names MusicVolume / SoundsVolume
+- User commit `9ff3375` (Аудиомикшер) переименовал 2 из 3 exposed parameters в mixer: "MusicVolume" → "MyExposedParam", "SoundsVolume" → "MyExposedParam 1".
+- Код в `MenuAudioManager`, `SoundControl`, `GameSettings` использует оригинальные имена → `SetFloat` возвращает warning "Exposed name does not exist" на каждом slider tick.
+- Fix: вернул names обратно. GUID'ы сохранил (юзер менял только `name` в mixer, GUID тот же), так что `m_Volume` references в группах остались валидными.
+
+### Round 45 (`723238e`) — invert Mute toggle logic в MenuAudioManager
+- Юзер: "Toggle выключен, музыка не звучит; toggle включён — звучит. SFX toggle вообще не воздействует."
+- Root cause: код использовал `muted = !isOn` (isOn=true → muted=false → sound plays). Для "Mute" toggle стандартная семантика — `isOn=true` означает "mute on" → silent.
+- Fix: все 4 места (Start, On*Slider, On*Toggle, SaveSettings) — `!isOn` → `isOn`. PlayerPrefs теперь хранит `isOn ? 1 : 0` (1 = muted).
+
+### Round 46 (`6094976`) — fix MasterVolume exposed name
+- User commit `1886062` (Аудио) переименовал "MasterVolume" → "MyExposedParam 2" **между моими раундами 43 и 44**. Я fix'нул только 2 из 3, пропустил Master.
+- `SoundControl.Mute()` и `GameSettings.Mute()` падали с "Exposed name does not exist: MasterVolume" каждый кадр.
+- Fix: вернул "MasterVolume".
+
+### Round 47 (`de9c676`) — SettingsPanel label swap + Mute sync
+- Юзер: "В игре 1) Mute не затрагивает звуки 2) Music slider handle-only 3) SFX slider не меняет громкость."
+- Нашёл root cause: в `SettingsPanel.prefab` TMP labels "Музыка:" / "Звуки:" перепутаны с slider references. Slider под "Музыка" управлял `_soundVoloumeSlider` (sfx), slider под "Звуки" — `_musicVoloumeSlider` (music). Юзер видел инвертированный мир.
+- Fix: swap TMP text "Музыка:" ↔ "Звуки:". Slider references не трогал — они правильные по fileID.
+- Добавил `Mute(_muteToggle.isOn)` в конец `GameSettings.Start()` — setter `isOn` срабатывает до AddListener, поэтому onValueChanged callback не вызывается. Принудительный sync после AddListener.
+- Добавил Debug.Log в GameSettings/SoundControl для диагностики.
+
+### Round 48 (`6227c4a`) — label revert (юзер сам fix'нул references)
+- Юзер: "Ссылки были перепутаны, но работали как подразумевалось. Я их поставил правильно, тем самым инвертировал. Где исправить, чтобы нормализовать?"
+- Юзер сам swap'нул `_musicVoloumeSlider` ↔ `_soundVoloumeSlider` references в `GameSettings`, чтобы slider под "Музыка" реально управлял music (а не sfx). Теперь мой label swap стал redundant.
+- Fix: revert label swap обратно (вернул "Музыка" в "Music" GameObject, "Звуки" — в "Sound" GameObject).
+- **Главный fix:** `ProjectInstaller.cs` — `FromInstance(_soundControl)` → `FromComponentInNewPrefab(_soundControl)`. Root cause всех "Mute не мьютит" / "slider не меняет" был **не в SettingsPanel, а в DI**:
+  - `_soundControl` в `ProjectContext` — это **prefab reference**, не scene instance.
+  - `FromInstance` в Zenject **не инстанциирует** prefab. Биндинг = null.
+  - `[Inject] SoundControl _sounds` в GameSettings = null.
+  - `GameSettings.Start()` падал с NRE на `_sounds.MusicVolume` (Unity подавляет).
+  - `AddListener` не вызывался → slider/toggle click = nothing.
+  - `SoundControl.Awake()` не вызывался → mixer оставался в default 0 dB → **звуки играли на full volume** несмотря на mute/slider.
+- `FromComponentInNewPrefab` говорит Zenject instantiate prefab при первом resolve, parent под ProjectContext, singleton на сессию.
+
+### Round 48b (`98f2e79`) — catch up ProjectInstaller
+- **Критическая ошибка:** round 48 commit случайно **не** включил `ProjectInstaller.cs` (забыл `git add`). Юзер применил fix вручную, но не закоммитил. На origin остался `FromInstance`.
+- Fix: догнал origin моим commit'ом.
+
+### Round 49 (`e219791`) — fallback FindObjectOfType
+- Юзер прислал скриншот с pre-existing warning'ами (Translation, Adobe.Substance), но **без моих `[GameSettings]` логов** → значит `Start()` NRE подавляется, не виден.
+- Fix: `if (_sounds == null) FindObjectOfType<SoundControl>()` + LogError на каждое callback. Fallback позволяет panel работать даже при сломанном DI; LogError делает проблему видимой.
+- Оставлено в коде после cleanup (round 50) как safety net.
+
+### Round 50 (current commit) — cleanup Debug.Log
+- Убрал все Debug.Log из `GameSettings` и `SoundControl`. Оставил только LogError в Start для DI failure detection и silent return в callbacks.
+- Сборка подтверждена: логи `Start OK. Music=1.00 SFX=0.75 Mute=False`, `ChangeMusicVolume 0.99` → `MusicVolume -> -0.1 dB` — цепочка работает end-to-end.
+- Юзер дополнительно починил AudioSource routing в Editor (output = Sound для music sources), сохранил.
+
+### Lesson (общий)
+- **AudioMixer exposed names = single source of truth.** Когда юзер rename'ит в Editor, не fix'ь частично — проверяй **все** entries в `m_ExposedParameters` за один commit. Round 46 был следствием того, что я в round 44 fix'нул только 2 из 3, потому что думал что MasterVolume не был сломан.
+- **Zenject `FromInstance(prefab)` = silent null.** Не инстанциирует. Используй `FromComponentInNewPrefab` для prefab-based bindings. **Lesson generalizable:** если `[Inject]` field всегда null — DI binding сломан, не код.
+- **NRE в `Start()` подавляется Unity.** Не полагайся на stack trace в Console. Используй LogError + early return + fallback, чтобы failure был видим.
+- **TMP labels могут перепутаны с GameObject names.** Visual hierarchy (GameObject name) ≠ visual labels (TMP text) ≠ slider behaviour. Проверяй все три.
+- **Когда юзер сам правит что-то в Editor — git status может быть чистым** (изменения только в Editor, не в YAML). Если юзер говорит "починил routing", но git пустой — спроси, сохранил ли он Scene.
 - **Юзер — лучший источник правды о "что работало утром"**. Когда юзер говорит "проблем не было" — верь ему, ищи в более ранних commit'ах.
 - **Round 27 bags fix включал cherry-pick из старой ветки**. Это рискованно: старый commit может иметь side effects, которых не было видно в контексте старой ветки.
 
