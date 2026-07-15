@@ -15,12 +15,12 @@ public class GameSettings : MonoBehaviour
         // Lock framerate to 60. Disable VSync so targetFrameRate is honored.
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
-        // (round 49) Fallback: if Zenject's ProjectInstaller binding did not
-        // inject a SoundControl (e.g. the FromComponentInNewPrefab change
-        // did not take effect, or the prefab field is missing), fall back
-        // to FindObjectOfType so the panel still works instead of silently
-        // doing nothing. LogError is loud so the missing injection is
-        // visible in the Console even when other warnings are present.
+        // (round 49, kept after round 50 cleanup) Fallback to
+        // FindObjectOfType if Zenject's ProjectInstaller binding did not
+        // inject a SoundControl. Costs nothing at runtime, but shields
+        // the panel from a future DI regression where the injection
+        // silently fails and the user is left with a settings panel
+        // that does nothing.
         if (_sounds == null)
         {
             Debug.LogError("[GameSettings] Zenject did not inject SoundControl. Falling back to FindObjectOfType.");
@@ -45,24 +45,20 @@ public class GameSettings : MonoBehaviour
         // above (isOn = ...) fired onValueChanged before AddListener was
         // attached, leaving the mixer in the previous state.
         Mute(_muteToggle.isOn);
-        Debug.Log($"[GameSettings] Start OK. Music={_sounds.MusicVolume:F2} SFX={_sounds.SoundVolume:F2} Mute={_sounds.IsMute}");
     }
     private void ChangeMusicVolume(float value)
     {
-        if (_sounds == null) { Debug.LogError("[GameSettings] _sounds NULL in ChangeMusicVolume"); return; }
-        Debug.Log($"[GameSettings] ChangeMusicVolume {value:F2}");
+        if (_sounds == null) { return; }
         _sounds.ChangeMusicVolume(value);
     }
     private void ChangeSoundVolume(float value)
     {
-        if (_sounds == null) { Debug.LogError("[GameSettings] _sounds NULL in ChangeSoundVolume"); return; }
-        Debug.Log($"[GameSettings] ChangeSoundVolume {value:F2}");
+        if (_sounds == null) { return; }
         _sounds.ChangeSoundVolume(value);
     }
     private void Mute(bool isMute)
     {
-        if (_sounds == null) { Debug.LogError("[GameSettings] _sounds NULL in Mute"); return; }
-        Debug.Log($"[GameSettings] Mute {isMute}");
+        if (_sounds == null) { return; }
         _sounds.Mute(isMute);
     }
 }
