@@ -25,17 +25,25 @@ public class GameSettings : MonoBehaviour
         _musicVoloumeSlider.onValueChanged.AddListener(ChangeMusicVolume);
         _soundVoloumeSlider.onValueChanged.AddListener(ChangeSoundVolume);
         _muteToggle.onValueChanged.AddListener(Mute);
+        // (round 47) Force a one-shot sync in case the toggle setter
+        // above (isOn = ...) fired onValueChanged before AddListener was
+        // attached, leaving the mixer in the previous state.
+        Mute(_muteToggle.isOn);
+        Debug.Log($"[GameSettings] Start OK. Music={_sounds.MusicVolume:F2} SFX={_sounds.SoundVolume:F2} Mute={_sounds.IsMute} mixer={(_sounds != null ? "ok" : "NULL")}");
     }
     private void ChangeMusicVolume(float value)
     {
+        Debug.Log($"[GameSettings] ChangeMusicVolume {value:F2}");
         _sounds.ChangeMusicVolume(value);
     }
     private void ChangeSoundVolume(float value)
     {
+        Debug.Log($"[GameSettings] ChangeSoundVolume {value:F2}");
         _sounds.ChangeSoundVolume(value);
     }
     private void Mute(bool isMute)
     {
+        Debug.Log($"[GameSettings] Mute {isMute}");
         _sounds.Mute(isMute);
     }
 }

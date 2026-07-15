@@ -44,6 +44,7 @@ public class SoundControl : MonoBehaviour
         // effectively-silent floor of -80 dB.
         float safe = Mathf.Max(value, 0.0001f);
         mixer.audioMixer.SetFloat("MusicVolume", Mathf.Log10(safe) * 20f);
+        Debug.Log($"[SoundControl] MusicVolume -> {Mathf.Log10(safe) * 20f:F1} dB (slider={value:F2})");
         SaveSettings();
     }
     public void ChangeSoundVolume(float value)
@@ -53,6 +54,7 @@ public class SoundControl : MonoBehaviour
         // before Log10 so the 0-slider position is silence, not -Infinity.
         float safe = Mathf.Max(value, 0.0001f);
         mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(safe) * 20f);
+        Debug.Log($"[SoundControl] SoundsVolume -> {Mathf.Log10(safe) * 20f:F1} dB (slider={value:F2})");
         SaveSettings();
     }
     public void Mute(bool isMute)
@@ -66,6 +68,7 @@ public class SoundControl : MonoBehaviour
         {
             mixer.audioMixer.SetFloat("MasterVolume", 0);
         }
+        Debug.Log($"[SoundControl] Mute -> {isMute} (MasterVolume={(isMute ? -80 : 0)} dB)");
         SaveSettings();
     }
 
