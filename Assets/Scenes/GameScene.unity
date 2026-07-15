@@ -41084,7 +41084,7 @@ PrefabInstance:
       objectReference: {fileID: 2111595118}
     - target: {fileID: 7636581297020917832, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _startMoney
-      value: 50000
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7636581297020917832, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: _moneyToInventoryText
