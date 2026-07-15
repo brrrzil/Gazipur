@@ -5241,6 +5241,10 @@ PrefabInstance:
       propertyPath: m_text
       value: "\u0413\u043E\u043B\u043E\u0441\u0430, \u0437\u0432\u0443\u043A\u0438:"
       objectReference: {fileID: 0}
+    - target: {fileID: 3692840735825292879, guid: 4e3a2e987f9380f4f9064ae33d497c96, type: 3}
+      propertyPath: m_fontSize
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 4033144659521655700, guid: 4e3a2e987f9380f4f9064ae33d497c96, type: 3}
       propertyPath: m_AnchorMax.x
       value: 1
@@ -5356,6 +5360,10 @@ PrefabInstance:
     - target: {fileID: 8382124017479415514, guid: 4e3a2e987f9380f4f9064ae33d497c96, type: 3}
       propertyPath: m_AnchorMin.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9157904688206218318, guid: 4e3a2e987f9380f4f9064ae33d497c96, type: 3}
+      propertyPath: m_fontSize
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
