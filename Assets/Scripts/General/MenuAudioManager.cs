@@ -13,23 +13,19 @@ public class MenuAudioManager : MonoBehaviour
 
     private void Start()
     {
-        // ��������� ����������� ���������
         float savedMusic = PlayerPrefs.GetFloat("MenuMusicVolume", 0.75f);
         float savedSounds = PlayerPrefs.GetFloat("MenuSoundsVolume", 0.75f);
         int musicMuted = PlayerPrefs.GetInt("MenuMusicMuted", 0);
         int soundsMuted = PlayerPrefs.GetInt("MenuSoundsMuted", 0);
 
-        // ������������� UI
         musicSlider.value = savedMusic;
         soundsSlider.value = savedSounds;
         musicToggle.isOn = musicMuted == 0;
         soundsToggle.isOn = soundsMuted == 0;
 
-        // ��������� ���������
         ApplyMusicVolume(savedMusic, musicMuted == 1);
         ApplySoundsVolume(savedSounds, soundsMuted == 1);
 
-        // ������������� �� �������
         musicSlider.onValueChanged.AddListener(OnMusicSlider);
         soundsSlider.onValueChanged.AddListener(OnSoundsSlider);
         musicToggle.onValueChanged.AddListener(OnMusicToggle);
@@ -63,10 +59,6 @@ public class MenuAudioManager : MonoBehaviour
     private void ApplyMusicVolume(float volume, bool muted)
     {
         float finalVolume = muted ? 0.0001f : volume;
-        // BUGFIX: Resources/AudioMixer.mixer only exposes MasterVolume /
-        // SoundsVolume / MusicVolume. The pre-round-6 code wrote to
-        // "Music" / "Sound" which threw 'Exposed name does not exist' on
-        // every slider tick. Match the in-game SoundControl param names.
         audioMixer.SetFloat("MusicVolume", Mathf.Log10(finalVolume) * 20);
     }
 
