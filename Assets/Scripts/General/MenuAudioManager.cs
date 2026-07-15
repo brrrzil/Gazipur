@@ -20,8 +20,10 @@ public class MenuAudioManager : MonoBehaviour
 
         musicSlider.value = savedMusic;
         soundsSlider.value = savedSounds;
-        musicToggle.isOn = musicMuted == 0;
-        soundsToggle.isOn = soundsMuted == 0;
+        // (round 45) isOn = true means 'Mute is on' = sound is muted.
+        // So isOn maps to the muted flag directly (not its inverse).
+        musicToggle.isOn = musicMuted == 1;
+        soundsToggle.isOn = soundsMuted == 1;
 
         ApplyMusicVolume(savedMusic, musicMuted == 1);
         ApplySoundsVolume(savedSounds, soundsMuted == 1);
@@ -34,25 +36,26 @@ public class MenuAudioManager : MonoBehaviour
 
     private void OnMusicSlider(float value)
     {
-        ApplyMusicVolume(value, !musicToggle.isOn);
+        // (round 45) muted = isOn (Mute toggle semantics: isOn = muted).
+        ApplyMusicVolume(value, musicToggle.isOn);
         SaveSettings();
     }
 
     private void OnSoundsSlider(float value)
     {
-        ApplySoundsVolume(value, !soundsToggle.isOn);
+        ApplySoundsVolume(value, soundsToggle.isOn);
         SaveSettings();
     }
 
     private void OnMusicToggle(bool isOn)
     {
-        ApplyMusicVolume(musicSlider.value, !isOn);
+        ApplyMusicVolume(musicSlider.value, isOn);
         SaveSettings();
     }
 
     private void OnSoundsToggle(bool isOn)
     {
-        ApplySoundsVolume(soundsSlider.value, !isOn);
+        ApplySoundsVolume(soundsSlider.value, isOn);
         SaveSettings();
     }
 
@@ -86,10 +89,12 @@ public class MenuAudioManager : MonoBehaviour
         // and "MusicMuted" (no "Menu" prefix), which meant the toggle
         // state was lost across sessions: Start() never saw what the
         // user toggled because it was reading from a different key.
+        // (round 45) isOn = true means muted, so store 1 (muted) when
+        // isOn is true, 0 (unmuted) when isOn is false.
         PlayerPrefs.SetFloat("MenuMusicVolume", musicSlider.value);
         PlayerPrefs.SetFloat("MenuSoundsVolume", soundsSlider.value);
-        PlayerPrefs.SetInt("MenuMusicMuted", musicToggle.isOn ? 0 : 1);
-        PlayerPrefs.SetInt("MenuSoundsMuted", soundsToggle.isOn ? 0 : 1);
+        PlayerPrefs.SetInt("MenuMusicMuted", musicToggle.isOn ? 1 : 0);
+        PlayerPrefs.SetInt("MenuSoundsMuted", soundsToggle.isOn ? 1 : 0);
         PlayerPrefs.Save();
     }
 }
