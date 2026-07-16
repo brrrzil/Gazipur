@@ -68,7 +68,14 @@ public class Inventory : MonoBehaviour
         }
 
         float weight = GetWeight();
-        float cap = Capacity - weight;
+        // (round 53) Round cap to 1 decimal too. GetWeight already rounds,
+        // but Capacity - weight subtracts two floats and can land on
+        // 0.0999999... even when the display reads '0.1 free'. Without
+        // this round, the check below (item.Weight * count > cap) trips
+        // for a single 0.1-weight item and rejects it, even though the
+        // user can clearly see '0.1/0.2' on screen and expects the
+        // pickup to fit. Same Mathf.Round pattern as GetWeight (round 21).
+        float cap = Mathf.Round((Capacity - weight) * 10f) / 10f;
         int res = 0;
         if (item.Weight * count > cap)
         {

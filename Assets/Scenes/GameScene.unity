@@ -76946,30 +76946,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1185104279}
     m_Modifications:
-    - target: {fileID: -3496270296852848093, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
-      propertyPath: maxDelay
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: -3496270296852848093, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
-      propertyPath: minDelay
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: -3496270296852848093, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -1275981482917686128, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3888867712973778188, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3888867712973778188, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
-      propertyPath: m_Resource
-      value: 
-      objectReference: {fileID: 8300000, guid: bf9e610d163e5b941ad91f6bfcd60f1c, type: 3}
     - target: {fileID: 7014812018505609486, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
       propertyPath: m_Name
       value: DeadCow
@@ -77018,7 +76994,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - target: {fileID: 3888867712973778188, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
+    - target: {fileID: -3496270296852848093, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
+    - target: {fileID: -1275981482917686128, guid: 2180878b7f67b9844bda7f2174267d8e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
