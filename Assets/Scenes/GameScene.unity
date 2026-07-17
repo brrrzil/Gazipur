@@ -13809,6 +13809,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355887126}
   m_Mesh: {fileID: -5364287261382099456, guid: 7d601acd1d30b1c4bbce664437ebbf81, type: 3}
+--- !u!1 &358055876 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1393881290536935365, guid: 672db997276968a48822ef49c311d4de, type: 3}
+  m_PrefabInstance: {fileID: 9168674271409095798}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &361140533
 GameObject:
   m_ObjectHideFlags: 0
@@ -56228,7 +56233,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
   m_PrefabInstance: {fileID: 9168674271409095798}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 358055876}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 665adb1eed1f25245b2c19afcff7361d, type: 3}
@@ -56239,6 +56244,23 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2291991455640945774, guid: 672db997276968a48822ef49c311d4de, type: 3}
   m_PrefabInstance: {fileID: 9168674271409095798}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1496796230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358055876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5049a4c50ffb51f448a25814b77bc8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Gazipur.Player.AimController
+  _virtualCamera: {fileID: 1595079869}
+  _defaultFoV: 60
+  _zoomFoV: 35
+  _zoomLerpSpeed: 0.1
+  _aimSlowdown: 0.25
 --- !u!1 &1498417766 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: dfcf1c416b1d6324e853346cde813216, type: 3}
@@ -79140,6 +79162,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1683994749}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1393881290536935365, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1496796230}
     - targetCorrespondingSourceObject: {fileID: 4668181685234610224, guid: 672db997276968a48822ef49c311d4de, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9168674271409095800}
