@@ -7,6 +7,7 @@ public class GameSettings : MonoBehaviour
 {
     [SerializeField] private Slider _musicVoloumeSlider;
     [SerializeField] private Slider _soundVoloumeSlider;
+    [SerializeField] private Slider _voicesVolumeSlider;
     [SerializeField] private Slider _mouseSensSlider;
     [SerializeField] private Toggle _muteToggle;
     [Inject] SoundControl _sounds;
@@ -37,6 +38,24 @@ public class GameSettings : MonoBehaviour
         // remapped to 1.
         _musicVoloumeSlider.value = _sounds.MusicVolume;
         _soundVoloumeSlider.value = _sounds.SoundVolume;
+        // (round 60) Voices slider. The actual GameObject the
+        // SerializeField points to is in Canvas.prefab under a
+        // GameObject named 'Voices' (the user added this in
+        // commit 684c22d). The binding is scene-level: you drag
+        // the slider from the Canvas hierarchy into this
+        // SerializeField slot in the Inspector. The serialized
+        // ref therefore lives on the SettingsPanel scene
+        // instance, not inside SettingsPanel.prefab.
+        // _voicesVolumeSlider is allowed to be null — if the
+        // user has not yet wired it up, the code below silently
+        // skips the Voices channel rather than NRE'ing the
+        // whole settings panel (lesson from round 49: a partial
+        // settings panel is more useful than no settings panel).
+        if (_voicesVolumeSlider != null)
+        {
+            _voicesVolumeSlider.value = _sounds.VoicesVolume;
+            _voicesVolumeSlider.onValueChanged.AddListener(ChangeVoicesVolume);
+        }
         _muteToggle.isOn = _sounds.IsMute;
         _musicVoloumeSlider.onValueChanged.AddListener(ChangeMusicVolume);
         _soundVoloumeSlider.onValueChanged.AddListener(ChangeSoundVolume);
@@ -55,6 +74,11 @@ public class GameSettings : MonoBehaviour
     {
         if (_sounds == null) { return; }
         _sounds.ChangeSoundVolume(value);
+    }
+    private void ChangeVoicesVolume(float value)
+    {
+        if (_sounds == null) { return; }
+        _sounds.ChangeVoicesVolume(value);
     }
     private void Mute(bool isMute)
     {

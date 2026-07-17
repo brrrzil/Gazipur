@@ -7,10 +7,12 @@ public class SoundControl : MonoBehaviour
     [SerializeField] private AudioMixerGroup mixer;
     public float MusicVolume { get; private set; } = 0.75f;
     public float SoundVolume { get; private set; } = 0.75f;
+    public float VoicesVolume { get; private set; } = 0.75f;
     public bool IsMute { get; private set; }
 
     private const string MusicKey = "MusicVolume";
     private const string SoundKey = "SoundsVolume";
+    private const string VoicesKey = "VoicesVolume";
     private const string MuteKey = "MasterMuted";
 
     private void Awake()
@@ -29,6 +31,15 @@ public class SoundControl : MonoBehaviour
             ChangeSoundVolume(PlayerPrefs.GetFloat(SoundKey));
         else
             ChangeSoundVolume(0.75f);
+        // (round 60) Same pattern as Music/Sound for the new Voices
+        // channel added in commit 684c22d. The AudioMixer now has a
+        // fourth exposed parameter 'VoicesVolume' bound to the new
+        // Voices group. User-facing default matches the rest (0.75)
+        // so the new slider does not look like an outlier.
+        if (PlayerPrefs.HasKey(VoicesKey))
+            ChangeVoicesVolume(PlayerPrefs.GetFloat(VoicesKey));
+        else
+            ChangeVoicesVolume(0.75f);
         if (PlayerPrefs.HasKey(MuteKey))
             Mute(PlayerPrefs.GetInt(MuteKey) == 1);
     }
@@ -55,6 +66,19 @@ public class SoundControl : MonoBehaviour
         mixer.audioMixer.SetFloat("SoundsVolume", Mathf.Log10(safe) * 20f);
         SaveSettings();
     }
+    public void ChangeVoicesVolume(float value)
+    {
+        VoicesVolume = value;
+        // Same pattern as ChangeSoundVolume / ChangeMusicVolume. The
+        // exposed parameter 'VoicesVolume' was added to AudioMixer.mixer
+        // in this round and points to the new Voices group that the user
+        // created in commit 684c22d (where they also moved the relevant
+        // AudioSources onto it). Clamp before Log10 so a slider value of
+        // 0 does not blow up to -Infinity.
+        float safe = Mathf.Max(value, 0.0001f);
+        mixer.audioMixer.SetFloat("VoicesVolume", Mathf.Log10(safe) * 20f);
+        SaveSettings();
+    }
     public void Mute(bool isMute)
     {
         IsMute = isMute;
@@ -73,6 +97,7 @@ public class SoundControl : MonoBehaviour
     {
         PlayerPrefs.SetFloat(MusicKey, MusicVolume);
         PlayerPrefs.SetFloat(SoundKey, SoundVolume);
+        PlayerPrefs.SetFloat(VoicesKey, VoicesVolume);
         PlayerPrefs.SetInt(MuteKey, IsMute ? 1 : 0);
         PlayerPrefs.Save();
     }
