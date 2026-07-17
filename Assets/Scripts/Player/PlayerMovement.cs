@@ -47,6 +47,11 @@ public class PlayerMovement : MonoBehaviour
     private bool _wantsToCrouch = false;
     private float _currentCameraHeight;
     private bool _hasJumped = false;
+    // (round 57) Multiplier pushed in by AimController every frame
+    // while right mouse is held. 1f = no slowdown, 0.25f = quarter
+    // speed. Default 1f so a scene without an AimController behaves
+    // exactly as before.
+    private float _aimSlowdown = 1f;
 
     // Fall damage tracking (round 18).
     private bool _wasGrounded;
@@ -291,6 +296,12 @@ public class PlayerMovement : MonoBehaviour
         // Camera look is NOT slowed — the player can still rotate freely.
         if (Time.time < _slowdownEndTime && _fallSlowdownFactor < 1f)
             _currentSpeed *= _fallSlowdownFactor;
+        // (round 57) Aim slowdown. AimController.SetAimSlowdown pushes
+        // a multiplier into _aimSlowdown every frame while right
+        // mouse is held. 1f = no slowdown, 0.25f = quarter speed.
+        // Camera look is NOT slowed — only translation.
+        if (_aimSlowdown < 1f)
+            _currentSpeed *= _aimSlowdown;
 
         Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
         moveDirection.y = 0;
@@ -400,5 +411,15 @@ public class PlayerMovement : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
+    }
+
+    // (round 57) AimController calls this every frame while right
+    // mouse is held, with the configured slowdown value. When the
+    // button is released AimController calls with 1f to restore
+    // normal speed. Value is clamped so a misconfigured 1.5f or
+    // negative value cannot make the player faster than normal.
+    public void SetAimSlowdown(float value)
+    {
+        _aimSlowdown = Mathf.Clamp(value, 0f, 1f);
     }
 }
