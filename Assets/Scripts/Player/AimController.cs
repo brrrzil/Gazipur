@@ -54,12 +54,12 @@ namespace Gazipur.Player
         private PlayerMovement _movement;
         private InputAction _aimAction;
         private bool _isAiming;
-        // (round 58) Default FoV and fog density are captured from
-        // the scene at first OnEnable (see CaptureDefaults) so the
-        // Inspector does not need to duplicate values that already
-        // live in RenderSettings and the CinemachineCamera asset.
+        // (round 58) Default FoV is captured from the camera at first
+        // OnEnable (see CaptureDefaults) so the Inspector does not
+        // need to duplicate the value already stored in
+        // CinemachineCamera.m_Lens.FieldOfView. Default fog density
+        // is an Inspector field above (sentinel -1f = auto-capture).
         private float _defaultFoV;
-        private float _defaultFogDensity;
         // Sentinel bools to avoid overwriting the captured values
         // every frame. Float defaults are 60 / 0.01 which are valid,
         // so we need a separate 'have we captured yet' flag.
