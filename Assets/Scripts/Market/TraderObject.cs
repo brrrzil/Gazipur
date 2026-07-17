@@ -26,6 +26,16 @@ public class TraderObject : InteractObject
                 // directly on cutter pickup. The dialog still plays for
                 // story purposes (it's isOneTime, so it won't repeat).
                 //
+                // (round 62) Dialog removed per user request — when
+                // closing the inventory after buying/picking up the
+                // cutter, a text panel with the trader's voice line
+                // popped up. User asked for it gone. The medicine unlock
+                // and HealMother quest flag below are gameplay and
+                // stay — only the dialog/voice is removed. The
+                // DialogType.traderAfterBuy enum value is left in
+                // EnumData so anything that imports the enum type
+                // still compiles.
+                //
                 // Idempotency guard: if the player picks up a second cutter
                 // (drops the first and re-picks), don't add a duplicate
                 // BuyItemObject in the trade panel. We key off the quest
@@ -35,7 +45,6 @@ public class TraderObject : InteractObject
                     _market.AddItem(_medicine, true);
                     _quest.HealMother(false);
                 }
-                _dialog.StartDialog(EnumData.DialogType.traderAfterBuy);
             }
         };
     }
