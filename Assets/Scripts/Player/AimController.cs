@@ -42,24 +42,23 @@ namespace Gazipur.Player
         [Range(0f, 1f)]
         [SerializeField] private float _aimSlowdown = 0.25f;
 
-        [Header("Fog (round 58)")]
-        [Tooltip("If true, also drive RenderSettings.fogDensity toward _zoomFogDensity while aiming and back to the scene's original value on release. Fog is a per-fragment uniform in URP, so this is essentially free at runtime.")]
+        [Header("Fog (round 58/59)")]
+        [Tooltip("If true, also drive RenderSettings.fogDensity while aiming and back to the captured scene value on release. Fog is a per-fragment uniform in URP, so this is essentially free at runtime.")]
         [SerializeField] private bool _affectFog = true;
-        [Tooltip("RenderSettings.fogDensity while right mouse button is held. 0 = no fog at zoom (close-up clarity through the scope).")]
-        [Range(0f, 1f)]
-        [SerializeField] private float _zoomFogDensity = 0f;
-        [Tooltip("RenderSettings.fogDensity when not aiming. -1 = capture from RenderSettings on Start. If your scene has fog disabled, leave this -1 and set _affectFog = false.")]
-        [SerializeField] private float _defaultFogDensity = -1f;
+        [Tooltip("Multiplier applied to the captured default fog density while right mouse is held. 0.5 = half density (fog thins out, recommended default), 0 = no fog, 1 = unchanged, >1 = thicker. 0.5 matches the source project intent: aim-zoom thins the fog without erasing it.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float _zoomFogMultiplier = 0.5f;
 
         private PlayerMovement _movement;
         private InputAction _aimAction;
         private bool _isAiming;
-        // (round 58) Default FoV is captured from the camera at first
-        // OnEnable (see CaptureDefaults) so the Inspector does not
-        // need to duplicate the value already stored in
-        // CinemachineCamera.m_Lens.FieldOfView. Default fog density
-        // is an Inspector field above (sentinel -1f = auto-capture).
+        // (round 58) Default FoV and default fog density are both
+        // captured from the scene at first OnEnable (see
+        // CaptureDefaults) so the Inspector does not need to
+        // duplicate values that already live in CinemachineCamera
+        // and RenderSettings.
         private float _defaultFoV;
+        private float _defaultFogDensity;
         // Sentinel bools to avoid overwriting the captured values
         // every frame. Float defaults are 60 / 0.01 which are valid,
         // so we need a separate 'have we captured yet' flag.
@@ -161,13 +160,14 @@ namespace Gazipur.Player
                 _defaultFoV = _virtualCamera.Lens.FieldOfView;
                 _defaultFoVCaptured = true;
             }
-            // Fog: only capture if the user did not set a value in the
-            // Inspector. -1 is the sentinel for 'not set, please read
-            // from RenderSettings'. If the scene has fog disabled,
-            // RenderSettings.fogDensity is still a valid number, we
-            // just don't push it back later because RenderSettings.fog
-            // is false and the renderer ignores it anyway.
-            if (!_defaultFogCaptured && _defaultFogDensity < 0f && _affectFog)
+            // Fog: capture once, regardless of fog state. If the
+            // scene has fog disabled, RenderSettings.fogDensity is
+            // still a valid number we can write back; the URP
+            // fragment shader just ignores it because the global
+            // 'fog' keyword is off. The guard in Update() and
+            // OnDisable() checks RenderSettings.fog before pushing
+            // the value, so this is safe.
+            if (!_defaultFogCaptured && _affectFog)
             {
                 _defaultFogDensity = RenderSettings.fogDensity;
                 _defaultFogCaptured = true;
@@ -193,9 +193,18 @@ namespace Gazipur.Player
             // scene that intentionally has it off — if the user
             // wants aim-zoom fog in such a scene, they can tick
             // 'Fog' in Lighting > Scene tab and re-enable _affectFog.
+            //
+            // (round 59) target density is now a multiplier of the
+            // captured default, not an absolute 0. 0.5 means
+            // 'fog thins out by half while aiming' — that matches
+            // the visual intent (the scene still has atmospheric
+            // depth, you just see further through the scope) without
+            // the harsh 'fog vanishes completely' feel of 0.
             if (_affectFog && _defaultFogCaptured && RenderSettings.fog)
             {
-                float targetDensity = _isAiming ? _zoomFogDensity : _defaultFogDensity;
+                float targetDensity = _isAiming
+                    ? _defaultFogDensity * _zoomFogMultiplier
+                    : _defaultFogDensity;
                 RenderSettings.fogDensity = Mathf.Lerp(
                     RenderSettings.fogDensity, targetDensity, _zoomLerpSpeed);
             }
