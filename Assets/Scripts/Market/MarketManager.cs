@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
-using static EnumData;
 
 public class MarketManager : MonoBehaviour
 {
