@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da1f6577857893f46a6486f2c31495fc, type: 3}
   m_Name: MatherMedecine
   m_EditorClassIdentifier: Assembly-CSharp::DialogStructure
-  <Question>k__BackingField: " (\u043A\u0430\u0448\u043B\u044F\u0435\u0442)"
+  <Question>k__BackingField: ...
   <QuestionVoice>k__BackingField: {fileID: 8300000, guid: fa7e0cbf8a0bf9342b7af1941e90e0a7, type: 3}
   <Answer>k__BackingField:
   - answer: "\u041C\u0430\u043C\u0430, \u0442\u0435\u0431\u0435 \u0441\u0440\u043E\u0447\u043D\u043E
