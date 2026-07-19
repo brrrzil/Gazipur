@@ -12,11 +12,6 @@ public class MarketManager : MonoBehaviour
     [Inject] private GameModeManager _modeManager;
     [Inject] private Inventory _inventory;
     [Inject] private DiContainer _container;
-    // (round 62b) DialogManager is now injected here so
-    // StartTrade(false) can fire the traderAfterBuy dialog on
-    // trade-panel close, not on the earlier AddItem call. See the
-    // round 62b note in TraderObject.cs for the full reasoning.
-    [Inject] private DialogManager _dialog;
     [field: SerializeField] public TradePanel TradePanel;
 
     // BUGFIX (round 27): bags are now SESSION-ONLY. Previously we persisted
@@ -72,19 +67,6 @@ public class MarketManager : MonoBehaviour
     {
         TradePanel.gameObject.SetActive(isStart);
         _inventory.ShowPanel(isStart);
-        // (round 62b) On trade-panel close, fire the trader
-        // post-purchase line. The previous wiring fired the
-        // same dialog from TraderObject on AddItem, which the
-        // player experienced as 'right after I close the
-        // inventory'. They asked for it to be tied to the
-        // trade-panel close instead, so the line plays once
-        // when they walk away from the trader. DialogManager
-        // is isOneTime so it will not re-fire on subsequent
-        // closes even if the player re-opens the panel.
-        if (!isStart)
-        {
-            _dialog.StartDialog(DialogType.traderAfterBuy);
-        }
     }
     public void AddItem(ItemData item, bool isSingle)
     {

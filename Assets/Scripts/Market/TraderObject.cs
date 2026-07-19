@@ -26,18 +26,6 @@ public class TraderObject : InteractObject
                 // directly on cutter pickup. The dialog still plays for
                 // story purposes (it's isOneTime, so it won't repeat).
                 //
-                // (round 62b) Dialog trigger moved out of this
-                // callback. It used to fire on AddItem — i.e. the
-                // instant the cutter was added to the inventory, which
-                // the player perceived as 'right after I close the
-                // inventory'. Per user feedback in this round, the
-                // dialog belongs on the trade-panel-close event in
-                // MarketManager.StartTrade(false), so it plays once
-                // when the player walks away from the trader, not
-                // while the inventory panel is still dismissing.
-                // The StartDialog call itself now lives in
-                // MarketManager.
-                //
                 // Idempotency guard: if the player picks up a second cutter
                 // (drops the first and re-picks), don't add a duplicate
                 // BuyItemObject in the trade panel. We key off the quest
@@ -47,6 +35,7 @@ public class TraderObject : InteractObject
                     _market.AddItem(_medicine, true);
                     _quest.HealMother(false);
                 }
+                _dialog.StartDialog(EnumData.DialogType.traderAfterBuy);
             }
         };
     }
