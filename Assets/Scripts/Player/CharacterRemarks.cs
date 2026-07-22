@@ -11,12 +11,30 @@ public class CharacterRemarks : MonoBehaviour
     [SerializeField] private CanvasGroup _cGroup;
     [SerializeField] private Text _remarkText;
     [SerializeField] private RemarkData[] _remarks;
+    [SerializeField] private AudioSource _remarkAudioSource; // Используем этот источник из-за бага с Рахулом
 
     private Tween _tween;
-    [Inject] Sounds _sounds;
-    private AudioSource _speaker => _sounds.DialogSource;
+    [Inject] private DataManager _data;
     private bool _isStarted;
     private RemarksType _currentType;
+
+    private AudioClip _lastPlayedClip;
+    private float _lastPlayTime;
+
+    private void Awake()
+    {
+        // Если не назначен в инспекторе, создаем автоматически
+        if (_remarkAudioSource == null)
+        {
+            _remarkAudioSource = gameObject.AddComponent<AudioSource>();
+            _remarkAudioSource.spatialBlend = 0f;
+            _remarkAudioSource.volume = 1f;
+            _remarkAudioSource.playOnAwake = false;
+            _remarkAudioSource.loop = false;
+            Debug.Log("CharacterRemarks: Created new AudioSource automatically");
+        }
+    }
+
     [System.Serializable]
     public class RemarkData
     {
@@ -31,8 +49,14 @@ public class CharacterRemarks : MonoBehaviour
         public bool isOneTime;
         [HideInInspector] public bool hasBeen;
     }
+
     public bool StartRemark(RemarksType remark)
     {
+        if (remark == RemarksType.rohulHelp && _data.gameMode == GameMode.dialog)
+        {
+            return false;
+        }
+
         var rem = System.Array.Find(_remarks, i => i.type == remark);
 
         if (rem == null) return false;
@@ -74,16 +98,22 @@ public class CharacterRemarks : MonoBehaviour
     {
         if (!clip) return;
 
-        // Cut off whatever is currently playing and start the new clip right
-        // away. The previous implementation used a DOTween sequence to wait for
-        // the current clip to finish, but that left a "queued" voice alive
-        // even after _speaker.Stop() was called externally (e.g. on game mode
-        // change to outdors) — so a leftover voice could fire several seconds
-        // after the player already left the context. Stopping and starting
-        // immediately avoids that without needing to track sequences.
-        if (_speaker.isPlaying)
-            _speaker.Stop();
-        _speaker.clip = clip;
-        _speaker.Play();
+        if (_lastPlayedClip == clip && Time.time - _lastPlayTime < 0.3f)
+            return;
+
+        if (_remarkAudioSource == null)
+        {
+            Debug.LogError("CharacterRemarks: _remarkAudioSource is null!");
+            return;
+        }
+
+        if (_remarkAudioSource.isPlaying)
+            _remarkAudioSource.Stop();
+
+        _remarkAudioSource.clip = clip;
+        _remarkAudioSource.Play();
+
+        _lastPlayedClip = clip;
+        _lastPlayTime = Time.time;
     }
 }

@@ -63,11 +63,14 @@ public class MarketManager : MonoBehaviour
         // Show only the cheapest un-bought bag, hide the rest.
         RefreshBagVisibility();
     }
+
     public void StartTrade(bool isStart)
     {
+        Debug.Log($"StartTrade called with isStart={isStart}");
         TradePanel.gameObject.SetActive(isStart);
         _inventory.ShowPanel(isStart);
     }
+
     public void AddItem(ItemData item, bool isSingle)
     {
         var obj = _container.InstantiatePrefabForComponent<BuyItemObject>(_buyItemPrefab, _buyItemsPanel);
@@ -93,6 +96,7 @@ public class MarketManager : MonoBehaviour
     // cheapest un-bought one). Earlier round 17 used `i <= _bagsPurchased`
     // which made 2 bags visible after the first purchase — the user could
     // skip ahead. Now it's strictly one-at-a-time.
+
     private void RefreshBagVisibility()
     {
         for (int i = 0; i < _bagBuyObjects.Count; i++)

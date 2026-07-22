@@ -30,6 +30,7 @@ public class Inventory : MonoBehaviour
     [Inject] GameManager _manager;
     [Inject] DialogManager _dialog;
     [Inject] Control _control;
+
     private void Start()
     {
         HaveTools = new HashSet<ToolsType>();
@@ -50,6 +51,7 @@ public class Inventory : MonoBehaviour
             AddItem(item, 1);
         }
     }
+
     public int AddItem(ItemData item, int count)
     {
         _picCounter++;
@@ -129,6 +131,7 @@ public class Inventory : MonoBehaviour
         }
         return totalUnpicked;
     }
+
     public float GetWeight()
     {
         float res = 0;
@@ -149,11 +152,13 @@ public class Inventory : MonoBehaviour
         // the displayed value and the actual pickup logic match.
         return Mathf.Round(res * 10f) / 10f;
     }
+
     public void ShowPanel(bool isShow)
     {
         _isOpen = isShow;
         _inventoryPanel.SetActive(isShow);
     }
+
     public void ChangeCellState(InventoryCell cell)
     {
         int num = System.Array.FindIndex(_cells,i=>i == cell);
@@ -163,6 +168,7 @@ public class Inventory : MonoBehaviour
         }
         ChangeCargoValue(Capacity);
     }
+
     private void UseFastSlot(int number) => UseItem(_cells[number - 1]);
 
     public void UseItem(InventoryCell cell)
@@ -176,10 +182,12 @@ public class Inventory : MonoBehaviour
                 cell.RemoveItem(1);
         }
     }
+
     public void ShowInfoPanel(InventoryCell cell)
     {
         ItemInfoPanel.SetItem(cell, _data.gameMode == GameMode.trade);
     }
+
     public bool CheckTool(ItemData item)
     {
         ToolItem ti = item.ItemPrefab as ToolItem;
@@ -196,6 +204,7 @@ public class Inventory : MonoBehaviour
         }
         return false;
     }
+
     public bool CheckFilterBlueprint(ItemData item)
     {
         FilterPart fp = item.ItemPrefab as FilterPart;
@@ -206,6 +215,7 @@ public class Inventory : MonoBehaviour
         }
         return false;
     }
+
     public void ChangeCargoValue(float value)
     {
         if (value < Capacity) return;
@@ -221,6 +231,7 @@ public class Inventory : MonoBehaviour
         _cargoPriceText.text = _cargoPrice.ToString();
        _inventoryCargoPriceText.text = _cargoPrice.ToString();
     }
+
     public InventoryCell CheckMedeicine()
     {
         foreach (var c in _cells)
@@ -232,6 +243,7 @@ public class Inventory : MonoBehaviour
         }
         return null;
     }
+
     public void OnEnable()
     {
         // BUGFIX (M6): the `return` was inside the loop body but outside the
@@ -239,6 +251,9 @@ public class Inventory : MonoBehaviour
         // `ShowInfoPanel(_cells[0])` was unreachable and the panel never
         // updated for the first non-empty cell. Restructure so we find the
         // first non-empty cell and bail, otherwise fall back to cell 0.
+
+        Debug.Log("Inventory.OnEnable() called");
+
         for (int i = 0; i < _cells.Length; i++)
         {
             if (_cells[i].Item)

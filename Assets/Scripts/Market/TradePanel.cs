@@ -1,6 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
+using static EnumData;
 
 public class TradePanel : MonoBehaviour
 {
@@ -16,19 +17,22 @@ public class TradePanel : MonoBehaviour
     [Inject] private DataManager _data;
     [Inject] private DialogManager _dialog;
     [Inject] private Sounds _sounds;
+    [Inject] private GameModeManager _gameModeManager;
+
     private void Start()
     {
         _slider.onValueChanged.AddListener(ChangeCount);
     }
+
     public void SetItem(InventoryCell cell)
     {
         gameObject.SetActive(true);
-        if (!cell.Item) 
+        if (!cell.Item)
         {
             _slider.gameObject.SetActive(false);
             return;
         }
-        _slider.gameObject.SetActive(cell.Count>1);
+        _slider.gameObject.SetActive(cell.Count > 1);
         _cell = cell;
         _count = cell.Count;
         _sellCount = _count;
@@ -36,6 +40,7 @@ public class TradePanel : MonoBehaviour
         _slider.maxValue = _count;
         SetUI();
     }
+
     private void ChangeCount(float value)
     {
         _sellCount = (int)value;
@@ -49,6 +54,7 @@ public class TradePanel : MonoBehaviour
         _sounds.UIPlay(EnumData.UISound.sell);
         SetItem(_cell);
     }
+
     private void SetUI()
     {
         _slider.value = _sellCount;
@@ -56,9 +62,14 @@ public class TradePanel : MonoBehaviour
         _sellCountText.text = _sellCount.ToString();
         _curCountText.text = (_count - _sellCount).ToString();
     }
+
     private void OnDisable()
     {
-        _dialog.Remarks.StartRemark(EnumData.RemarksType.rohulHelp);
+        // Показываем rohulHelp только при выходе ИЗ режима торговли
+        // (не при переходе в диалог и не при закрытии инвентаря)
+        if (!_gameModeManager.IsTransitioningToDialog && _gameModeManager.PreviousMode == GameMode.trade)
+        {
+            _dialog.Remarks.StartRemark(EnumData.RemarksType.rohulHelp);
+        }
     }
 }
-

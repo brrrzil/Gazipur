@@ -18,6 +18,9 @@ public class GameModeManager : MonoBehaviour
     public UnityEvent<bool> OnWin = new UnityEvent<bool>();
     public System.Action<GameMode> onChangeMode;
 
+    public bool IsTransitioningToDialog { get; private set; }
+    public GameMode PreviousMode { get; private set; }
+
     // Explicit list of modes where the player cannot move/look and the cursor
     // is shown. Use IsUIMode() to check, not the implicit `mode != outdors`
     // trick — the new `win` mode is UI too.
@@ -83,13 +86,22 @@ public class GameModeManager : MonoBehaviour
             // die panel to restart or quit.
         };
     }
+
     public void ChangeMode(GameMode mode)
     {
+        PreviousMode = _data.gameMode;
+        IsTransitioningToDialog = (mode == GameMode.dialog);
+
+        Debug.Log($"ChangeMode from {PreviousMode} to {mode}, IsTransitioningToDialog={IsTransitioningToDialog}");
+
         _mods[_data.gameMode]?.Invoke(false);
         _data.gameMode = mode;
         onChangeMode?.Invoke(mode);
         _mods[mode]?.Invoke(true);
+
+        IsTransitioningToDialog = false;
     }
+
     public void OutDors()
     {
         Time.timeScale = 1;
