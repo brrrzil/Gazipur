@@ -9,9 +9,10 @@ public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExit
     private Button _button;
     private Vector3 _rotate;
     private Tween _tween;
+
     public void OnPointerEnter(PointerEventData eventData)
     {
-        _tween?.Kill();
+        //_tween?.Kill();
         _button.transform.DORotate(Vector3.zero, 0.2f).SetEase(Ease.OutElastic);
     }
 

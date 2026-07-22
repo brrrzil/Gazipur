@@ -14,6 +14,7 @@ public class HoleInFance : InteractObject
     [Inject] HoldProgressBar _holdBar;
     [Inject] DialogManager _dialog;
     [Inject] Sounds _sounds;
+
     public override void Intearct(bool isDown)
     {
 
@@ -37,9 +38,10 @@ public class HoleInFance : InteractObject
             _dialog.Remarks.StartRemark(_remark);
         }
     }
+
     private void Open()
     {
-        _sounds.PlayerStop();
+        //_sounds.PlayerStop();
         _holdBar.CancelHold();
         _holdBar.OnHoldComplete -= Open;
         //_fance.enabled = false;

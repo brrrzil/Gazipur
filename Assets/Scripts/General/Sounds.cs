@@ -18,6 +18,7 @@ public class Sounds : MonoBehaviour
     [field: SerializeField] public AudioSource[] Background { get; private set; }
 
     private AudioSource _curBackground;
+
     [Inject]
     private void Init()
     {
@@ -37,6 +38,7 @@ public class Sounds : MonoBehaviour
         public PlayerSound sound;
         public AudioClip clip;
     }
+
     [System.Serializable]
     public struct UISoundData
     {
@@ -112,6 +114,7 @@ public class Sounds : MonoBehaviour
             _curBackground = source;
         });
     }
+
     public void PlayerPlay(PlayerSound sound, bool isLoop)
     {
         // (round 35) Null-guards: _playerSource or _playerSounds may be
@@ -125,12 +128,14 @@ public class Sounds : MonoBehaviour
         _playerSource.loop = isLoop;
         _playerSource.Play();
     }
+
     public void PlayerStop()
     {
         if (_playerSource == null) return;
         _playerSource.loop = false;
         _playerSource.Stop();
     }
+
     public void UIPlay(UISound sound)
     {
         // (round 35) Same null-guards as PlayerPlay.
@@ -140,6 +145,7 @@ public class Sounds : MonoBehaviour
         _uiSource.clip = found.clip;
         _uiSource.Play();
     }
+
     public void OpenMenu()
     {
         UIPlay(UISound.openPanel);
