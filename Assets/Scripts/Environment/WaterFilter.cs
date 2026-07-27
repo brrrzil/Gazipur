@@ -13,7 +13,6 @@ public class WaterFilter : InteractObject
 
     public override void Intearct(bool isDown)
     {
-        Debug.Log("filterComplete " + _blueprint.CheckComplete());
         if (!_blueprint.CheckComplete())
         {
                 _dialog.Remarks.StartRemark(EnumData.RemarksType.fewParts);

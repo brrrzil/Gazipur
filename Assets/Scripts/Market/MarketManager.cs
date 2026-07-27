@@ -66,7 +66,6 @@ public class MarketManager : MonoBehaviour
 
     public void StartTrade(bool isStart)
     {
-        Debug.Log($"StartTrade called with isStart={isStart}");
         TradePanel.gameObject.SetActive(isStart);
         _inventory.ShowPanel(isStart);
     }

@@ -31,7 +31,6 @@ public class CharacterRemarks : MonoBehaviour
             _remarkAudioSource.volume = 1f;
             _remarkAudioSource.playOnAwake = false;
             _remarkAudioSource.loop = false;
-            Debug.Log("CharacterRemarks: Created new AudioSource automatically");
         }
     }
 
