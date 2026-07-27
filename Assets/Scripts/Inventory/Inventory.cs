@@ -252,6 +252,7 @@ public class Inventory : MonoBehaviour
         // updated for the first non-empty cell. Restructure so we find the
         // first non-empty cell and bail, otherwise fall back to cell 0.
 
+        Debug.Log("Inventory.OnEnable() called");
 
         for (int i = 0; i < _cells.Length; i++)
         {
