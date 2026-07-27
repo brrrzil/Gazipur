@@ -18,9 +18,6 @@ public class GameModeManager : MonoBehaviour
     public UnityEvent<bool> OnWin = new UnityEvent<bool>();
     public System.Action<GameMode> onChangeMode;
 
-    public bool IsTransitioningToDialog { get; private set; }
-    public GameMode PreviousMode { get; private set; }
-
     // Explicit list of modes where the player cannot move/look and the cursor
     // is shown. Use IsUIMode() to check, not the implicit `mode != outdors`
     // trick — the new `win` mode is UI too.
@@ -43,6 +40,11 @@ public class GameModeManager : MonoBehaviour
     [Inject] DataManager _data;
     [Inject] DialogManager _dialog;
     [Inject] Control _control;
+    [Inject] Sounds _sounds; // ДОБАВЛЯЕМ
+
+    // Флаг для TradePanel
+    public bool IsTransitioningToDialog { get; private set; }
+    public GameMode PreviousMode { get; private set; }
 
     [Inject]
     private void InitMods()
@@ -68,6 +70,9 @@ public class GameModeManager : MonoBehaviour
                 // Open the pause menu.
                 ChangeMode(GameMode.menu);
                 Time.timeScale = 0;
+
+                // BUGFIX: переключаем музыку на трек меню
+                _sounds.SwitchToMenuBackground();
                 return;
             }
             if (_data.gameMode != GameMode.die)
@@ -81,6 +86,9 @@ public class GameModeManager : MonoBehaviour
                 OutDors();
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+
+                // BUGFIX: возвращаем игровую музыку при выходе из меню
+                _sounds.SwitchToGameBackground();
             }
             // If we're in `die`, do nothing — the player needs to use the
             // die panel to restart or quit.
@@ -92,14 +100,34 @@ public class GameModeManager : MonoBehaviour
         PreviousMode = _data.gameMode;
         IsTransitioningToDialog = (mode == GameMode.dialog);
 
-        Debug.Log($"ChangeMode from {PreviousMode} to {mode}, IsTransitioningToDialog={IsTransitioningToDialog}");
-
         _mods[_data.gameMode]?.Invoke(false);
         _data.gameMode = mode;
         onChangeMode?.Invoke(mode);
         _mods[mode]?.Invoke(true);
 
         IsTransitioningToDialog = false;
+
+        // BUGFIX: переключаем фоновую музыку в зависимости от режима
+        switch (mode)
+        {
+            case GameMode.menu:
+                _sounds.SwitchToMenuBackground();
+                break;
+            case GameMode.die:
+                _sounds.SwitchToDieBackground();
+                break;
+            case GameMode.win:
+                _sounds.SwitchToWinBackground();
+                break;
+            case GameMode.outdors:
+                // Возвращаем игровую музыку только если выходим не из меню
+                // (меню обрабатывается отдельно в OnEsc)
+                if (PreviousMode != GameMode.menu)
+                {
+                    _sounds.SwitchToGameBackground();
+                }
+                break;
+        }
     }
 
     public void OutDors()
@@ -107,5 +135,4 @@ public class GameModeManager : MonoBehaviour
         Time.timeScale = 1;
         ChangeMode(GameMode.outdors);
     }
-
 }

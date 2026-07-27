@@ -13,7 +13,7 @@ public class PlayerState : MonoBehaviour
     [SerializeField] private float _thristForHealing;
     [SerializeField] private float _damagePerSecond;
     [SerializeField] private float _healingPerSecond;
-    
+
     [SerializeField] private ProgressBar _healthBar;
     [SerializeField] private ProgressBar _hungerBar;
     [SerializeField] private ProgressBar _thirstBar;
@@ -24,13 +24,18 @@ public class PlayerState : MonoBehaviour
     [Inject] private DataManager _data;
     [Inject] private GameModeManager _modeManager;
     [Inject] private DialogManager _dialog;
+    [Inject] private Sounds _sounds; // ƒќЅј¬Ћя≈ћ
     private DataManager.HeroInfo _info;
     private int _hungerForRemark;
     private int _thirstForRemark;
+
+    private bool _isDead; // ƒќЅј¬Ћя≈ћ флаг, чтобы не запускать смерть несколько раз
+
     private void Start()
     {
         _data.SetDeffoultHeroState();
         _info = _data.Hero;
+        _isDead = false;
         StartCoroutine(Tic());
         SetState();
     }
@@ -45,11 +50,11 @@ public class PlayerState : MonoBehaviour
 
             _info.hunger -= _hungerPerSecond;
             _info.thirst -= _thirstPerSecond;
-            if(_info.hunger <= 0 || _info.thirst <= 0)
+            if (_info.hunger <= 0 || _info.thirst <= 0)
             {
                 _info.health -= _damagePerSecond;
             }
-            if(_info.hunger>=_hungerForHealing && _info.thirst >= _thirstPerSecond)
+            if (_info.hunger >= _hungerForHealing && _info.thirst >= _thristForHealing)
             {
                 _info.health += _healingPerSecond;
             }
@@ -58,7 +63,14 @@ public class PlayerState : MonoBehaviour
     }
     public void SetState()
     {
-        if (_info.health <= 0) _modeManager.ChangeMode(EnumData.GameMode.die);
+        // BUGFIX: если здоровье <= 0 и мы еще не в режиме смерти
+        if (_info.health <= 0 && !_isDead)
+        {
+            _isDead = true;
+            // ѕереключаем музыку на трек смерти
+            _sounds.SwitchToDieBackground();
+            _modeManager.ChangeMode(EnumData.GameMode.die);
+        }
 
         if (_info.hunger <= 30 && (int)(_info.hunger) % 5 == 0
             && (int)_info.hunger != _hungerForRemark)
@@ -67,7 +79,7 @@ public class PlayerState : MonoBehaviour
             _hungerForRemark = (int)_info.hunger;
         }
 
-        if (_info.thirst <= 30 && (int)(_info.thirst) % 5 == 0 
+        if (_info.thirst <= 30 && (int)(_info.thirst) % 5 == 0
             && (int)_info.thirst != _thirstForRemark)
         {
             _dialog.Remarks.StartRemark(EnumData.RemarksType.thirst);

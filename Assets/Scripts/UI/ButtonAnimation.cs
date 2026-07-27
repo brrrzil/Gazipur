@@ -27,6 +27,4 @@ public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExit
        _button = GetComponent<Button>();
        _rotate = transform.rotation.eulerAngles;
     }
-
-
 }

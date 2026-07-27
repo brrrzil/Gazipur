@@ -1,4 +1,3 @@
-
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -8,7 +7,7 @@ using static EnumData;
 
 public class Sounds : MonoBehaviour
 {
-    [field: SerializeField] public AudioSource DialogSource { get; private set;}
+    [field: SerializeField] public AudioSource DialogSource { get; private set; }
     [SerializeField] private AudioMixerGroup mixer;
 
     [SerializeField] private AudioSource _playerSource;
@@ -17,18 +16,19 @@ public class Sounds : MonoBehaviour
     [SerializeField] private UISoundData[] _uiSound;
     [field: SerializeField] public AudioSource[] Background { get; private set; }
 
+    // Фоновые треки для разных состояний (можно назначить в инспекторе)
+    [Header("Background Tracks")]
+    [SerializeField] private AudioSource _menuBackground;
+    [SerializeField] private AudioSource _gameBackground;
+    [SerializeField] private AudioSource _dieBackground;
+    [SerializeField] private AudioSource _winBackground;
+
     private AudioSource _curBackground;
+    private AudioSource _targetBackground;
 
     [Inject]
     private void Init()
     {
-        // BUGFIX: DontDestroyOnLoad only works on root GameObjects. The
-        // Sounds component lives on SoundManager.prefab, which is nested
-        // inside GameManager.prefab — so 'gameObject' is a CHILD, not a
-        // root, and the call throws 'DontDestroyOnLoad only works for
-        // root GameObjects' on every scene load. Use transform.root to
-        // grab the actual top of the hierarchy (GameManager itself,
-        // which IS a root in the scene).
         DontDestroyOnLoad(transform.root.gameObject);
     }
 
@@ -48,15 +48,23 @@ public class Sounds : MonoBehaviour
 
     private void Start()
     {
-        // (round 35) Null-guards: Background[] may be empty / null if
-        // SoundManager.prefab wasn't fully wired.
         if (Background == null) return;
         foreach (var bg in Background)
         {
             if (bg != null) bg.Stop();
         }
-        if (Background.Length > 0 && Background[0] != null)
-            Background[0].Play();
+
+        // Стартуем с игровым фоном
+        if (_gameBackground != null)
+        {
+            _curBackground = _gameBackground;
+            _curBackground.Play();
+        }
+        else if (Background.Length > 0 && Background[0] != null)
+        {
+            _curBackground = Background[0];
+            _curBackground.Play();
+        }
     }
 
     public void RandomPitch(AudioSource pitchedAudio, float spread)
@@ -77,16 +85,83 @@ public class Sounds : MonoBehaviour
     {
         switch (typeNumber)
         {
-            case 0: UIPlay(UISound.buttonClick);
+            case 0:
+                UIPlay(UISound.buttonClick);
                 break;
         }
     }
 
+    // --- НОВЫЕ МЕТОДЫ ДЛЯ ПЕРЕКЛЮЧЕНИЯ ФОНА ---
+
+    /// <summary>
+    /// Переключить фоновую музыку на трек для меню
+    /// </summary>
+    public void SwitchToMenuBackground()
+    {
+        if (_menuBackground != null)
+            ChangeBackground(_menuBackground);
+        else
+            Debug.LogWarning("Sounds: _menuBackground not assigned!");
+    }
+
+    /// <summary>
+    /// Переключить фоновую музыку на трек для игры
+    /// </summary>
+    public void SwitchToGameBackground()
+    {
+        if (_gameBackground != null)
+            ChangeBackground(_gameBackground);
+        else
+            Debug.LogWarning("Sounds: _gameBackground not assigned!");
+    }
+
+    /// <summary>
+    /// Переключить фоновую музыку на трек для смерти
+    /// </summary>
+    public void SwitchToDieBackground()
+    {
+        if (_dieBackground != null)
+            ChangeBackground(_dieBackground);
+        else
+            Debug.LogWarning("Sounds: _dieBackground not assigned!");
+    }
+
+    /// <summary>
+    /// Переключить фоновую музыку на трек для победы
+    /// </summary>
+    public void SwitchToWinBackground()
+    {
+        if (_winBackground != null)
+            ChangeBackground(_winBackground);
+        else
+            Debug.LogWarning("Sounds: _winBackground not assigned!");
+    }
+
+    /// <summary>
+    /// Остановить фоновую музыку
+    /// </summary>
+    public void StopBackground()
+    {
+        if (_curBackground != null)
+        {
+            _curBackground.DOFade(0, 1f).OnComplete(() =>
+            {
+                _curBackground.Stop();
+                _curBackground = null;
+            });
+        }
+    }
+
+    // --- КОНЕЦ НОВЫХ МЕТОДОВ ---
+
     public void ChangeBackground(AudioSource source)
     {
+        if (source == null) return;
+
         if (!_curBackground)
         {
             _curBackground = source;
+            source.volume = 1f;
             source.Play();
             return;
         }
@@ -96,31 +171,42 @@ public class Sounds : MonoBehaviour
 
     public void OverlapBackground(AudioSource source)
     {
-        float tr = _curBackground.time;
-        _curBackground.Stop();
+        if (source == null) return;
+
+        float tr = _curBackground != null ? _curBackground.time : 0;
+        if (_curBackground != null)
+            _curBackground.Stop();
         _curBackground = source;
         _curBackground.time = tr;
+        _curBackground.volume = 1f;
         _curBackground.Play();
     }
 
     private void FadeSound(AudioSource source)
     {
+        if (source == null) return;
+
         source.volume = 0;
         source.Play();
         source.DOFade(1, 3);
-        _curBackground.DOFade(0, 3).OnComplete(() =>
+
+        if (_curBackground != null)
         {
-            _curBackground.Stop();
+            _curBackground.DOFade(0, 3).OnComplete(() =>
+            {
+                if (_curBackground != null)
+                    _curBackground.Stop();
+                _curBackground = source;
+            });
+        }
+        else
+        {
             _curBackground = source;
-        });
+        }
     }
 
     public void PlayerPlay(PlayerSound sound, bool isLoop)
     {
-        // (round 35) Null-guards: _playerSource or _playerSounds may be
-        // unassigned if SoundManager.prefab wasn't fully wired in the
-        // editor. Without these checks every play call would throw
-        // NullReferenceException / ArgumentNullException.
         if (_playerSource == null || _playerSounds == null) return;
         var found = System.Array.Find(_playerSounds, s => s.sound == sound);
         if (found.clip == null) return;
@@ -138,7 +224,6 @@ public class Sounds : MonoBehaviour
 
     public void UIPlay(UISound sound)
     {
-        // (round 35) Same null-guards as PlayerPlay.
         if (_uiSource == null || _uiSound == null) return;
         var found = System.Array.Find(_uiSound, s => s.sound == sound);
         if (found.clip == null) return;

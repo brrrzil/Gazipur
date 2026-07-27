@@ -6,7 +6,7 @@ using static EnumData;
 
 public class QuestManager : MonoBehaviour
 {
-    public Dictionary<Quests,int> QuestsState { get; private set; } 
+    public Dictionary<Quests, int> QuestsState { get; private set; }
 
     [SerializeField] private GameObject _filterPanel;
     [SerializeField] private GameObject _blueprintPanel;
@@ -18,11 +18,12 @@ public class QuestManager : MonoBehaviour
     [Inject] DialogManager _dialog;
     [Inject] DataManager _data;
     [Inject] GameModeManager _mode;
+    [Inject] Sounds _sounds;
     private bool _isStartFind;
     private void Start()
     {
         QuestsState = new Dictionary<Quests, int>()
-        { 
+        {
             [Quests.filter] = 0,
             [Quests.healMother] = 0
         };
@@ -36,28 +37,28 @@ public class QuestManager : MonoBehaviour
                 _isStartFind = true;
         };
         _inventory.onTakeItem += i =>
-         {
-             if (_isStartFind && QuestsState[Quests.filter] ==0 
-             && _data.gameMode == GameMode.outdors && !(i.ItemPrefab is FilterPart))
-             {
-                 QuestsState[Quests.filter] = 1;
-                 _filterPanel.SetActive(true);
-                 _blueprintPanel.SetActive(true);
-                 _dialog.Remarks.StartRemark(RemarksType.foundBlueprint);
-                 _filterPlace.SetActive(true);
-                 _mode.ChangeMode(GameMode.otherPanels);
-             }
-             if(QuestsState[Quests.filter] == 1 && _inventory.CheckFilterBlueprint(i))
-             {
-                 _dialog.Remarks.StartRemark(RemarksType.foundPart);
-             }
-         };
+        {
+            if (_isStartFind && QuestsState[Quests.filter] == 0
+            && _data.gameMode == GameMode.outdors && !(i.ItemPrefab is FilterPart))
+            {
+                QuestsState[Quests.filter] = 1;
+                _filterPanel.SetActive(true);
+                _blueprintPanel.SetActive(true);
+                _dialog.Remarks.StartRemark(RemarksType.foundBlueprint);
+                _filterPlace.SetActive(true);
+                _mode.ChangeMode(GameMode.otherPanels);
+            }
+            if (QuestsState[Quests.filter] == 1 && _inventory.CheckFilterBlueprint(i))
+            {
+                _dialog.Remarks.StartRemark(RemarksType.foundPart);
+            }
+        };
     }
-   
+
     public void CloseFilterPanel()
     {
         _dialog.Remarks.StartRemark(RemarksType.closeBlueprint);
-        _filterPanel.SetActive(false); 
+        _filterPanel.SetActive(false);
         _mode.ChangeMode(GameMode.outdors);
     }
     public void HealMother(bool isHeal)
@@ -84,5 +85,8 @@ public class QuestManager : MonoBehaviour
         _blueprintPanel.SetActive(false);
         _filterPlace.SetActive(true);
         QuestsState[Quests.filter] = 2;
+
+        // BUGFIX: переключаем фоновую музыку на трек победы
+        _sounds.SwitchToWinBackground();
     }
 }
