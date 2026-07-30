@@ -324,7 +324,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 movement = moveDirection * _currentSpeed * Time.deltaTime;
         _controller.Move(movement);
 
-        // Round 68: drive the legs/hands animator with three bools.
+        // Round 69: drive the legs/hands animator with three bools.
         // The Isha_Legs_Hands controller (Assets/Animations/Isha/
         // Isha_Legs_Hands.controller) listens to isRun, isWalk and
         // isCrouch and resolves them to one of Isha_Idle / Isha_Walk
@@ -333,7 +333,7 @@ public class PlayerMovement : MonoBehaviour
         // (each state's incoming transition is 'this bool true,
         // the other two false'). So we set:
         //   isCrouch  = _isCrouching && isMoving
-        //   isRun     = _isRunning && !_isCrouching
+        //   isRun     = _isRunning && !_isCrouching && isMoving
         //   isWalk    = isMoving && !_isRunning && !_isCrouching
         // and rely on the Animator's transitions to pick the right
         // state. We only push to SetBool on a change so the Animator
@@ -351,10 +351,19 @@ public class PlayerMovement : MonoBehaviour
         // any movement key while crouched, isMoving becomes true,
         // isCrouch flips to true, and the controller transitions into
         // Isha_Crouch as before.
+        //
+        // Round 69 fix: isRun gets the same treatment. Holding Shift
+        // without any WASD pressed also dropped the player into
+        // Isha_Run (m_Speed=0.7) with the rig animating in place.
+        // Adding && isMoving to the isRun expression makes Shift a
+        // no-op for the animator unless the player is also producing
+        // movement input. As soon as the player presses WASD, the rig
+        // transitions into Isha_Run. When the player releases WASD but
+        // keeps Shift held, the rig falls back to Isha_Idle (frozen).
         if (_legsHandsAnimator != null)
         {
             bool isMoving = _moveInput.sqrMagnitude > 0.01f;
-            bool isRun = _isRunning && !_isCrouching;
+            bool isRun = _isRunning && !_isCrouching && isMoving;
             bool isWalk = isMoving && !_isRunning && !_isCrouching;
             bool isCrouch = _isCrouching && isMoving;
 
