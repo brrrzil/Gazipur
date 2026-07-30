@@ -324,7 +324,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 movement = moveDirection * _currentSpeed * Time.deltaTime;
         _controller.Move(movement);
 
-        // Round 67: drive the legs/hands animator with three bools.
+        // Round 68: drive the legs/hands animator with three bools.
         // The Isha_Legs_Hands controller (Assets/Animations/Isha/
         // Isha_Legs_Hands.controller) listens to isRun, isWalk and
         // isCrouch and resolves them to one of Isha_Idle / Isha_Walk
@@ -332,18 +332,31 @@ public class PlayerMovement : MonoBehaviour
         //   Crouch > Run > Walk > Idle
         // (each state's incoming transition is 'this bool true,
         // the other two false'). So we set:
-        //   isCrouch  = _isCrouching
+        //   isCrouch  = _isCrouching && isMoving
         //   isRun     = _isRunning && !_isCrouching
         //   isWalk    = isMoving && !_isRunning && !_isCrouching
         // and rely on the Animator's transitions to pick the right
         // state. We only push to SetBool on a change so the Animator
         // does not receive a redundant write every frame.
+        //
+        // Round 68 fix: isCrouch now requires BOTH _isCrouching and
+        // isMoving. Without the isMoving clause, simply holding the
+        // crouch key (C) with no WASD pressed sent the animator into
+        // Isha_Crouch at m_Speed=0.3, so the legs/hands kept 'running
+        // on the spot' while the player was standing still in a crouch.
+        // With the extra && isMoving, holding C without moving falls
+        // through to the all-false state and the animator goes to
+        // Isha_Idle (m_Speed=0, m_CycleOffset=0.1) - the same frozen
+        // pose used when standing still. As soon as the player presses
+        // any movement key while crouched, isMoving becomes true,
+        // isCrouch flips to true, and the controller transitions into
+        // Isha_Crouch as before.
         if (_legsHandsAnimator != null)
         {
             bool isMoving = _moveInput.sqrMagnitude > 0.01f;
             bool isRun = _isRunning && !_isCrouching;
             bool isWalk = isMoving && !_isRunning && !_isCrouching;
-            bool isCrouch = _isCrouching;
+            bool isCrouch = _isCrouching && isMoving;
 
             if (isRun != _wasRun)
             {
