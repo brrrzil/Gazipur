@@ -40,7 +40,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _fallSlowdownFactor = 0.5f;
 
     [Header("Animation")]
-    [Tooltip("Animator on the player's legs/hands rig (Isha_GamePlay). SetBool('isRun') is driven by movement: true while moving, false when stopped. Optional - null guard skips it if not bound.")]
+    [Tooltip("Animator on the player's legs/hands rig (Isha_GamePlay). PlayerMovement writes three bools to it (isRun, isWalk, isCrouch) every frame they change. Optional - null guard skips the write if not bound.")]
     [SerializeField] private Animator _legsHandsAnimator;
 
     private CharacterController _controller;
@@ -75,11 +75,16 @@ public class PlayerMovement : MonoBehaviour
     private bool _isGrounded;
     public bool IsGrounded => _isGrounded;
     private bool _isUIMode;
-    // Round 66: tracks whether the player is currently producing movement
-    // input. Used to drive the legs/hands animator's isRun parameter via
-    // SetBool — true while moving, false when stopped. Cached across
-    // frames so we only push the value when it actually changes.
-    private bool _wasMoving;
+    // Round 67: per-bool caches for the legs/hands animator. The
+    // Isha_Legs_Hands controller listens to three Bool parameters
+    // (isRun, isWalk, isCrouch) and resolves them to a state with
+    // the priority Crouch > Run > Walk > Idle. We only push a value
+    // to the Animator when it actually changes, so we keep the
+    // last-pushed value of each bool here and diff against the
+    // current frame's intended value.
+    private bool _wasRun;
+    private bool _wasWalk;
+    private bool _wasCrouch;
     [Inject] GameModeManager _gameMode;
     [Inject]
     void Init()
@@ -319,19 +324,41 @@ public class PlayerMovement : MonoBehaviour
         Vector3 movement = moveDirection * _currentSpeed * Time.deltaTime;
         _controller.Move(movement);
 
-        // Round 66: drive the legs/hands animator. SetBool('isRun')
-        // toggles the Isha_Legs_Hands controller between Isha_Run
-        // (plays the walk animation) and Isha_Idle (paused at the
-        // 5th frame, see Isha_Legs_Hands.controller). We only push
-        // the value on a change so we don't spam the Animator with
-        // identical bool writes every frame.
+        // Round 67: drive the legs/hands animator with three bools.
+        // The Isha_Legs_Hands controller (Assets/Animations/Isha/
+        // Isha_Legs_Hands.controller) listens to isRun, isWalk and
+        // isCrouch and resolves them to one of Isha_Idle / Isha_Walk
+        // / Isha_Run / Isha_Crouch with the priority
+        //   Crouch > Run > Walk > Idle
+        // (each state's incoming transition is 'this bool true,
+        // the other two false'). So we set:
+        //   isCrouch  = _isCrouching
+        //   isRun     = _isRunning && !_isCrouching
+        //   isWalk    = isMoving && !_isRunning && !_isCrouching
+        // and rely on the Animator's transitions to pick the right
+        // state. We only push to SetBool on a change so the Animator
+        // does not receive a redundant write every frame.
         if (_legsHandsAnimator != null)
         {
             bool isMoving = _moveInput.sqrMagnitude > 0.01f;
-            if (isMoving != _wasMoving)
+            bool isRun = _isRunning && !_isCrouching;
+            bool isWalk = isMoving && !_isRunning && !_isCrouching;
+            bool isCrouch = _isCrouching;
+
+            if (isRun != _wasRun)
             {
-                _wasMoving = isMoving;
-                _legsHandsAnimator.SetBool("isRun", isMoving);
+                _wasRun = isRun;
+                _legsHandsAnimator.SetBool("isRun", isRun);
+            }
+            if (isWalk != _wasWalk)
+            {
+                _wasWalk = isWalk;
+                _legsHandsAnimator.SetBool("isWalk", isWalk);
+            }
+            if (isCrouch != _wasCrouch)
+            {
+                _wasCrouch = isCrouch;
+                _legsHandsAnimator.SetBool("isCrouch", isCrouch);
             }
         }
     }
