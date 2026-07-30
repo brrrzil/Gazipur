@@ -39,6 +39,10 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Movement speed multiplier during the slowdown. 0.5 = half speed, 0 = no movement. Default 0.5.")]
     [SerializeField] private float _fallSlowdownFactor = 0.5f;
 
+    [Header("Animation")]
+    [Tooltip("Animator on the player's legs/hands rig (Isha_GamePlay). SetBool('isRun') is driven by movement: true while moving, false when stopped. Optional - null guard skips it if not bound.")]
+    [SerializeField] private Animator _legsHandsAnimator;
+
     private CharacterController _controller;
     private Vector3 _velocity = Vector3.zero;
     private float _currentSpeed;
@@ -71,6 +75,11 @@ public class PlayerMovement : MonoBehaviour
     private bool _isGrounded;
     public bool IsGrounded => _isGrounded;
     private bool _isUIMode;
+    // Round 66: tracks whether the player is currently producing movement
+    // input. Used to drive the legs/hands animator's isRun parameter via
+    // SetBool — true while moving, false when stopped. Cached across
+    // frames so we only push the value when it actually changes.
+    private bool _wasMoving;
     [Inject] GameModeManager _gameMode;
     [Inject]
     void Init()
@@ -309,6 +318,22 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 movement = moveDirection * _currentSpeed * Time.deltaTime;
         _controller.Move(movement);
+
+        // Round 66: drive the legs/hands animator. SetBool('isRun')
+        // toggles the Isha_Legs_Hands controller between Isha_Run
+        // (plays the walk animation) and Isha_Idle (paused at the
+        // 5th frame, see Isha_Legs_Hands.controller). We only push
+        // the value on a change so we don't spam the Animator with
+        // identical bool writes every frame.
+        if (_legsHandsAnimator != null)
+        {
+            bool isMoving = _moveInput.sqrMagnitude > 0.01f;
+            if (isMoving != _wasMoving)
+            {
+                _wasMoving = isMoving;
+                _legsHandsAnimator.SetBool("isRun", isMoving);
+            }
+        }
     }
 
     void OnJumpPerformed(InputAction.CallbackContext context)
