@@ -107511,13 +107511,17 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
-      propertyPath: _cameraHeightNormal
-      value: 0
+      propertyPath: _runSpeed
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
       propertyPath: _legsHandsAnimator
-      value:
+      value: 
       objectReference: {fileID: 348712269}
+    - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      propertyPath: _cameraHeightNormal
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 4321456246219452101, guid: 672db997276968a48822ef49c311d4de, type: 3}
