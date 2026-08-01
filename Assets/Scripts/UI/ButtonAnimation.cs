@@ -58,22 +58,27 @@ public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExit
         //_tween?.Kill();
         _button.transform.DORotate(Vector3.zero, 0.2f).SetEase(Ease.OutElastic);
 
-        // Try the central Sounds service first. _sounds may be null
-        // in scenes where GameInstaller._sounds was not bound in the
-        // inspector; in that case the if-guard falls through to the
-        // per-button AudioClip fallback below.
-        if (_sounds != null)
-        {
-            _sounds.UIPlay(UISound.buttonHover);
-            return;
-        }
-
-        // Per-button fallback. PlayClipAtPoint spawns a one-shot
-        // AudioSource at the button's world position and disposes
-        // it when the clip ends. Works without any AudioMixer
-        // routing, which is fine for a UI click feedback sound.
-        if (_hoverSound != null)
-            AudioSource.PlayClipAtPoint(_hoverSound, transform.position);
+        // Round 75: play the hover through UIAudio, a central
+        // AudioSource that UIAudio attaches to the active
+        // EventSystem on Awake. UIAudio is the
+        // mixer-routed replacement for the round-72
+        // Sounds.UIPlay path (which had no working binding
+        // in this project) and the round-74 PlayClipAtPoint
+        // fallback (which created a throwaway GameObject
+        // per hover and did not route through the Sound
+        // group). The clip itself stays per-button
+        // (the user assigns the same hover AudioClip to
+        // every button that has a ButtonAnimation
+        // component, or to just one and the rest of the
+        // binding is trivial). Null-guard on
+        // UIAudio.Instance covers the case where the
+        // UIAudio component has not yet woken up in the
+        // current scene; the next hover will work because
+        // UIAudio.Awake runs early (DefaultExecutionOrder
+        // -100) and the instance is cached in a static
+        // field.
+        if (_hoverSound != null && UIAudio.Instance != null)
+            UIAudio.Instance.Play(_hoverSound);
     }
 
     public void OnPointerExit(PointerEventData eventData)
