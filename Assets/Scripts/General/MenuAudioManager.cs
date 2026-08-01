@@ -8,74 +8,95 @@ public class MenuAudioManager : MonoBehaviour
 
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider soundsSlider;
-    [SerializeField] private Toggle musicToggle;
-    [SerializeField] private Toggle soundsToggle;
+    // Round 78: one Toggle for both channels instead of two.
+    // Previously the menu had separate 'musicToggle' and
+    // 'soundsToggle' for 'mute music' and 'mute sounds' but the
+    // user has consolidated them into a single 'muteToggle'
+    // that mutes / unmutes BOTH channels at once. The
+    // individual toggle SerializeFields are removed from the
+    // class and the toggle wiring in Start and the
+    // per-channel handler methods (OnMusicToggle,
+    // OnSoundsToggle) are replaced by a single OnMuteToggle.
+    // PlayerPrefs keys for muted state are also consolidated
+    // from two keys ('MenuMusicMuted', 'MenuSoundsMuted')
+    // to one ('MenuMuted') - users who had a different mute
+    // state for music and sounds before this change will
+    // see both channels snap to the saved value on next
+    // launch, which is the right behaviour for a single-
+    // mute model.
+    [SerializeField] private Toggle muteToggle;
 
     private void Start()
     {
         float savedMusic = PlayerPrefs.GetFloat("MenuMusicVolume", 0.75f);
         float savedSounds = PlayerPrefs.GetFloat("MenuSoundsVolume", 0.75f);
-        int musicMuted = PlayerPrefs.GetInt("MenuMusicMuted", 0);
-        int soundsMuted = PlayerPrefs.GetInt("MenuSoundsMuted", 0);
+        int muted = PlayerPrefs.GetInt("MenuMuted", 0);
 
         musicSlider.value = savedMusic;
         soundsSlider.value = savedSounds;
-        // (round 45) isOn = true means 'Mute is on' = sound is muted.
-        // So isOn maps to the muted flag directly (not its inverse).
-        musicToggle.isOn = musicMuted == 1;
-        soundsToggle.isOn = soundsMuted == 1;
+        // isOn = true means 'Mute is on' = sound is muted.
+        // So isOn maps to the muted flag directly (not its
+        // inverse). One toggle drives both channels now, so
+        // the previous 'musicToggle.isOn = musicMuted == 1'
+        // and 'soundsToggle.isOn = soundsMuted == 1' pair
+        // is collapsed into one assignment.
+        muteToggle.isOn = muted == 1;
 
-        ApplyMusicVolume(savedMusic, musicMuted == 1);
-        ApplySoundsVolume(savedSounds, soundsMuted == 1);
+        ApplyMusicVolume(savedMusic, muted == 1);
+        ApplySoundsVolume(savedSounds, muted == 1);
 
         musicSlider.onValueChanged.AddListener(OnMusicSlider);
         soundsSlider.onValueChanged.AddListener(OnSoundsSlider);
-        musicToggle.onValueChanged.AddListener(OnMusicToggle);
-        soundsToggle.onValueChanged.AddListener(OnSoundsToggle);
+        // One listener for the single mute toggle.
+        muteToggle.onValueChanged.AddListener(OnMuteToggle);
     }
 
     private void OnMusicSlider(float value)
     {
-        // (round 45) muted = isOn (Mute toggle semantics: isOn = muted).
-        ApplyMusicVolume(value, musicToggle.isOn);
+        // muted = isOn (Mute toggle semantics: isOn = muted).
+        // The single muteToggle drives both ApplyMusicVolume
+        // and ApplySoundsVolume, so music slider movement
+        // does not re-apply sounds volume and vice versa -
+        // the toggle is the only path that touches both.
+        ApplyMusicVolume(value, muteToggle.isOn);
         SaveSettings();
     }
 
     private void OnSoundsSlider(float value)
     {
-        ApplySoundsVolume(value, soundsToggle.isOn);
+        ApplySoundsVolume(value, muteToggle.isOn);
         SaveSettings();
     }
 
-    private void OnMusicToggle(bool isOn)
+    private void OnMuteToggle(bool isOn)
     {
+        // One toggle drives both channels. ApplyMusicVolume
+        // and ApplySoundsVolume are called back-to-back with
+        // the current slider values, so the user hears
+        // both music and sounds go silent (or both come back)
+        // in the same frame.
         ApplyMusicVolume(musicSlider.value, isOn);
-        SaveSettings();
-    }
-
-    private void OnSoundsToggle(bool isOn)
-    {
         ApplySoundsVolume(soundsSlider.value, isOn);
         SaveSettings();
     }
 
     private void ApplyMusicVolume(float volume, bool muted)
     {
-        // (round 42) Clamp volume to a tiny positive value even when
-        // not muted, so Mathf.Log10 doesn't return -Infinity. AudioMixer
-        // handles -Infinity inconsistently. 0.0001 -> -80 dB, which is
-        // below the AudioMixer's effectively-silent floor.
+        // Clamp volume to a tiny positive value even when
+        // not muted, so Mathf.Log10 doesn't return -Infinity.
+        // AudioMixer handles -Infinity inconsistently.
+        // 0.0001 -> -80 dB, which is below the AudioMixer's
+        // effectively-silent floor.
         float finalVolume = muted ? 0.0001f : Mathf.Max(volume, 0.0001f);
-        // BUGFIX: Resources/AudioMixer.mixer only exposes MasterVolume /
-        // SoundsVolume / MusicVolume. The pre-round-6 code wrote to
-        // "Music" / "Sound" which threw 'Exposed name does not exist' on
-        // every slider tick. Match the in-game SoundControl param names.
+        // Resources/AudioMixer.mixer only exposes MasterVolume /
+        // SoundsVolume / MusicVolume. Match the in-game
+        // SoundControl param names.
         audioMixer.SetFloat("MusicVolume", Mathf.Log10(finalVolume) * 20);
     }
 
     private void ApplySoundsVolume(float volume, bool muted)
     {
-        // (round 42) Same clamp as ApplyMusicVolume: 0.0001 floor so
+        // Same clamp as ApplyMusicVolume: 0.0001 floor so
         // the slider's 0 position is silence, not -Infinity.
         float finalVolume = muted ? 0.0001f : Mathf.Max(volume, 0.0001f);
         audioMixer.SetFloat("SoundsVolume", Mathf.Log10(finalVolume) * 20);
@@ -83,18 +104,18 @@ public class MenuAudioManager : MonoBehaviour
 
     private void SaveSettings()
     {
-        // (round 42) Use the same PlayerPrefs keys that Start() reads
-        // from ("MenuMusicVolume", "MenuSoundsVolume", "MenuMusicMuted",
-        // "MenuSoundsMuted"). The previous version wrote to "MusicVolume"
-        // and "MusicMuted" (no "Menu" prefix), which meant the toggle
-        // state was lost across sessions: Start() never saw what the
-        // user toggled because it was reading from a different key.
-        // (round 45) isOn = true means muted, so store 1 (muted) when
+        // Single 'MenuMuted' key replaces 'MenuMusicMuted'
+        // and 'MenuSoundsMuted'. Volume slider values are
+        // unchanged ('MenuMusicVolume', 'MenuSoundsVolume').
+        // (Round 42 fix) Use the same PlayerPrefs keys that
+        // Start() reads from; the previous version wrote
+        // without the 'Menu' prefix and the toggle state
+        // was lost across sessions.
+        // isOn = true means muted, so store 1 (muted) when
         // isOn is true, 0 (unmuted) when isOn is false.
         PlayerPrefs.SetFloat("MenuMusicVolume", musicSlider.value);
         PlayerPrefs.SetFloat("MenuSoundsVolume", soundsSlider.value);
-        PlayerPrefs.SetInt("MenuMusicMuted", musicToggle.isOn ? 1 : 0);
-        PlayerPrefs.SetInt("MenuSoundsMuted", soundsToggle.isOn ? 1 : 0);
+        PlayerPrefs.SetInt("MenuMuted", muteToggle.isOn ? 1 : 0);
         PlayerPrefs.Save();
     }
 }
