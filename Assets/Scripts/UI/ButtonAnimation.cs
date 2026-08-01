@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using DG.Tweening;
 using Zenject;
+using static EnumData;
 
 [RequireComponent(typeof(Button))]
 public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
