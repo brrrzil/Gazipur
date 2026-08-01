@@ -83,11 +83,18 @@ public static class EnumData
     }
     public enum UISound
     {
-        buy, 
+        buy,
         sell,
         questComplete,
         buttonClick,
-        openPanel
+        openPanel,
+        // Round 72: hover sound for any UI button the cursor enters.
+        // ButtonAnimation.OnPointerEnter calls
+        // Sounds.UIPlay(UISound.buttonHover). The matching AudioClip
+        // is bound by the user in GameManager.prefab -> Sounds._uiSound
+        // (one UISoundData entry with sound=buttonHover, clip=<their
+        // hover wav/ogg>).
+        buttonHover
     }
     public enum Quests
     {
