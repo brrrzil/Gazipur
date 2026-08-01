@@ -58,7 +58,8 @@ public static class EnumData
         rohulSelBuy,
         rohulHelp,
         lie,
-        firstMother
+        firstMother,
+        firstEnterRichZone
     }
     public enum FilterParts
     {
