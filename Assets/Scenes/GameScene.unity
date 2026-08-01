@@ -42280,6 +42280,18 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 9168674271409095800}
     - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _uiSound.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _uiSound.Array.data[5].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: d9e3ab95ab795c44b9f158bb2c250127, type: 3}
+    - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _uiSound.Array.data[5].sound
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8104229321366536984, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: <DialogSource>k__BackingField
       value: 
       objectReference: {fileID: 1034958095}
