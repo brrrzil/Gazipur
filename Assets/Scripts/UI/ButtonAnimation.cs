@@ -58,27 +58,39 @@ public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExit
         //_tween?.Kill();
         _button.transform.DORotate(Vector3.zero, 0.2f).SetEase(Ease.OutElastic);
 
-        // Round 75: play the hover through UIAudio, a central
-        // AudioSource that UIAudio attaches to the active
-        // EventSystem on Awake. UIAudio is the
-        // mixer-routed replacement for the round-72
-        // Sounds.UIPlay path (which had no working binding
-        // in this project) and the round-74 PlayClipAtPoint
-        // fallback (which created a throwaway GameObject
-        // per hover and did not route through the Sound
-        // group). The clip itself stays per-button
-        // (the user assigns the same hover AudioClip to
-        // every button that has a ButtonAnimation
-        // component, or to just one and the rest of the
-        // binding is trivial). Null-guard on
-        // UIAudio.Instance covers the case where the
-        // UIAudio component has not yet woken up in the
-        // current scene; the next hover will work because
-        // UIAudio.Awake runs early (DefaultExecutionOrder
-        // -100) and the instance is cached in a static
-        // field.
-        if (_hoverSound != null && UIAudio.Instance != null)
-            UIAudio.Instance.Play(_hoverSound);
+        // Round 76: play the hover through UIAudio.Play,
+        // a static helper that lazily creates ONE
+        // AudioSource on first call and routes it
+        // through the AudioMixer 'Sound' group. This
+        // replaces three earlier attempts that all
+        // had problems:
+        //
+        //   - Round 72: _sounds.UIPlay(UISound
+        //     .buttonHover) - dead in this project
+        //     because GameInstaller._sounds is null
+        //     and SoundManager.prefab._uiSound is [].
+        //   - Round 74: AudioSource.PlayClipAtPoint -
+        //     created a fresh throwaway GameObject
+        //     per hover and did not route through
+        //     the AudioMixer.
+        //   - Round 75: UIAudio.Instance.Play - the
+        //     UIAudio MonoBehaviour was correct in
+        //     principle but required the user to
+        //     add the component to a GameObject in
+        //     the scene; without that, Awake never
+        //     fired and Instance stayed null.
+        //
+        // The static UIAudio.Play needs no scene-side
+        // component - it creates its own
+        // DontDestroyOnLoad GameObject on the first
+        // hover and reuses it forever after. The
+        // clip itself is still per-button
+        // ([SerializeField] AudioClip _hoverSound);
+        // the user assigns the same AudioClip to
+        // every ButtonAnimation they want to be
+        // audible on hover.
+        if (_hoverSound != null)
+            UIAudio.Play(_hoverSound);
     }
 
     public void OnPointerExit(PointerEventData eventData)
