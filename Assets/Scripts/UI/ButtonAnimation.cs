@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using DG.Tweening;
-using Zenject;
-using static EnumData;
 
 [RequireComponent(typeof(Button))]
 public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -12,46 +10,48 @@ public class ButtonAnimation : MonoBehaviour, IPointerEnterHandler, IPointerExit
     private Vector3 _rotate;
     private Tween _tween;
 
-    // Round 74: the hover sound is bound directly on the button itself
-    // (per-instance AudioClip) instead of going through Sounds._uiSound.
+    // Round 77: the hover AudioClip is the only public binding on
+    // the button. No [Inject] on this class any more.
     //
-    // The previous design (round 72) tried to play the hover via
-    // Sounds.UIPlay(UISound.buttonHover), which is a lookup into the
-    // central Sounds._uiSound table. That table turned out to be
-    // empty in this project: SoundManager.prefab has _uiSound: [],
-    // GameManager.prefab has no Sounds component at all, and the
-    // GameInstaller._sounds reference (the one that was supposed to
-    // hand a Sounds instance to Zenject's Bind<Sounds>) is also null
-    // in the saved prefab. So the [Inject] private Sounds _sounds
-    // resolved to null, the if-guard caught it, and the hover clip
-    // was never played. The Sounds service exists in the scene as a
-    // dangling-prefab MonoBehaviour but is not wired into Zenject and
-    // has no _uiSound rows to look up.
+    // Round 72 added [Inject] private Sounds _sounds; to call
+    // _sounds.UIPlay(UISound.buttonHover). The dependency on
+    // Sounds via Zenject was required to play the hover through
+    // the central UI audio table. In this project that pipeline
+    // is not wired up:
+    //   - GameInstaller._sounds and MenuInstaller._sounds are
+    //     both null in the saved prefabs.
+    //   - SoundManager.prefab._uiSound is [] in every commit.
+    //   - SoundManager.prefab is not instantiated in either
+    //     scene.
+    // So [Inject] private Sounds _sounds was a Zenject-
+    // required dependency that resolved to null at every
+    // call site. Keeping the [Inject] in the file even with a
+    // null-guard at the call site is still a problem: Zenject
+    // resolves dependencies eagerly, and an [Inject] on a
+    // MonoBehaviour that lives in a scene with a
+    // SceneContext (every MainMenu button has a SceneContext)
+    // triggers a full DI graph walk. If the binding is missing,
+    // Zenject throws ZenjectException at scene start BEFORE
+    // the null-guard can run. Round 76's user console shows
+    // exactly this: 'ZenjectException: Unable to resolve
+    // 'Sounds' while building object with type
+    // 'ButtonAnimation''.
     //
-    // To make the hover actually play without requiring the user to
-    // rewire every installer + every prefab, the AudioClip now lives
-    // on the ButtonAnimation itself. The user assigns ONE clip in the
-    // inspector and it plays for every button that has a
-    // ButtonAnimation component.
-    //
-    // We try Sounds first (so the existing central pipeline still
-    // works if the user later wires it up) and fall back to
-    // PlayClipAtPoint on the button's own transform if Sounds is
-    // null. PlayClipAtPoint creates a temporary AudioSource on a
-    // throwaway GameObject that lives until the clip finishes; the
-    // clip routes to the default AudioListener, NOT through the
-    // project's AudioMixer, so the SoundsVolume slider does not
-    // affect it. That is a deliberate trade-off here - the previous
-    // Sounds-based path did not play at all because of the empty
-    // _uiSound table, so a working un-routed clip is strictly better
-    // than a non-working routed one. If the user later wants the
-    // hover to go through the mixer, they can (a) wire a Sounds
-    // instance into GameInstaller._sounds, (b) add a row to that
-    // Sounds._uiSound for buttonHover, and (c) the lookup at the
-    // top of OnPointerEnter will then take over and the AudioClip
-    // field becomes a fallback.
+    // The audio path used in round 76 (UIAudio.Play, a static
+    // helper) does not need Sounds at all. So the [Inject] is
+    // removed in this commit, and the 'using Zenject;' /
+    // 'using static EnumData;' lines that only existed to
+    // support the dead Sounds path are also removed. Zenject
+    // no longer visits ButtonAnimation, and the volume
+    // sliders in MenuAudioManager (which were collateral
+    // damage in the user's console: NRE on line 26 because
+    // the resolution crash happened on a different thread)
+    // are also unblocked. MenuAudioManager itself still has
+    // its own NRE if the user has not bound the music/sound
+    // slider and toggle fields in the editor - that is a
+    // separate inspector-side issue, not a ButtonAnimation
+    // regression and not addressed in this commit.
     [SerializeField] private AudioClip _hoverSound;
-    [Inject] private Sounds _sounds;
 
     public void OnPointerEnter(PointerEventData eventData)
     {
