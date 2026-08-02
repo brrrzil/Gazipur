@@ -22,7 +22,7 @@ public class LocationChanger : MonoBehaviour
     // is the second layer of the same guard
     // and would also stop the second play
     // even if this flag were stripped out.
-    private bool _richZoneRemarkPlayed;
+    private bool _richZoneRemarkPlayed = false;
     // Round 79: cached reference to the CharacterRemarks
     // MonoBehaviour so OnTriggerEnter can ask it to play
     // the one-time 'firstEnterRichZone' remark when the
