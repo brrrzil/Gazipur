@@ -34,6 +34,44 @@ public class LocationChanger : MonoBehaviour
     // the first AreaRich entry.
     private CharacterRemarks _remarks;
 
+    private void OnEnable()
+    {
+        // Round 80 (v2): explicit reset of the
+        // one-shot flag on every enable. The
+        // default C# value of a bool field is
+        // 'false', so a fresh instance would
+        // start with '_richZoneRemarkPlayed
+        // == false' anyway, BUT - in Unity
+        // 2019.3+ the Editor can be configured
+        // to skip the Domain Reload on 'Enter
+        // Play Mode' (Project Settings ->
+        // Editor -> 'Enter Play Mode
+        // Options' with 'Reload Domain'
+        // unchecked). With that setting on,
+        // MonoBehaviour instances and their
+        // instance fields are NOT reset
+        // between Play sessions in the
+        // Editor, so a '_richZoneRemarkPlayed
+        // == true' from a previous run would
+        // survive into the next run. OnEnable
+        // is called whenever the GameObject
+        // is enabled, which covers: the
+        // initial scene load (a fresh
+        // instance, OnEnable fires once),
+        // the 'Reload Scene' case (OnEnable
+        // fires again on the recreated
+        // instances), and the 'skip domain
+        // reload' Editor case (OnEnable still
+        // fires on entering Play Mode because
+        // the scene is reloaded even when the
+        // domain is not). The one-liner
+        // '_richZoneRemarkPlayed = false;'
+        // is the cheapest, most robust
+        // defence against the flag surviving
+        // across Play sessions.
+        _richZoneRemarkPlayed = false;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         string tag = other.tag;
