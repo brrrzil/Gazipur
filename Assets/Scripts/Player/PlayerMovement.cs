@@ -84,7 +84,6 @@ public class PlayerMovement : MonoBehaviour
     // current frame's intended value.
     private bool _wasRun;
     private bool _wasWalk;
-    private bool _wasCrouch;
     [Inject] GameModeManager _gameMode;
     [Inject]
     void Init()
@@ -224,11 +223,60 @@ public class PlayerMovement : MonoBehaviour
     void OnCrouchPerformed(InputAction.CallbackContext context)
     {
         _wantsToCrouch = true;
+        // Round 84: drive the crouch animation
+        // forward (1.0) on press. The
+        // 'Isha_Crouch' Animator state has
+        // m_SpeedParameter set to
+        // 'crouchDirection' and
+        // m_SpeedParameterActive = 1, so
+        // setting this float to 1.0 makes
+        // the state play at full speed
+        // forward. The state itself is
+        // non-looping (the .anim file is
+        // 'Run.anim' in the Isha folder,
+        // bound to the Isha_Crouch state in
+        // the Isha_Animator.controller, and
+        // 'Run.anim' has its own non-loop
+        // behaviour - the Animator plays the
+        // motion once and freezes at the end
+        // while crouchDirection stays at
+        // 1.0). The isCrouch bool is set to
+        // true at the same time so the
+        // 'Idle -> Isha_Crouch' transition
+        // (Animator condition
+        // 'isCrouch == true') fires and
+        // switches the Animator into the
+        // Isha_Crouch state.
+        if (_legsHandsAnimator != null)
+        {
+            _legsHandsAnimator.SetFloat("crouchDirection", 1f);
+            _legsHandsAnimator.SetBool("isCrouch", true);
+        }
     }
 
     void OnCrouchCanceled(InputAction.CallbackContext context)
     {
         _wantsToCrouch = false;
+        // Round 84: on release, drive the
+        // crouch animation backward (-1.0)
+        // so it plays in reverse. Note the
+        // isCrouch bool is NOT set to false
+        // here - the Animator must STAY in
+        // the Isha_Crouch state for the
+        // reverse playback to be visible. The
+        // isCrouch bool is set to false later,
+        // from Update(), once the reverse
+        // playback has reached the start of
+        // the clip (normalizedTime <= 0).
+        // Setting isCrouch=false here would
+        // fire the 'Isha_Crouch -> Isha_Idle'
+        // transition immediately, cutting the
+        // reverse playback short and snapping
+        // the rig to Idle on key-up.
+        if (_legsHandsAnimator != null)
+        {
+            _legsHandsAnimator.SetFloat("crouchDirection", -1f);
+        }
     }
 
     void HandleCrouch()
@@ -362,10 +410,51 @@ public class PlayerMovement : MonoBehaviour
         // keeps Shift held, the rig falls back to Isha_Idle (frozen).
         if (_legsHandsAnimator != null)
         {
+            // Round 84: 'isCrouch' is no
+            // longer driven from Update().
+            // The crouch animation is now
+            // press-driven (forward on press,
+            // reverse on release), not
+            // state-driven, so the per-frame
+            // SetBool('isCrouch', ...)
+            // pattern that the round 67-69
+            // code path used is removed. The
+            // isCrouch bool is still set by
+            // OnCrouchPerformed / Update's
+            // reverse-completion check (so
+            // the 'Idle -> Isha_Crouch' and
+            // 'Isha_Crouch -> Isha_Idle'
+            // transitions in the Animator
+            // still fire), but it is not
+            // recomputed every frame from
+            // '_isCrouching && isMoving' any
+            // more. The 'isMoving' guard the
+            // user asked to drop was
+            // specifically about the
+            // animation, not about the
+            // character height / camera
+            // height (those still go through
+            // the HandleCrouch() method
+            // below, which uses _wantsToCrouch
+            // and is independent of
+            // isMoving). The isRun and
+            // isWalk bools are still driven
+            // from Update() with their
+            // isMoving guards - only the
+            // crouch bool drops the guard
+            // because the crouch animation
+            // is no longer 'is the player
+            // crouching AND moving' but
+            // rather 'is the crouch key
+            // currently held', which is
+            // exactly what _wantsToCrouch
+            // tracks and what the new
+            // OnCrouchPerformed /
+            // OnCrouchCanceled handlers
+            // drive into the Animator.
             bool isMoving = _moveInput.sqrMagnitude > 0.01f;
             bool isRun = _isRunning && !_isCrouching && isMoving;
             bool isWalk = isMoving && !_isRunning && !_isCrouching;
-            bool isCrouch = _isCrouching && isMoving;
 
             if (isRun != _wasRun)
             {
@@ -377,10 +466,67 @@ public class PlayerMovement : MonoBehaviour
                 _wasWalk = isWalk;
                 _legsHandsAnimator.SetBool("isWalk", isWalk);
             }
-            if (isCrouch != _wasCrouch)
+            // Round 84: crouch reverse
+            // completion check. When the
+            // user releases the crouch
+            // key, OnCrouchCanceled sets
+            // 'crouchDirection' to -1.0
+            // and the Isha_Crouch state
+            // starts playing in reverse.
+            // When the reverse playback
+            // reaches the start of the
+            // clip (normalizedTime <=
+            // 0.01f, with a small margin
+            // to avoid floating-point
+            // precision issues at exactly
+            // 0), we set the isCrouch bool
+            // to false. This fires the
+            // 'Isha_Crouch -> Isha_Idle'
+            // transition (which the
+            // round 67 / 68 / 69 state
+            // machine is set up for: it
+            // already requires isCrouch
+            // = 0 AND isRun = 0 AND
+            // isWalk = 0 to fire from
+            // Isha_Crouch to Isha_Idle),
+            // and the rig returns to
+            // standing. The reverse
+            // playback is what the user
+            // asked for in round 84:
+            // 'when the player releases
+            // the crouch key, the
+            // animation should play in
+            // reverse'.
+            //
+            // The '!_wantsToCrouch' guard
+            // is critical: the
+            // normalizedTime <= 0.01f
+            // check would also be true
+            // at the very START of a
+            // forward playback (the
+            // normalizedTime is 0 at
+            // t=0), which would
+            // immediately re-trigger
+            // the Isha_Crouch -> Isha_Idle
+            // transition and snap the
+            // rig out of Isha_Crouch on
+            // the first press. Gating
+            // the check on
+            // '!_wantsToCrouch' (i.e.
+            // 'the user has released
+            // the crouch key') makes
+            // sure the exit only fires
+            // after a release-and-reverse
+            // cycle, not on a fresh
+            // press.
+            if (!_wantsToCrouch)
             {
-                _wasCrouch = isCrouch;
-                _legsHandsAnimator.SetBool("isCrouch", isCrouch);
+                var stateInfo = _legsHandsAnimator.GetCurrentAnimatorStateInfo(0);
+                if (stateInfo.IsName("Isha_Crouch") && stateInfo.normalizedTime <= 0.01f)
+                {
+                    _legsHandsAnimator.SetBool("isCrouch", false);
+                    _legsHandsAnimator.SetFloat("crouchDirection", 0f);
+                }
             }
         }
     }
