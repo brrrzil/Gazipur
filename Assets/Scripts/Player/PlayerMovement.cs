@@ -257,52 +257,97 @@ public class PlayerMovement : MonoBehaviour
     void OnCrouchCanceled(InputAction.CallbackContext context)
     {
         _wantsToCrouch = false;
-        // Round 84: on release, drive the
-        // crouch animation backward (-1.0)
-        // so it plays in reverse. Note the
-        // isCrouch bool is NOT set to false
-        // here - the Animator must STAY in
-        // the Isha_Crouch state for the
-        // reverse playback to be visible. The
-        // isCrouch bool is set to false later,
-        // from Update(), once the reverse
-        // playback has reached the start of
-        // the clip (normalizedTime <= 0).
-        // Setting isCrouch=false here would
-        // fire the 'Isha_Crouch -> Isha_Idle'
-        // transition immediately, cutting the
-        // reverse playback short and snapping
-        // the rig to Idle on key-up.
+        // Round 84 v3: on release, drive
+        // the crouch animation backward
+        // (-1.0) AND keep the playback
+        // head at whatever frame the
+        // forward pass had reached when
+        // the user released the key. The
+        // user is explicit about this in
+        // round 84 v3: 'on release, the
+        // animation plays in reverse
+        // from the same frame where it
+        // was at the moment of release'.
+        // Concretely:
+        //   1. Read the current
+        //      normalizedTime of the
+        //      Isha_Crouch state
+        //      (this is the frame the
+        //      user saw when they
+        //      released the key).
+        //   2. Set the crouchDirection
+        //      float to -1f so the
+        //      state's m_Speed becomes
+        //      -1 (m_Speed 1 * parameter
+        //      -1 = -1).
+        //   3. Call Animator.Play with
+        //      the read-back
+        //      normalizedTime so the
+        //      Animator state machine
+        //      acknowledges the
+        //      position reset and
+        //      starts stepping
+        //      backward from there. A
+        //      plain SetFloat without
+        //      Play is not enough
+        //      because the Animator
+        //      does not always re-evaluate
+        //      the state machine just
+        //      because one of its speed
+        //      parameters changed - it
+        //      only re-evaluates on
+        //      Play, on a transition
+        //      being met, or on the
+        //      next state update tick,
+        //      and a speed flip from
+        //      +1 to -1 is a 'negative
+        //      speed' that needs an
+        //      explicit nudge to be
+        //      picked up.
+        // The fractional part of
+        // normalizedTime is used (%
+        // 1f) because the Isha_Crouch
+        // state is set to m_LoopTime: 1
+        // (added in round 84 v2), so a
+        // user who holds the crouch key
+        // past the end of the clip will
+        // have a normalizedTime > 1
+        // (the clip wrapped). The
+        // reverse-completion check in
+        // Update still fires on
+        // 'normalizedTime <= 0.01f',
+        // so a wrapped user gets
+        // 'reverse from the wrap
+        // point' which is visually
+        // 'reverse from the end of
+        // the clip' (the loop seam).
+        // The isCrouch bool is NOT
+        // set to false here - the
+        // Animator must STAY in
+        // Isha_Crouch for the
+        // reverse playback to be
+        // visible. The bool is reset
+        // to false in Update when
+        // the reverse reaches the
+        // start of the clip.
         if (_legsHandsAnimator != null)
         {
-            _legsHandsAnimator.SetFloat("crouchDirection", -1f);
-            // Round 84 v2: explicit Play at
-            // normalizedTime=1f to start the
-            // reverse playback from the END
-            // of the clip. Without this
-            // Play() call, the Animator
-            // would reverse from whatever
-            // current normalizedTime the
-            // Isha_Crouch state had reached
-            // when the user pressed and
-            // held C (which is a random
-            // value in [0, 1] depending on
-            // how long the user held the
-            // key before releasing), and
-            // the user would see the rig
-            // jerk to that random time and
-            // then walk backward. Setting
-            // normalizedTime=1f forces the
-            // playback head to the last
-            // frame, which the m_Speed = -1
-            // (via the crouchDirection
-            // parameter) then walks
-            // backward to the first frame.
-            // The reverse-completion check
-            // in Update fires at
-            // normalizedTime <= 0.01f
-            // and exits to Isha_Idle.
-            _legsHandsAnimator.Play("Isha_Crouch", 0, 1f);
+            var s = _legsHandsAnimator.GetCurrentAnimatorStateInfo(0);
+            if (s.IsName("Isha_Crouch"))
+            {
+                // Read the frame the user
+                // saw at release, mod 1f
+                // to handle the loop wrap.
+                float currentTime = s.normalizedTime;
+                if (currentTime > 1f) currentTime = currentTime - Mathf.Floor(currentTime);
+                // SetFloat first so the
+                // m_Speed = -1 is in effect
+                // when Play() restarts the
+                // state machine on the
+                // current frame.
+                _legsHandsAnimator.SetFloat("crouchDirection", -1f);
+                _legsHandsAnimator.Play("Isha_Crouch", 0, currentTime);
+            }
         }
     }
 
