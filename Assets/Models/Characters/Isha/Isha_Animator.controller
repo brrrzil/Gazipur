@@ -95,8 +95,8 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Isha_Idle
-  m_Speed: 0
-  m_CycleOffset: 0.1
+  m_Speed: 1
+  m_CycleOffset: 0
   m_Transitions:
   - {fileID: 1000000000000000001}
   - {fileID: 1000000000000000002}
@@ -110,7 +110,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: d47a18df14250bc4bbce910d4af321bd, type: 2}
+  m_Motion: {fileID: 7400000, guid: 5ed796619a1303b45a5159f5ce261acd, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 
@@ -122,7 +122,7 @@ AnimatorController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Group
+  m_Name: Isha_Animator
   serializedVersion: 6
   m_AnimatorParameters:
   - m_Name: isRun
