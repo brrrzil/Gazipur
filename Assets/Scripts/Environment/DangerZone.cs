@@ -1,4 +1,5 @@
 using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -36,7 +37,10 @@ public class DangerZone : MonoBehaviour
     // exactly the image the user wants
     // driven.
     [SerializeField] private GameObject _maskOverlay;
+    [SerializeField] private GameObject _fogOverlay;
     private GameObject _resolvedMaskRoot;
+    private Image _resolvedFogImage;
+    private Tween _fogTween;
 
     private bool _inZone;
 
@@ -75,10 +79,36 @@ public class DangerZone : MonoBehaviour
             FindObjectsSortMode.None);
         foreach (var img in images)
         {
-            if (img.sprite != null && img.sprite.name == "MaskImage")
+            if (img.sprite != null)
             {
-                _resolvedMaskRoot = img.gameObject;
-                break;
+                // The mask is the Image
+                // whose sprite is the one
+                // imported from
+                // 'Assets/Resources/MaskImage.png'.
+                if (_resolvedMaskRoot == null && img.sprite.name == "MaskImage")
+                {
+                    _resolvedMaskRoot = img.gameObject;
+                }
+                // The fog layer is a
+                // second sibling Image
+                // whose sprite is the
+                // one imported from
+                // 'Assets/Resources/FogImage.png'
+                // (or any other
+                // 'FogImage' sprite
+                // the user drops in).
+                // The fog Image is
+                // optional: if no
+                // Image with sprite
+                // name 'FogImage' is
+                // found, the fog path
+                // is a silent no-op
+                // (no DOTween started,
+                // no error, no NRE).
+                if (_resolvedFogImage == null && img.sprite.name == "FogImage")
+                {
+                    _resolvedFogImage = img;
+                }
             }
         }
     }
@@ -134,6 +164,33 @@ public class DangerZone : MonoBehaviour
             {
                 _resolvedMaskRoot.SetActive(true);
             }
+            // Round 82 (v5): start the
+            // 'breathing through the
+            // mask' fog pulse. The fog
+            // layer is a separate
+            // sibling Image whose
+            // sprite is the one
+            // imported from
+            // 'Assets/Resources/FogImage.png'
+            // (or any 'FogImage'
+            // sprite). The pulse is
+            // a DOTween Yoyo on the
+            // Image's colour alpha,
+            // 0.10 <-> 0.30 over 3
+            // seconds with
+            // Ease.InOutSine, so the
+            // fog looks like a slow
+            // breath rather than a
+            // mechanical blink. If
+            // no fog Image is found
+            // (the user has not
+            // created one in the
+            // scene) the lookup
+            // returns null and the
+            // fog path is a silent
+            // no-op - no NRE, no
+            // warning, just no fog.
+            StartFog();
         }
     }
     private void OnTriggerExit(Collider other)
@@ -171,8 +228,53 @@ public class DangerZone : MonoBehaviour
             {
                 _resolvedMaskRoot.SetActive(false);
             }
+            // Round 82 (v5): stop the
+            // fog pulse on exit so
+            // the breathing does not
+            // keep running when the
+            // mask is hidden.
+            StopFog();
         }
     }
+    // Round 82 (v5): fog pulse
+    // implementation. The fog is
+    // a second sibling Image on
+    // the same Canvas as the
+    // mask. It is OPTIONAL: if
+    // the user has not created
+    // one (or the auto-find did
+    // not match a 'FogImage'
+    // sprite), the methods are
+    // silent no-ops.
+    private void StartFog()
+    {
+        if (_resolvedFogImage == null) return;
+        StopFog();
+        // Reset to known start
+        // alpha so the first Yoyo
+        // leg is identical to
+        // subsequent ones.
+        var c = _resolvedFogImage.color;
+        c.a = 0.10f;
+        _resolvedFogImage.color = c;
+        // Yoyo loop: 0.10 -> 0.30
+        // over 1.5s, 0.30 -> 0.10
+        // over 1.5s, looping
+        // forever until StopFog().
+        // Ease.InOutSine makes it
+        // feel like a slow breath.
+        _fogTween = _resolvedFogImage.DOFade(0.30f, 1.5f)
+            .SetEase(Ease.InOutSine)
+            .SetLoops(-1, LoopType.Yoyo);
+    }
+
+    private void StopFog()
+    {
+        if (_fogTween == null) return;
+        _fogTween.Kill();
+        _fogTween = null;
+    }
+
     private IEnumerator Tic()
     {
         while (_inZone)
