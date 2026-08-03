@@ -161,13 +161,36 @@ public class MaskOverlay : MonoBehaviour
         // missing rather than throwing -
         // debug helpers should never break a
         // build over a missing art asset.
+        // Try to load the user's mask artwork
+        // from Resources/MaskImage.png. If the
+        // file is missing (the user has not
+        // dropped it in yet, the Resources
+        // folder does not exist, or the Texture
+        // Type is wrong), fall back to a
+        // programmatic 1x1 white sprite. This
+        // way the Image component is NEVER left
+        // with a null sprite (which Unity
+        // silently does not render) - the user
+        // always sees SOMETHING when Show() is
+        // called, even if it is just a solid
+        // white quad that proves the overlay
+        // logic is wired up correctly. A
+        // Debug.LogWarning tells the user that
+        // the artwork was not found and how to
+        // fix it.
         var maskSprite = Resources.Load<Sprite>("MaskImage");
         if (maskSprite != null)
+        {
             _maskImage.sprite = maskSprite;
+        }
         else
+        {
             Debug.LogWarning("[MaskOverlay] 'Resources/MaskImage.png' not found. " +
                 "Drop the mask sprite into Assets/Resources/ with the name 'MaskImage' " +
-                "(Texture Type = Sprite (2D and UI), Alpha Is Transparency on).");
+                "(Texture Type = Sprite (2D and UI), Alpha Is Transparency on). " +
+                "Falling back to a solid white quad for now so the overlay is visible.");
+            _maskImage.sprite = CreateWhiteSprite();
+        }
 
         // ----- Fog Image -----
         var fogGo = new GameObject("FogImage");
@@ -191,7 +214,24 @@ public class MaskOverlay : MonoBehaviour
         fogRect.offsetMax = Vector2.zero;
         var fogSprite = Resources.Load<Sprite>("FogImage");
         if (fogSprite != null)
+        {
             _fogImage.sprite = fogSprite;
+        }
+        else
+        {
+            // Same fallback pattern as the mask
+            // - if the user has not provided a
+            // fog texture, the fog image is a
+            // solid white quad. The alpha
+            // pulse still works on a plain
+            // white sprite (it just looks like
+            // a milky white overlay pulsing
+            // instead of a textured fog). The
+            // user can drop a noise PNG into
+            // Resources/FogImage.png at any
+            // time to upgrade the look.
+            _fogImage.sprite = CreateWhiteSprite();
+        }
         // Tint the fog white so a missing
         // FogImage still produces a milky
         // overlay (the alpha is what makes
@@ -274,5 +314,68 @@ public class MaskOverlay : MonoBehaviour
     {
         _fogTween?.Kill();
         _fogTween = null;
+    }
+
+    /// <summary>
+    /// Round 82 (v2): programmatic 1x1 white
+    /// sprite used as a fallback when
+    /// Resources.Load fails for the mask or
+    /// fog artwork. Image.sprite = null in
+    /// Unity does NOT render anything (the
+    /// component is silently skipped), which
+    /// makes missing artwork very hard to
+    /// debug - the user just sees a black
+    /// screen and assumes the whole overlay
+    /// is broken. By assigning a non-null
+    /// white sprite, the Image renders a
+    /// solid white quad, which proves the
+    /// overlay logic is firing and isolates
+    /// the bug to the artwork (missing
+    /// Resources folder, wrong Texture
+    /// Type, etc.).
+    ///
+    /// Implementation notes:
+    /// - The texture is created with
+    ///   TextureFormat.RGBA32 and a single
+    ///   white pixel, which is the minimum
+    ///   required to be a valid sprite.
+    /// - The pivot is (0.5, 0.5) (centre)
+    ///   so the white quad scales
+    ///   symmetrically.
+    /// - pixelsPerUnit = 100 is the Unity
+    ///   default for newly-created sprites
+    ///   and matches what the user's
+    ///   imported PNGs would have.
+    /// - The texture is named
+    ///   "[MaskOverlay Fallback]" so it is
+    ///   easy to find in the Memory Profiler
+    ///   if needed.
+    /// - applyAlpha = true so the sprite
+    ///   respects alpha correctly if the
+    ///   user later modifies the fallback
+    ///   texture to a non-white colour.
+    /// </summary>
+    private static Sprite CreateWhiteSprite()
+    {
+        var tex = new Texture2D(1, 1, TextureFormat.RGBA32, false)
+        {
+            name = "[MaskOverlay Fallback]",
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp
+        };
+        tex.SetPixel(0, 0, Color.white);
+        tex.Apply();
+        // Pivot (0.5, 0.5) means the sprite
+        // is anchored at its centre, which
+        // matches the way the user's mask
+        // artwork is composed (the eye
+        // holes are at the geometric centre
+        // of the image). 100 pixelsPerUnit
+        // is the Unity default.
+        return Sprite.Create(
+            tex,
+            new Rect(0, 0, 1, 1),
+            new Vector2(0.5f, 0.5f),
+            100f);
     }
 }
