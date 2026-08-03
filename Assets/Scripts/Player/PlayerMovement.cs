@@ -84,6 +84,23 @@ public class PlayerMovement : MonoBehaviour
     // current frame's intended value.
     private bool _wasRun;
     private bool _wasWalk;
+    // Round 84 v4: persistent flag set
+    // true at the moment of release
+    // and cleared when the reverse
+    // playback reaches the start
+    // of the clip. The Update
+    // check fires on this flag
+    // (not on the _wantsToCrouch
+    // check alone) so that the
+    // 'first-press-then-release'
+    // case (a tap that did not
+    // advance the forward pass
+    // past the very first
+    // frame) still gets a
+    // reliable 'exit to Idle'
+    // signal when the reverse
+    // pass has finished.
+    private bool _isReversing;
     [Inject] GameModeManager _gameMode;
     [Inject]
     void Init()
@@ -249,8 +266,33 @@ public class PlayerMovement : MonoBehaviour
         // Isha_Crouch state.
         if (_legsHandsAnimator != null)
         {
+            _isReversing = false;
             _legsHandsAnimator.SetFloat("crouchDirection", 1f);
             _legsHandsAnimator.SetBool("isCrouch", true);
+            // Round 84 v4: explicit Play at
+            // normalizedTime=0 on press.
+            // The Animator transition
+            // 'Idle -> Isha_Crouch' fires
+            // when isCrouch goes true, but
+            // the transition does not
+            // reset the target state's
+            // normalizedTime to 0 on its
+            // own - the playback head
+            // resumes from wherever the
+            // previous Isha_Crouch visit
+            // left it (or, on a brand new
+            // game, from 0). Without the
+            // explicit Play() call here,
+            // a second press after a long
+            // reverse-walk that ended at
+            // normalizedTime 0.1 would
+            // resume the new forward pass
+            // from 0.1 (continuing the
+            // previous play) instead of
+            // restarting cleanly from 0.
+            // The Play(state, 0, 0f) call
+            // forces a clean restart.
+            _legsHandsAnimator.Play("Isha_Crouch", 0, 0f);
         }
     }
 
@@ -336,14 +378,32 @@ public class PlayerMovement : MonoBehaviour
             if (s.IsName("Isha_Crouch"))
             {
                 // Read the frame the user
-                // saw at release, mod 1f
-                // to handle the loop wrap.
+                // saw at release. With
+                // m_LoopTime: 0 in round
+                // 84 v4, normalizedTime
+                // is always in [0, 1]
+                // (non-loop state never
+                // wraps), but the
+                // mod-1f guard is still
+                // there for safety in
+                // case a future Editor
+                // change re-enables
+                // m_LoopTime.
                 float currentTime = s.normalizedTime;
                 if (currentTime > 1f) currentTime = currentTime - Mathf.Floor(currentTime);
+                // Set _isReversing BEFORE
+                // the SetFloat so the
+                // Update check below
+                // (which runs on the
+                // next frame) can see
+                // the flag and not
+                // fire on a press.
+                _isReversing = true;
                 // SetFloat first so the
-                // m_Speed = -1 is in effect
-                // when Play() restarts the
-                // state machine on the
+                // m_Speed = -1 is in
+                // effect when Play()
+                // restarts the state
+                // machine on the
                 // current frame.
                 _legsHandsAnimator.SetFloat("crouchDirection", -1f);
                 _legsHandsAnimator.Play("Isha_Crouch", 0, currentTime);
@@ -591,13 +651,31 @@ public class PlayerMovement : MonoBehaviour
             // after a release-and-reverse
             // cycle, not on a fresh
             // press.
-            if (!_wantsToCrouch)
+            // Round 84 v4: exit on
+            // _isReversing (not on
+            // '!_wantsToCrouch' alone)
+            // so the 'first press
+            // then release' case (a
+            // tap that did not
+            // advance the forward
+            // pass past the very
+            // first frame) still
+            // gets a reliable exit
+            // signal. The
+            // _isReversing flag is
+            // set in
+            // OnCrouchCanceled and
+            // cleared here when the
+            // reverse pass has
+            // completed.
+            if (_isReversing)
             {
                 var stateInfo = _legsHandsAnimator.GetCurrentAnimatorStateInfo(0);
                 if (stateInfo.IsName("Isha_Crouch") && stateInfo.normalizedTime <= 0.01f)
                 {
                     _legsHandsAnimator.SetBool("isCrouch", false);
                     _legsHandsAnimator.SetFloat("crouchDirection", 0f);
+                    _isReversing = false;
                 }
             }
         }
