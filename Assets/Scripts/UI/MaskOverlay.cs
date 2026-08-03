@@ -3,250 +3,144 @@ using UnityEngine.UI;
 using DG.Tweening;
 
 /// <summary>
-/// Round 82: full-screen mask overlay shown when the
-/// player has bought a mask from a trader and walks
-/// into a Danger zone. The mask is a PNG with
-/// transparent eye holes (the user has the
-/// artwork); the fog layer above the mask is a
-/// second image that pulses between two alpha
-/// values to give a 'breathing through the mask'
-/// effect.
+/// Round 82 (v3): helper component that fades a
+/// pre-existing Canvas in / out and pulses a
+/// second Image as a 'breathing through the mask'
+/// fog effect.
 ///
-/// Component auto-bootstraps on first scene load
-/// (same [RuntimeInitializeOnLoadMethod +
-/// AfterSceneLoad] pattern as FpsCounter and
-/// DebugCheat), so no scene / prefab wiring is
-/// needed. The component builds its own Canvas
-/// (Screen Space - Overlay, sortingOrder 100),
-/// its own Image for the mask, and its own Image
-/// for the fog. The mask / fog sprites are loaded
-/// from the 'Resources/' folder by name:
-/// 'MaskImage.png' and 'FogImage.png'. The user
-/// only needs to drop the two PNGs into
-/// Assets/Resources/ with the correct names
-/// (Texture Type = Sprite (2D and UI), Alpha
-/// Is Transparency on) and the overlay will
-/// find them on the first frame.
+/// v3 redesign: the v1 / v2 versions of this
+/// script auto-bootstrapped a Canvas + Image + Image
+/// (mask + fog) from Resources.Load on the first
+/// scene load. The user has instead set up the
+/// Canvas and Image MANUALLY in the Editor (the
+/// 'Panel_Gas_Mask.png' sprite is wired into an
+/// Image on a Canvas in GameScene.unity, not into
+/// a Resources folder), so the auto-bootstrap
+/// path was creating a SECOND Canvas (with a
+/// white fallback sprite, since the artwork was
+/// in Sprites/ not Resources/) that did not match
+/// the user's Editor setup. This v3 keeps all the
+/// runtime behaviour (Show / Hide / fog pulse) but
+/// drops the auto-bootstrap and expects the user
+/// to wire up [SerializeField] references in the
+/// Inspector. The benefit is the user controls
+/// the UI exactly the way they want (no magic
+/// auto-created GameObjects fighting the scene
+/// hierarchy), at the cost of a few Inspector
+/// drags.
 ///
-/// Public API:
-///   Show() - fade the canvas in over
-///     _fadeDuration seconds, start the fog
-///     pulse.
-///   Hide() - fade the canvas out, stop the
-///     fog pulse.
-/// Both are safe to call multiple times; the
-/// DOTween fade tween is short-circuited and
-/// the fog tween is .Kill()-ed before being
-/// restarted, so there is no accumulating
-/// tween leak if the player runs in and out
-/// of the danger zone rapidly.
+/// What the user does in the Editor (one-time
+/// setup, 6 steps):
+///   1. Open the Canvas in GameScene.unity that
+///      already holds the 'Panel_Gas_Mask' Image.
+///   2. Select the Canvas root GameObject. In
+///      the Inspector, click 'Add Component' and
+///      add a CanvasGroup. Tick the boxes for
+///      'Interactable' and 'Blocks Raycasts' OFF
+///      (the mask is a visual-only overlay, it
+///      must not eat clicks intended for the
+///      game UI). Set 'Alpha' to 0 so the mask
+///      starts hidden.
+///   3. Select the 'Image' child of the Canvas
+///      (the one whose Source Image is
+///      Panel_Gas_Mask). In the RectTransform,
+///      set the four anchor handles to stretch
+///      the image to the full screen:
+///        - Anchor Min: 0, 0
+///        - Anchor Max: 1, 1
+///        - Offset Min: 0, 0
+///        - Offset Max: 0, 0
+///      This is the step the user missed in v2
+///      (the image was 20x20 at offset (150, 0),
+///      which is why the mask did not appear on
+///      the face). With full-screen stretch the
+///      transparent eye holes in
+///      Panel_Gas_Mask.png line up with the
+///      centre of the screen at any aspect
+///      ratio.
+///   4. (Optional) Duplicate the 'Image' child
+///      to create a second 'Fog' Image. Set
+///      its colour to white and alpha 0.10. This
+///      is the layer that pulses via DOTween
+///      Yoyo to give the breathing effect. If
+///      the user skips this step, the fog path
+///      silently no-ops (no error).
+///   5. Create an empty GameObject named
+///      'MaskOverlay' (or any name) as a child
+///      of the Canvas, and add the
+///      'MaskOverlay' component to it. Drag:
+///        - the mask Image into the 'Mask
+///          Image' field
+///        - the fog Image (or leave empty) into
+///          the 'Fog Image' field
+///        - the Canvas's CanvasGroup into the
+///          'Canvas Group' field
+///   6. Save the scene. The DangerZone.cs
+///      OnTriggerEnter / OnTriggerExit calls
+///      (committed in round 82) will then
+///      invoke MaskOverlay.Show() / Hide() on
+///      the user-wired component.
+///
+/// The DangerZone side of the integration is
+/// unchanged from round 82: the script calls
+/// 'FindFirstObjectByType&lt;MaskOverlay&gt;()' from
+/// its OnTriggerEnter and OnTriggerExit (the
+/// round 79 pattern; round 77 was the lesson
+/// that [Inject] on a component that is not
+/// bound in any installer triggers a
+/// ZenjectException at scene start). When the
+/// user has wired up MaskOverlay on a
+/// GameObject in the scene, the lookup
+/// succeeds; if the user has not, the lookup
+/// returns null and the DangerZone silently
+/// no-ops (no error, no NRE).
 /// </summary>
 public class MaskOverlay : MonoBehaviour
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void AutoBootstrap()
-    {
-        // Round 75/76 lesson: a MonoBehaviour on its
-        // own is useless (Awake never fires), so
-        // DontDestroyOnLoad + auto-create is the
-        // safe pattern for cross-scene debug /
-        // UI helpers. The same pattern is used by
-        // FpsCounter.cs (F3 fps overlay) and
-        // DebugCheat.cs (P money cheat).
-        if (FindFirstObjectByType<MaskOverlay>() != null) return;
-        var go = new GameObject("[MaskOverlay]");
-        DontDestroyOnLoad(go);
-        go.AddComponent<MaskOverlay>();
-    }
+    [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private Image _maskImage;
+    // Fog image is OPTIONAL. If left null in
+    // the Inspector, the breathing effect is
+    // simply skipped (Show / Hide still work
+    // for the mask fade). This makes the
+    // component usable with just the mask
+    // image, which is the minimum the user
+    // needs.
+    [SerializeField] private Image _fogImage;
 
     [SerializeField] private float _fadeDuration = 0.4f;
-    // Fog pulses between _fogMinAlpha and
-    // _fogMaxAlpha over _fogCycle seconds
-    // (full ping-pong). The default values
-    // produce a subtle 'breathing' effect:
-    // 0.10 -> 0.30 -> 0.10 over 3 seconds.
     [SerializeField] private float _fogMinAlpha = 0.10f;
     [SerializeField] private float _fogMaxAlpha = 0.30f;
     [SerializeField] private float _fogCycle = 3f;
 
-    private CanvasGroup _canvasGroup;
-    private Image _maskImage;
-    private Image _fogImage;
     private Tween _fadeTween;
     private Tween _fogTween;
 
-    private void Awake()
+    private void Start()
     {
-        BuildUI();
-        // Start hidden.
-        _canvasGroup.alpha = 0f;
-        _canvasGroup.interactable = false;
-        _canvasGroup.blocksRaycasts = false;
+        // Initial state: hidden. The user
+        // already set the CanvasGroup alpha
+        // to 0 in the Editor (per step 2 of
+        // the setup notes), but the runtime
+        // reasserts the value so a missing
+        // Inspector setting is not a
+        // showstopper. interactable /
+        // blocksRaycasts are also forced off
+        // here so the mask never eats clicks
+        // even if the user leaves them on in
+        // the Inspector.
+        if (_canvasGroup != null)
+        {
+            _canvasGroup.alpha = 0f;
+            _canvasGroup.interactable = false;
+            _canvasGroup.blocksRaycasts = false;
+        }
         if (_fogImage != null)
         {
-            // Fog initial alpha is the min so the
-            // first Yoyo loop starts from a known
-            // value. (DOTween's Yoyo loop holds
-            // the start value for the first half
-            // of the cycle; setting the colour
-            // here keeps the first cycle visually
-            // identical to subsequent cycles.)
             var c = _fogImage.color;
             c.a = _fogMinAlpha;
             _fogImage.color = c;
         }
-    }
-
-    private void BuildUI()
-    {
-        // ----- Canvas -----
-        var canvasGo = new GameObject("MaskCanvas");
-        canvasGo.transform.SetParent(transform);
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        // sort order 100 keeps the overlay above
-        // every other Canvas in the scene (the
-        // game UI Canvas is at sort order 0 by
-        // default and the trade panel / settings
-        // panel Canvas are also at sort order 0
-        // or 1). The mask must always be on top
-        // so the fog pulse is not occluded by
-        // the trade panel.
-        canvas.sortingOrder = 100;
-        // CanvasScaler is required by the UI
-        // system for the RectTransform
-        // stretching below to work correctly
-        // at any screen resolution.
-        var scaler = canvasGo.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
-        // GraphicRaycaster is required on a
-        // Canvas that hosts Image components.
-        // The mask does not need to receive
-        // raycasts (the user is not clicking
-        // through the mask), but the
-        // raycaster has to be present or the
-        // Image refuses to render in some
-        // Unity versions. We disable
-        // raycastTarget on the Images
-        // themselves so the raycaster is a
-        // no-op at runtime.
-        canvasGo.AddComponent<GraphicRaycaster>();
-
-        // ----- Mask Image -----
-        var maskGo = new GameObject("MaskImage");
-        maskGo.transform.SetParent(canvasGo.transform, false);
-        _maskImage = maskGo.AddComponent<Image>();
-        _maskImage.raycastTarget = false;
-        // Stretch the image to the full canvas
-        // so the eye holes line up with the
-        // centre of the screen regardless of
-        // aspect ratio. The user's mask
-        // artwork already has transparent
-        // pixels for the eye holes, so no
-        // per-eye Image is needed; the
-        // transparent alpha in the PNG is what
-        // shows the game world through the
-        // mask.
-        var maskRect = _maskImage.rectTransform;
-        maskRect.anchorMin = Vector2.zero;
-        maskRect.anchorMax = Vector2.one;
-        maskRect.offsetMin = Vector2.zero;
-        maskRect.offsetMax = Vector2.zero;
-        // Resources.Load returns null if the
-        // asset is missing or not built into
-        // a Resources folder. We log a
-        // one-line warning if the sprite is
-        // missing rather than throwing -
-        // debug helpers should never break a
-        // build over a missing art asset.
-        // Try to load the user's mask artwork
-        // from Resources/MaskImage.png. If the
-        // file is missing (the user has not
-        // dropped it in yet, the Resources
-        // folder does not exist, or the Texture
-        // Type is wrong), fall back to a
-        // programmatic 1x1 white sprite. This
-        // way the Image component is NEVER left
-        // with a null sprite (which Unity
-        // silently does not render) - the user
-        // always sees SOMETHING when Show() is
-        // called, even if it is just a solid
-        // white quad that proves the overlay
-        // logic is wired up correctly. A
-        // Debug.LogWarning tells the user that
-        // the artwork was not found and how to
-        // fix it.
-        var maskSprite = Resources.Load<Sprite>("MaskImage");
-        if (maskSprite != null)
-        {
-            _maskImage.sprite = maskSprite;
-        }
-        else
-        {
-            Debug.LogWarning("[MaskOverlay] 'Resources/MaskImage.png' not found. " +
-                "Drop the mask sprite into Assets/Resources/ with the name 'MaskImage' " +
-                "(Texture Type = Sprite (2D and UI), Alpha Is Transparency on). " +
-                "Falling back to a solid white quad for now so the overlay is visible.");
-            _maskImage.sprite = CreateWhiteSprite();
-        }
-
-        // ----- Fog Image -----
-        var fogGo = new GameObject("FogImage");
-        fogGo.transform.SetParent(canvasGo.transform, false);
-        _fogImage = fogGo.AddComponent<Image>();
-        _fogImage.raycastTarget = false;
-        // Place the fog above the mask in the
-        // hierarchy (it is the second child
-        // of canvasGo) so the fog renders on
-        // top of the mask artwork. The fog
-        // sprite is optional - if the user
-        // does not provide one the fog
-        // component simply renders a flat
-        // tinted quad, which still produces
-        // a usable 'breathing' effect via
-        // alpha pulsing.
-        var fogRect = _fogImage.rectTransform;
-        fogRect.anchorMin = Vector2.zero;
-        fogRect.anchorMax = Vector2.one;
-        fogRect.offsetMin = Vector2.zero;
-        fogRect.offsetMax = Vector2.zero;
-        var fogSprite = Resources.Load<Sprite>("FogImage");
-        if (fogSprite != null)
-        {
-            _fogImage.sprite = fogSprite;
-        }
-        else
-        {
-            // Same fallback pattern as the mask
-            // - if the user has not provided a
-            // fog texture, the fog image is a
-            // solid white quad. The alpha
-            // pulse still works on a plain
-            // white sprite (it just looks like
-            // a milky white overlay pulsing
-            // instead of a textured fog). The
-            // user can drop a noise PNG into
-            // Resources/FogImage.png at any
-            // time to upgrade the look.
-            _fogImage.sprite = CreateWhiteSprite();
-        }
-        // Tint the fog white so a missing
-        // FogImage still produces a milky
-        // overlay (the alpha is what makes
-        // it look like fog).
-        _fogImage.color = new Color(1f, 1f, 1f, _fogMinAlpha);
-
-        // ----- CanvasGroup -----
-        // One CanvasGroup on the Canvas root
-        // controls the alpha of both images
-        // at once. DOTween's DOFade on
-        // CanvasGroup.alpha animates the
-        // whole tree in a single property
-        // write per frame, which is cheaper
-        // than animating two Image alphas.
-        _canvasGroup = canvasGo.AddComponent<CanvasGroup>();
     }
 
     public void Show()
@@ -254,11 +148,7 @@ public class MaskOverlay : MonoBehaviour
         if (_canvasGroup == null) return;
         // Kill any in-flight fade so rapid
         // Show / Hide / Show sequences do
-        // not stack tweens (which would
-        // cause DOTween to throw on the
-        // second .DOFade call and would
-        // leave the alpha at an
-        // intermediate value).
+        // not stack tweens.
         _fadeTween?.Kill();
         _fadeTween = _canvasGroup.DOFade(1f, _fadeDuration);
         StartFog();
@@ -269,39 +159,21 @@ public class MaskOverlay : MonoBehaviour
         if (_canvasGroup == null) return;
         _fadeTween?.Kill();
         _fadeTween = _canvasGroup.DOFade(0f, _fadeDuration)
-            // Hide() is the last call when the
-            // player leaves the danger zone, so
-            // stop the fog pulse on the same
-            // frame the fade starts. The fog
-            // tween is .Kill()-ed inside
-            // StopFog() so it does not fight
-            // the fade-out.
             .OnComplete(StopFog);
-        // If the fade is interrupted by a new
-        // Show() before this tween completes,
-        // .Kill() above is enough - the
-        // OnComplete callback does not fire
-        // on a killed tween, so StopFog() is
-        // not called in that case (the fog
-        // continues to run, which is what we
-        // want - Show() calls StartFog()
-        // anyway).
     }
 
     private void StartFog()
     {
         if (_fogImage == null) return;
         StopFog();
-        // Yoyo loop: animate alpha from
-        // _fogMinAlpha to _fogMaxAlpha over
-        // _fogCycle / 2 seconds, then back
-        // to _fogMinAlpha over the next
-        // _fogCycle / 2 seconds, looping
-        // forever until StopFog() kills
-        // the tween. Ease.InOutSine makes
-        // the pulse feel like slow
-        // breathing rather than a
-        // mechanical blink.
+        // The 'breathing' effect: fog alpha
+        // Yoyos between _fogMinAlpha and
+        // _fogMaxAlpha over _fogCycle
+        // seconds (each leg is _fogCycle /
+        // 2). Ease.InOutSine makes the
+        // transition feel like a slow
+        // breath rather than a mechanical
+        // blink.
         var startColor = _fogImage.color;
         startColor.a = _fogMinAlpha;
         _fogImage.color = startColor;
@@ -314,68 +186,5 @@ public class MaskOverlay : MonoBehaviour
     {
         _fogTween?.Kill();
         _fogTween = null;
-    }
-
-    /// <summary>
-    /// Round 82 (v2): programmatic 1x1 white
-    /// sprite used as a fallback when
-    /// Resources.Load fails for the mask or
-    /// fog artwork. Image.sprite = null in
-    /// Unity does NOT render anything (the
-    /// component is silently skipped), which
-    /// makes missing artwork very hard to
-    /// debug - the user just sees a black
-    /// screen and assumes the whole overlay
-    /// is broken. By assigning a non-null
-    /// white sprite, the Image renders a
-    /// solid white quad, which proves the
-    /// overlay logic is firing and isolates
-    /// the bug to the artwork (missing
-    /// Resources folder, wrong Texture
-    /// Type, etc.).
-    ///
-    /// Implementation notes:
-    /// - The texture is created with
-    ///   TextureFormat.RGBA32 and a single
-    ///   white pixel, which is the minimum
-    ///   required to be a valid sprite.
-    /// - The pivot is (0.5, 0.5) (centre)
-    ///   so the white quad scales
-    ///   symmetrically.
-    /// - pixelsPerUnit = 100 is the Unity
-    ///   default for newly-created sprites
-    ///   and matches what the user's
-    ///   imported PNGs would have.
-    /// - The texture is named
-    ///   "[MaskOverlay Fallback]" so it is
-    ///   easy to find in the Memory Profiler
-    ///   if needed.
-    /// - applyAlpha = true so the sprite
-    ///   respects alpha correctly if the
-    ///   user later modifies the fallback
-    ///   texture to a non-white colour.
-    /// </summary>
-    private static Sprite CreateWhiteSprite()
-    {
-        var tex = new Texture2D(1, 1, TextureFormat.RGBA32, false)
-        {
-            name = "[MaskOverlay Fallback]",
-            filterMode = FilterMode.Point,
-            wrapMode = TextureWrapMode.Clamp
-        };
-        tex.SetPixel(0, 0, Color.white);
-        tex.Apply();
-        // Pivot (0.5, 0.5) means the sprite
-        // is anchored at its centre, which
-        // matches the way the user's mask
-        // artwork is composed (the eye
-        // holes are at the geometric centre
-        // of the image). 100 pixelsPerUnit
-        // is the Unity default.
-        return Sprite.Create(
-            tex,
-            new Rect(0, 0, 1, 1),
-            new Vector2(0.5f, 0.5f),
-            100f);
     }
 }
