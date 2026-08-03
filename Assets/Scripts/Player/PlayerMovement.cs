@@ -276,6 +276,33 @@ public class PlayerMovement : MonoBehaviour
         if (_legsHandsAnimator != null)
         {
             _legsHandsAnimator.SetFloat("crouchDirection", -1f);
+            // Round 84 v2: explicit Play at
+            // normalizedTime=1f to start the
+            // reverse playback from the END
+            // of the clip. Without this
+            // Play() call, the Animator
+            // would reverse from whatever
+            // current normalizedTime the
+            // Isha_Crouch state had reached
+            // when the user pressed and
+            // held C (which is a random
+            // value in [0, 1] depending on
+            // how long the user held the
+            // key before releasing), and
+            // the user would see the rig
+            // jerk to that random time and
+            // then walk backward. Setting
+            // normalizedTime=1f forces the
+            // playback head to the last
+            // frame, which the m_Speed = -1
+            // (via the crouchDirection
+            // parameter) then walks
+            // backward to the first frame.
+            // The reverse-completion check
+            // in Update fires at
+            // normalizedTime <= 0.01f
+            // and exits to Isha_Idle.
+            _legsHandsAnimator.Play("Isha_Crouch", 0, 1f);
         }
     }
 
