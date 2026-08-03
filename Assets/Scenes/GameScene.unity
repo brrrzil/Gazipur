@@ -72474,15 +72474,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3398832841044205652, guid: 14d34d3dac2498e47b31fcc1ee95cc59, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 31.31
+      value: 17.59
       objectReference: {fileID: 0}
     - target: {fileID: 3398832841044205652, guid: 14d34d3dac2498e47b31fcc1ee95cc59, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.67
+      value: 2.72
       objectReference: {fileID: 0}
     - target: {fileID: 3398832841044205652, guid: 14d34d3dac2498e47b31fcc1ee95cc59, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -24.18
+      value: -30.93
       objectReference: {fileID: 0}
     - target: {fileID: 3398832841044205652, guid: 14d34d3dac2498e47b31fcc1ee95cc59, type: 3}
       propertyPath: m_LocalRotation.w
@@ -74564,12 +74564,12 @@ GameObject:
   - component: {fileID: 1783009371}
   - component: {fileID: 1783009370}
   m_Layer: 5
-  m_Name: Image
+  m_Name: GasMaskImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1783009369
 RectTransform:
   m_ObjectHideFlags: 0
