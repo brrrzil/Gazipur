@@ -84,7 +84,8 @@ public static class EnumData
         pickedMettal,
         pickedTecno,
         wireCut,
-        build
+        build,
+        bikeBell
     }
     public enum UISound
     {
