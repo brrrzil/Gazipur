@@ -1,22 +1,19 @@
 using UnityEngine;
-using Zenject;
-using static EnumData;
 
 // Interactable for the bicycle models on the location. The
-// inherited _tooltipeText (Inspector) sets the tooltip; the
 // inherited Outline component is enabled/disabled by
-// InteractObject.Select(). Intearct() plays the bell sound once
-// per E press. The 'bikeBell' PlayerSound is bound to an
-// AudioClip by the user in GameManager.prefab -> Sounds._playerSounds[].
+// InteractObject.Select(); leave the inherited _tooltipeText
+// field empty to suppress the tooltip. Intearct() plays the
+// bell once per E press via the local AudioSource (drag the
+// bike bell AudioClip onto it, or assign an AudioSource that
+// already has the bell clip).
 public class BikeInteract : InteractObject
 {
-    [SerializeField] private PlayerSound _bellSound = PlayerSound.bikeBell;
-
-    [Inject] private Sounds _sounds;
+    [SerializeField] private AudioSource _bellSource;
 
     public override void Intearct(bool isDown)
     {
         if (!isDown) return;
-        _sounds.PlayerPlay(_bellSound, false);
+        if (_bellSource != null) _bellSource.Play();
     }
 }
