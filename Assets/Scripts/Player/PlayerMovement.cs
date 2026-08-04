@@ -806,9 +806,9 @@ public class PlayerMovement : MonoBehaviour
     // are also cleared so the rig does not stay in Isha_Run
     // after the lock ends (the Animator state would otherwise
     // keep playing until the next transition fires).
-    public void PlayLockedAnimation(string trigger, float duration, int layer = 0)
+    public void PlayLockedAnimation(string trigger, float duration)
     {
-        if (_legsHandsAnimator != null) _legsHandsAnimator.SetTrigger(trigger, layer);
+        if (_legsHandsAnimator != null) _legsHandsAnimator.SetTrigger(trigger);
         if (_wasRun)  { _legsHandsAnimator.SetBool("isRun", false);  _wasRun = false; }
         if (_wasWalk) { _legsHandsAnimator.SetBool("isWalk", false); _wasWalk = false; }
         _isLocked = true;
@@ -819,18 +819,18 @@ public class PlayerMovement : MonoBehaviour
     // re-fires the trigger. Used by GarbageObject's loop pickup
     // (PicItem fires after every hold bar complete; we extend
     // the lock so the player stays standing for the next pick).
-    public void RefreshLock(string trigger, float duration, int layer = 0)
+    public void RefreshLock(string trigger, float duration)
     {
-        if (_legsHandsAnimator != null) _legsHandsAnimator.SetTrigger(trigger, layer);
+        if (_legsHandsAnimator != null) _legsHandsAnimator.SetTrigger(trigger);
         _lockEndTime = Time.time + duration;
     }
 
     // Drops the lock immediately and resets the trigger so the
     // animation stops looping. Used when the player releases E
     // or the interaction is cancelled.
-    public void UnlockAnimation(string trigger, int layer = 0)
+    public void UnlockAnimation(string trigger)
     {
-        if (_legsHandsAnimator != null) _legsHandsAnimator.ResetTrigger(trigger, layer);
+        if (_legsHandsAnimator != null) _legsHandsAnimator.ResetTrigger(trigger);
         _isLocked = false;
     }
 }

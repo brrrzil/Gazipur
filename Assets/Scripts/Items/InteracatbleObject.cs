@@ -9,7 +9,6 @@ public abstract class InteractObject : MonoBehaviour
     private Outline _outline;
     [SerializeField] private string _tooltipeText;
     [SerializeField] private string _playerAnimTrigger;
-    [SerializeField] private int _animLayer = 1;
     [SerializeField] private float _animDuration = 0.5f;
     private Tween _tween;
     [Inject] private Tooltipe _tooltipe;
@@ -38,17 +37,17 @@ public abstract class InteractObject : MonoBehaviour
     protected void PlayInteractAnimation()
     {
         if (_playerAnimTrigger != "" && _movement != null)
-            _movement.PlayLockedAnimation(_playerAnimTrigger, _animDuration, _animLayer);
+            _movement.PlayLockedAnimation(_playerAnimTrigger, _animDuration);
     }
     protected void RefreshInteractAnimation()
     {
         if (_playerAnimTrigger != "" && _movement != null)
-            _movement.RefreshLock(_playerAnimTrigger, _animDuration, _animLayer);
+            _movement.RefreshLock(_playerAnimTrigger, _animDuration);
     }
     protected void StopInteractAnimation()
     {
         if (_playerAnimTrigger != "" && _movement != null)
-            _movement.UnlockAnimation(_playerAnimTrigger, _animLayer);
+            _movement.UnlockAnimation(_playerAnimTrigger);
     }
 }
 
