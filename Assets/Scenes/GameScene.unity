@@ -53812,24 +53812,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.6242957, y: 50, z: 0.24954376}
   m_Center: {x: 0, y: 24, z: 0}
---- !u!1 &1340319064 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3057119249109414745, guid: fbda11e00e126de4990bd5bfdd417f33, type: 3}
-  m_PrefabInstance: {fileID: 1121309632994092231}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1340319068
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1340319064}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d706ee42e8af0cd4899a218c6c0cbd98, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerInteract
-  _interactableDistance: 0
 --- !u!1001 &1341831495
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -88704,10 +88686,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3057119249109414745, guid: fbda11e00e126de4990bd5bfdd417f33, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1340319068}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fbda11e00e126de4990bd5bfdd417f33, type: 3}
 --- !u!114 &1123951553299778762
 MonoBehaviour:

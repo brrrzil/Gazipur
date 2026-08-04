@@ -69,7 +69,7 @@ public static class EnumData
     {
         shortTube,
         longTube,
-        bascet,
+        basket,
         teleTube,
         support,
         pump,
