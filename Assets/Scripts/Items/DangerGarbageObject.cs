@@ -44,7 +44,7 @@ public class DangerGarbageObject : GarbageObject
         int rnd = Random.Range(0, 100);
         if (!_inventory.HaveTools.Contains(ToolsType.glowes) &&  _damageChance> rnd)
         {
-            _dialog.Remarks.StartRemark(RemarksType.noGrowes);
+            _dialog.Remarks.StartRemark(RemarksType.noGlowes);
             _player.TakeDamage(_damage);
         }
         base.PicItem();

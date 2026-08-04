@@ -37,9 +37,9 @@ public static class EnumData
     public enum RemarksType
     {        
         noWrench,
-        noGrowes,
+        noGlowes,
         noHacksaw,
-        inventoryFool,
+        inventoryFull,
         noCutters,
         noKey,
         noMask,
@@ -55,13 +55,15 @@ public static class EnumData
         hungry,
         thirst,
         iAdult,
-        rohulSelBuy,
+        rohulSellBuy,
         rohulHelp,
         lie,
         firstMother,
         firstEnterRichZone,
+        midHP,
         lowHP,
-        soMuchWater
+        soMuchWater,
+        iCantAnymore
     }
     public enum FilterParts
     {

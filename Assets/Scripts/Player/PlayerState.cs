@@ -225,7 +225,7 @@ public class PlayerState : MonoBehaviour
             // the row's isOneTime /
             // isMultiRemark / chance
             // settings.
-            _dialog.Remarks.StartRemark(EnumData.RemarksType.lowHP);
+            _dialog.Remarks.StartRemark(EnumData.RemarksType.midHP);
             _wasLowHP = true;
         }
         else if (!isLowHP && _wasLowHP)

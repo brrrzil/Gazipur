@@ -127,7 +127,7 @@ public class Inventory : MonoBehaviour
         }
         else
         {
-            _dialog.Remarks.StartRemark(RemarksType.inventoryFool);
+            _dialog.Remarks.StartRemark(RemarksType.inventoryFull);
         }
         return totalUnpicked;
     }
