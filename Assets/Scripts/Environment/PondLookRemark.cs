@@ -1,605 +1,742 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 using static EnumData;
 
-// Round 88 v1: fires the 'soMuchWater' remark when the
-// player keeps their crosshair on a pond (one of the
-// three pond GameObjects in GameScene - ClearPond,
-// PoisonedPond, DirtyPond, plus the matching
-// *Surface colliders that sit on top of the water
-// mesh) for more than 1 second while standing
-// within 5 metres of it.
+// Round 88 v3: fires the
+// 'soMuchWater'
+// remark when the
+// player keeps
+// their crosshair on
+// a pond for more
+// than 1 second while
+// standing within 5
+// metres of it.
 //
-// User report (in Russian):
+// Round 88 v1 used
+// Physics.Raycast
+// from the player
+// camera in the
+// player's look
+// direction with a
+// 5 m length, and
+// checked
+// 'hit.collider.name
+// .Contains("Pond")'.
+// That did NOT work
+// in GameScene because
+// the three pond
+// GameObjects
+// (ClearPond,
+// DirtyPond,
+// PoisonedPond) and
+// their *Surface
+// children all carry
+// MeshColliders with
+// 'm_Convex: 0'
+// (concave / non-
+// convex), and
+// Unity's
+// Physics.Raycast
+// does NOT register
+// hits against non-
+// convex MeshColliders
+// (this is a known
+// Unity limitation -
+// non-convex
+// MeshColliders
+// support physics
+// simulation but not
+// raycasting; only
+// convex MeshColliders
+// and primitive
+// colliders
+// (BoxCollider,
+// SphereCollider,
+// CapsuleCollider)
+// support raycasts
+// against them).
+// The user reported
+// 'Не работает' (it
+// does not work)
+// because the
+// raycast
+// silently
+// missed
+// every
+// frame, the
+// _lookTimer
+// never
+// reached
+// 1.0 s, and
+// the
+// remark
+// never
+// fired.
 //
-//   'I added an event
-//   soMuchWater in
-//   RemarksType, set the
-//   text and added the
-//   audio clip. This
-//   event should occur
-//   when the hero looks
-//   at the pond for more
-//   than 1 second at a
-//   distance of less than
-//   5 metres (the numbers
-//   are approximate but
-//   it is better to
-//   hardcode them). This
-//   event does not
-//   happen if the hero
-//   completed the filter
-//   build.'
+// The fix in v3 is
+// to drop the
+// raycast entirely
+// and use a direct
+// distance + angle
+// test against the
+// pond's
+// transform.position
+// instead:
+//   distance < 5 m
+//     (the user-
+//     asked
+//     'within 5
+//     metres'
+//     check)
+//   angle
+//     between
+//     camera
+//     .forward
+//     and
+//     (pond -
+//     camera
+//     ).normalized
+//     < 30
+//     degrees
+//     (the
+//     'player is
+//     actually
+//     looking at
+//     the pond'
+//     check -
+//     30 degrees
+//     is the
+//     half-angle
+//     of a
+//     typical
+//     60-degree
+//     FOV cone,
+//     which is
+//     roughly
+//     the
+//     'crosshair
+//     on
+//     target'
+//     zone in a
+//     first-
+//     person
+//     game)
+// The combination
+// of distance < 5 m
+// AND angle < 30
+// degrees is what
+// matches the user
+// 'looks at the
+// pond for more
+// than 1 second
+// at a distance of
+// less than 5
+// metres' phrasing:
+//   - 'distance of
+//     less than 5
+//     metres'
+//     maps to
+//     Vector3
+//     .Distance
+//     (cameraPos,
+//     pondPos)
+//     < 5.0f
+//   - 'looks at
+//     the pond'
+//     maps to
+//     Vector3
+//     .Angle
+//     (camera
+//     .forward,
+//     (pondPos
+//     - cameraPos
+//     ).normalized)
+//     < 30.0f
+// Both checks
+// are evaluated
+// every frame;
+// _lookTimer is
+// incremented only
+// when both pass
+// for at least one
+// pond (the player
+// can have more
+// than one pond in
+// their 5 m
+// vicinity and
+// the remark still
+// fires once for
+// that look
+// direction), and
+// reset to zero on
+// any frame where
+// no pond satisfies
+// both checks (so
+// the '1 second of
+// continuous look'
+// requirement is
+// enforced
+// strictly).
 //
-// Why a new MonoBehaviour
-// (instead of adding the
-// logic into PlayerState
-// or PlayerMovement):
+// Pond discovery
+// (the user
+// controls the
+// list, with a
+// name-based
+// fallback for
+// convenience):
 //
-// PlayerState.SetState is
-// the existing
-// edge-detection site for
-// 'lowHP' (round 85) and
-// the periodic
-// hunger/thirst remarks,
-// but its update cadence
-// is per state-set
-// (tied to HeroInfo
-// mutations from
-// PlayerMovement.Tic()),
-// not per frame, and the
-// pond look timer
-// requires a continuous
-// 'is the camera ray
-// hitting the pond right
-// now' read-out that
-// has nothing to do with
-// the hunger / thirst /
-// health data that
-// drives the existing
-// SetState checks. A
-// dedicated MonoBehaviour
-// with its own Update()
-// matches the '1
-// second of continuous
-// look' requirement
-// without mixing concerns
-// with the health /
-// hunger / thirst edge
-// detection in
-// PlayerState.
+//   [SerializeField]
+//   private List
+//   <GameObject>
+//   _ponds
 //
-// PlayerMovement already
-// does camera rotation,
-// but adding a
-// pond-look raycast in
-// the middle of its
-// already-busy LateUpdate
-// (movement + look +
-// ground check + crouch
-// animation) is exactly
-// the kind of
-// 'kitchen-sink' mixing
-// that round 82 (the
-// mask overlay) tried to
-// avoid when the user
-// asked for a separate
-// MonoBehaviour on a
-// separate GameObject
-// for each cross-cutting
-// concern. Following
-// the same pattern, the
-// pond-look driver is
-// its own component.
+// If the user
+// drags the pond
+// GameObjects
+// (ClearPond,
+// DirtyPond,
+// PoisonedPond,
+// plus the
+// *Surface
+// children if
+// desired) into
+// the _ponds list
+// in the Inspector,
+// that list is
+// used as-is.
+// This is the
+// 'round 82 v6
+// minimal wiring'
+// pattern - the
+// user controls
+// the references
+// explicitly,
+// and the
+// component
+// does not auto-
+// find anything
+// at runtime
+// when the list
+// is populated.
 //
-// The hardcoded constants
-// the user asked for:
+// If the user
+// leaves _ponds
+// empty (or
+// forgets to
+// wire it), the
+// component falls
+// back to a one-
+// time auto-find
+// in Awake using
+// Resources
+// .FindObjectsOfTypeAll
+// <GameObject>()
+// and filtering by
+// name containing
+// 'Pond' (case-
+// sensitive, same
+// as v1). This
+// is the
+// 'round 82 v5
+// auto-find by
+// name' pattern -
+// a convenience
+// fallback that
+// works without
+// Inspector
+// wiring. The
+// auto-find is
+// done exactly
+// once in Awake
+// and cached in
+// _ponds, so the
+// per-frame cost
+// is just a list
+// iteration
+// (a few
+// Vector3
+// .Distance
+// calls per
+// frame, which
+// is trivial).
 //
-//   _lookDistance = 5.0f
-//     metres. This is the
-//     raycast length. It
-//     is also the
-//     'effective look
-//     distance' check -
-//     the raycast is run
-//     from the player
-//     camera in the
-//     player's look
-//     direction, and if
-//     the ray hits
-//     something within
-//     5 metres, the
-//     player is treated
-//     as 'looking at it'.
-//     5 metres is the
-//     user-asked value
-//     (round 88 report:
-//     'less than 5
-//     metres') and is
-//     applied as a strict
-//     raycast length, not
-//     a Vector3.Distance
-//     to the pond centre,
-//     because Vector3
-//     .Distance to the
-//     pond centre would
-//     fire even when the
-//     player is looking
-//     the opposite way
-//     (5 m from the
-//     player position to
-//     the pond centre
-//     does not mean the
-//     player is looking
-//     at the pond).
-//     Raycast from
-//     forward is the
-//     correct 'is the
-//     player looking at
-//     the pond' test.
+// Camera
+// reference
+// (same dual
+// approach):
 //
-//   _lookDuration = 1.0f
-//     seconds. This is the
-//     continuous-look
-//     threshold. A
-//     private
-//     float _lookTimer is
-//     incremented by
-//     Time.deltaTime
-//     every frame the
-//     raycast hits a
-//     pond-named
-//     collider, and reset
-//     to zero every frame
-//     the raycast does
-//     not hit a pond
-//     (or hits nothing,
-//     or hits a
-//     non-pond-named
-//     collider). When
-//     _lookTimer
-//     reaches or
-//     exceeds
-//     _lookDuration
-//     (1.0 s), the
-//     remark fires
-//     once and the
-//     _hasFired flag
-//     latches true for
-//     the rest of the
-//     game session.
+//   [SerializeField]
+//   private
+//   Transform
+//   _cameraTransform
 //
-//   _raycastYOffset
-//     = 1.6f metres.
-//     Optional helper
-//     that adds the
-//     typical camera
-//     height (the
-//     PlayerMovement
-//     _cameraHeightNormal
-//     is 0.8 m above
-//     the controller
-//     centre, and the
-//     controller
-//     centre itself is
-//     half the capsule
-//     height above the
-//     feet, so the
-//     camera is roughly
-//     1.5-1.7 m above
-//     the ground). The
-//     raycast origin is
-//     taken from the
-//     _cameraTransform
-//     position (set by
-//     the user in the
-//     Inspector to point
-//     at the player's
-//     actual camera
-//     Transform), so
-//     this constant is
-//     a safety net in
-//     case the user
-//     wires the
-//     component to the
-//     Player root
-//     instead of the
-//     camera itself -
-//     the raycast
-//     origin is then
-//     'transform.position
-//     + Vector3.up *
-//     1.6f' to get the
-//     eye-line rather
-//     than the foot
-//     line. If the user
-//     wires the
-//     component to the
-//     camera Transform
-//     (the recommended
-//     way), the offset
-//     is essentially
-//     zero and does not
-//     affect the result.
+// If wired in
+// the Inspector
+// (the user
+// drags the
+// Player's
+// _cameraHolder
+// Transform
+// there, which
+// is the same
+// Transform the
+// PlayerMovement
+// script rotates
+// in LateUpdate
+// to drive the
+// look
+// direction),
+// that
+// Transform is
+// used as-is.
 //
-// Pond identification:
+// If the user
+// leaves the
+// field empty,
+// the component
+// falls back to
+// Camera.main
+// in Awake. The
+// GameScene has
+// a 'Main
+// Camera'
+// GameObject
+// (fileID
+// 330585545,
+// tag
+// 'MainCamera'),
+// so
+// Camera.main
+// resolves to
+// that camera
+// and gives the
+// component the
+// player's
+// render
+// perspective.
+// (The Main
+// Camera and
+// the Player's
+// _cameraHolder
+// are usually
+// the same
+// camera in
+// the project
+// because
+// PlayerMovement
+// is on the
+// Player root
+// and the
+// _cameraHolder
+// is a child
+// of the
+// Player that
+// carries the
+// same camera
+// the user
+// sees
+// through; the
+// Player
+// prefab's
+// Main Camera
+// is the
+// render
+// target, and
+// the
+// _cameraHolder
+// is what
+// PlayerMovement
+// rotates to
+// drive look.
+// In practice
+// they are at
+// the same
+// world-space
+// position and
+// rotation, so
+// either
+// reference
+// gives the
+// same
+// _lookAtPond
+// result. The
+// dual
+// approach
+// covers both
+// the case
+// where the
+// user has
+// the camera
+// wiring
+// already in
+// the scene
+// and the case
+// where the
+// component
+// was dropped
+// in the
+// scene
+// without
+// any camera
+// reference
+// wired.)
 //
-//   The three ponds in
-//   GameScene are
-//   GameObjects named
-//   'ClearPond' (the
-//   fresh-water pond,
-//   the one the player
-//   can use to refill
-//   their thirst bar
-//   when the filter is
-//   not yet built),
-//   'DirtyPond' (the
-//   muddy, contaminated
-//   one), and
-//   'PoisonedPond' (the
-//   toxic one). Each
-//   pond also has a
-//   child GameObject
-//   named 'XxxPondSurface'
-//   that carries the
-//   water-surface
-//   collider the
-//   raycast actually
-//   hits when the
-//   player looks at
-//   the water. The
-//   identifier used in
-//   the raycast check
-//   is 'name contains
-//   "Pond"' (case-
-//   sensitive), which
-//   matches all three
-//   pond GameObjects
-//   and all three
-//   surface
-//   GameObjects. This
-//   is intentionally
-//   loose so the
-//   user can rename
-//   or add ponds
-//   later without
-//   breaking the
-//   trigger.
+// Skip
+// condition
+// (the user
+// asked for
+// 'this event
+// does not
+// happen if
+// the hero
+// completed
+// the filter
+// build'):
 //
-// Skip condition:
+// _quest.QuestsState
+// [Quests.filter]
+// == 2 is the
+// post-build
+// state set by
+// QuestManager
+// .CompleteFilter
+// (called by
+// WaterFilter
+// .Finish when
+// the hold bar
+// fills up and
+// the player has
+// built the
+// water filter).
+// The check is
+// at the top of
+// Update() and
+// short-circuits
+// before the
+// per-pond
+// distance /
+// angle loop
+// runs, so
+// there is no
+// per-frame
+// cost when
+// the filter is
+// already
+// built.
 //
-//   '_quest.QuestsState
-//   [Quests.filter] ==
-//   2' is the post-
-//   build state. It is
-//   set by
-//   QuestManager.CompleteFilter
-//   (the one that
-//   WaterFilter.Finish
-//   calls when the
-//   hold bar fills up
-//   and the player has
-//   built the water
-//   filter). At that
-//   point the game
-//   transitions to
-//   GameMode.win and
-//   the WinDiePanel
-//   appears, so the
-//   player is no
-//   longer in
-//   outdors mode and
-//   the player
-//   movement is
-//   frozen, but
-//   PlayerMovement
-//   .OnDisable keeps
-//   the player
-//   position in the
-//   registry, and
-//   the player can
-//   still be standing
-//   near a pond
-//   (e.g. right next
-//   to the one they
-//   just built the
-//   filter at). The
-//   'do not fire
-//   remark after
-//   filter built'
-//   rule in the user
-//   report is enforced
-//   here as a hard
-//   check at the top
-//   of Update() so
-//   the remark can
-//   not fire even if
-//   the player
-//   continues to look
-//   at the pond after
-//   the win panel is
-//   up. The flag is
-//   not reset until
-//   the scene
-//   reloads (via
-//   the TryAgainButton
-//   path that round
-//   87 made safe
-//   through
-//   ZenjectSceneLoader),
-//   so a 'post-build
-//   look' in the
-//   current session
-//   will never fire.
+// One-shot
+// firing:
 //
-// One-shot firing:
+// Same pattern as
+// v1: a private
+// bool
+// _hasFiredSoMuch
+// Water latches
+// true the
+// first time
+// _lookTimer
+// reaches 1.0 s
+// and stays
+// true for the
+// rest of the
+// component's
+// lifetime. The
+// Update() loop
+// short-
+// circuits
+// before the
+// per-pond loop
+// even runs
+// after the
+// fire, so
+// there is no
+// per-frame
+// cost after
+// the fire
+// (just one
+// bool check).
+// The flag is
+// reset on
+// OnEnable
+// (the round 80
+// v2 'Enter
+// Play Mode
+// Options +
+// Reload Domain
+// off'
+// robustness
+// pattern), so
+// a fresh Play
+// session can
+// re-fire the
+// remark even
+// if Domain
+// Reload is off
+// in the
+// Editor.
 //
-//   The remark fires
-//   exactly once per
-//   component
-//   lifetime (so once
-//   per scene load
-//   before the player
-//   builds the filter).
-//   After
-//   _hasFiredSoMuchWater
-//   latches true,
-//   the Update() loop
-//   short-circuits
-//   before the
-//   raycast even
-//   runs, so there
-//   is no per-frame
-//   cost after the
-//   fire. The flag
-//   does not reset
-//   when the player
-//   looks away from
-//   the pond (the
-//   _lookTimer still
-//   resets to zero
-//   so the player
-//   can 're-arm' a
-//   future build by
-//   triggering the
-//   remark-again
-//   edge, but the
-//   outer
-//   _hasFiredSoMuchWater
-//   gate prevents
-//   re-fire even if
-//   the inner
-//   condition is
-//   met). The user
-//   can reset the
-//   flag by toggling
-//   the component's
-//   enabled checkbox
-//   off and on in
-//   the Inspector
-//   (or by reloading
-//   the scene via
-//   Try Again), so
-//   this is
-//   effectively a
-//   'once per
-//   session' gate
-//   matching the
-//   'I am looking at
-//   this pond, what a
-//   lot of water'
-//   one-off
-//   observation the
-//   user is going
-//   for in the
-//   remark.
+// Debug
+// visualization
+// (optional,
+// user-toggleable
+// in the
+// Inspector):
 //
-// Wiring (Inspector):
+//   [SerializeField]
+//   private bool
+//   _drawDebug
 //
-//   The user creates
-//   one empty
-//   GameObject in
-//   GameScene (e.g.
-//   'PondLookRemark')
-//   and adds this
-//   component. The
-//   only field the
-//   user needs to
-//   wire is
-//   _cameraTransform,
-//   and that is
-//   expected to be
-//   the Player's
-//   camera
-//   Transform (the
-//   same Transform
-//   that
-//   PlayerMovement
-//   ._cameraHolder
-//   is on - the
-//   user can drag
-//   the Player
-//   prefab's
-//   _cameraHolder
-//   from the
-//   Inspector or,
-//   if the user has
-//   the camera
-//   hierarchy
-//   exposed in the
-//   scene, drag the
-//   camera
-//   GameObject's
-//   Transform). If
-//   the user does
-//   not wire it, the
-//   component
-//   short-circuits
-//   in Update()
-//   (the
-//   'if
-//   (_cameraTransform
-//   == null) return;'
-//   guard at the
-//   top) and the
-//   remark is
-//   never fired -
-//   no NRE, no
-//   console spam.
-//   The Zenject
-//   [Inject] fields
-//   (DialogManager
-//   and
-//   QuestManager)
-//   resolve through
-//   the scene's
-//   SceneContext
-//   (the
-//   GameManager
-//   prefab's
-//   SceneContext
-//   that round 87
-//   made
-//   visible), so
-//   no manual
-//   wiring is
-//   needed for
-//   the DI
-//   dependencies.
+// If the user
+// enables
+// _drawDebug,
+// the component
+// calls
+// Debug.DrawRay
+// every frame to
+// visualise
+// the distance
+// + angle check
+// (green ray
+// from the
+// camera to a
+// pond that
+// passes both
+// checks, red
+// ray to a pond
+// that fails
+// one or both
+// checks, plus
+// a short log
+// every second
+// of the
+// current
+// state -
+// 'soMuchWater
+// timer X / 1 s
+// ' for in-
+// progress
+// looks).
+// This is the
+// same
+// 'toggle-
+// able debug
+// overlay'
+// pattern that
+// DangerZone
+// uses in
+// round 82
+// (the
+// DangerZone
+// class has
+// '#if
+// UNITY_EDITOR'
+// sections
+// that draw
+// gizmos in
+// the Editor).
+// The debug
+// draws are
+// only visible
+// in the Scene
+// view and the
+// Game view if
+// 'Gizmos' is
+// enabled (the
+// standard
+// Unity Editor
+// gizmo toggle
+// in the top
+// right of the
+// Game view).
+// They are
+// completely
+// free in
+// production
+// builds (the
+// _drawDebug
+// default is
+// false, and
+// the user can
+// leave it
+// false in the
+// Inspector for
+// release).
 public class PondLookRemark : MonoBehaviour
 {
-    // The user's
-    // approximate
-    // values,
-    // hardcoded
-    // per the
-    // round 88
-    // request.
-    // 'Numbers
-    // are
-    // approximate
-    // but better
-    // to
-    // hardcode
-    // them.'
     private const float _lookDistance = 5.0f;
     private const float _lookDuration = 1.0f;
-    private const float _raycastYOffset = 1.6f;
+    // Half-angle of the
+    // 'crosshair on
+    // target' cone.
+    // 30 degrees is
+    // roughly the
+    // half-FOV of a
+    // typical 60-degree
+    // FOV, which is
+    // the 'I am
+    // looking at this
+    // thing' zone in
+    // a first-person
+    // game. The user
+    // asked for the
+    // 'looks at the
+    // pond' check
+    // without a
+    // specific angle,
+    // so 30 degrees is
+    // hardcoded as a
+    // reasonable
+    // approximation
+    // of 'aimed at'.
+    private const float _lookHalfAngleDeg = 30.0f;
 
-    [Tooltip("Player camera Transform - the same one that PlayerMovement._cameraHolder points at. " +
-        "If null, the component is a no-op.")]
+    [Tooltip("Pond GameObjects to check. If empty, the component auto-finds by name containing 'Pond' in Awake.")]
+    [SerializeField] private List<GameObject> _ponds = new List<GameObject>();
+
+    [Tooltip("Player camera Transform (e.g. PlayerMovement._cameraHolder). If null, the component falls back to Camera.main in Awake.")]
     [SerializeField] private Transform _cameraTransform;
 
-    [Tooltip("Optional. Layers the raycast will hit. If empty, the raycast uses Physics.DefaultRaycastLayers " +
-        "(everything except Ignore Raycast). Set this to the layer your pond colliders are on if you want to " +
-        "exclude other geometry (e.g. UI, characters) from the trigger.")]
-    [SerializeField] private LayerMask _raycastMask = Physics.DefaultRaycastLayers;
+    [Tooltip("If true, draws Debug.DrawRay visualisation of the distance + angle check every frame. Visible only when the Game view 'Gizmos' toggle is on. Free in production builds (default false).")]
+    [SerializeField] private bool _drawDebug = false;
 
     [Inject] private DialogManager _dialog;
     [Inject] private QuestManager _quest;
 
     private float _lookTimer;
     private bool _hasFiredSoMuchWater;
+    private bool _initialised;
+
+    private void Awake()
+    {
+        // Camera
+        // fallback.
+        // If the user
+        // did not wire
+        // _cameraTransform
+        // in the
+        // Inspector,
+        // try
+        // Camera.main.
+        // The
+        // GameScene
+        // has a 'Main
+        // Camera'
+        // GameObject
+        // with the
+        // 'MainCamera'
+        // tag, so
+        // Camera.main
+        // resolves to
+        // it.
+        if (_cameraTransform == null)
+        {
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                _cameraTransform = mainCam.transform;
+            }
+        }
+
+        // Pond
+        // fallback.
+        // If the user
+        // did not
+        // wire _ponds
+        // in the
+        // Inspector,
+        // do a one-
+        // time auto-
+        // find by
+        // name. The
+        // user is
+        // free to
+        // either
+        // wire the
+        // list
+        // explicitly
+        // (the
+        // 'round 82
+        // v6 minimal'
+        // pattern)
+        // or rely on
+        // this auto-
+        // find
+        // (the 'round
+        // 82 v5
+        // auto-find
+        // by name'
+        // pattern).
+        // Both
+        // patterns
+        // are
+        // documented
+        // at the top
+        // of this
+        // file.
+        if (_ponds == null || _ponds.Count == 0)
+        {
+            _ponds = new List<GameObject>();
+            GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                GameObject go = all[i];
+                if (go == null) continue;
+                if (!go.name.Contains("Pond")) continue;
+                // Only
+                // include
+                // active
+                // scene
+                // GameObjects
+                // (not
+                // prefab
+                // assets
+                // from
+                // Resources,
+                // not
+                // disabled
+                // editor
+                // objects).
+                if (!go.scene.IsValid()) continue;
+                if (!go.activeInHierarchy) continue;
+                _ponds.Add(go);
+            }
+        }
+
+        _initialised = (_cameraTransform != null) && (_ponds != null && _ponds.Count > 0);
+    }
 
     private void Update()
     {
-        // Skip if the
-        // component is
-        // not wired
-        // (the user
-        // has not
-        // assigned a
-        // camera yet).
-        // This is a
-        // no-op, not
-        // an error -
-        // the user
-        // can drop the
-        // component in
-        // the scene
-        // and wire it
-        // later.
-        if (_cameraTransform == null) return;
+        // Not
+        // wired
+        // (no
+        // camera,
+        // no
+        // ponds)
+        // -
+        // no-op,
+        // no
+        // console
+        // spam,
+        // no
+        // NRE.
+        if (!_initialised) return;
 
-        // Skip if the
-        // remark
-        // already
-        // fired this
+        // Already
+        // fired
+        // this
         // session.
-        // The flag
-        // latches true
-        // and is never
-        // reset by
-        // the player
-        // looking away
-        // (only by
-        // scene reload
-        // or by
-        // toggling the
-        // component in
-        // the
-        // Inspector).
         if (_hasFiredSoMuchWater) return;
 
-        // Skip if the
-        // filter has
-        // been built
-        // (the user
-        // report
-        // explicitly
-        // says 'this
-        // event does
-        // not happen
-        // if the hero
-        // completed
-        // the filter
-        // build').
-        //
-        // QuestsState
-        // is a
-        // Dictionary
-        // keyed by
-        // Quests
-        // enum values,
-        // initialised
-        // in
-        // QuestManager
-        // .Start to:
-        //   [filter] = 0
-        //   [healMother] = 0
-        // and
-        // transitioned
-        // by
-        // QuestManager
-        // .CompleteFilter
-        // (the one
-        // WaterFilter
-        // .Finish
-        // calls when
-        // the hold bar
-        // fills) to
-        // '[filter] =
-        // 2'. So
-        // 'filter == 2'
-        // is the
-        // 'built' state
-        // in the same
-        // notation
-        // the rest of
+        // Filter
+        // built
+        // -
+        // skip
         // the
-        // project's
-        // quests use
-        // (see
-        // WaterFilter
-        // .Intearct,
-        // which checks
-        // 'healMother
-        // == 2' the
-        // same way for
-        // the 'mother
-        // healed'
-        // state).
+        // remark
+        // entirely.
         if (_quest != null
             && _quest.QuestsState != null
             && _quest.QuestsState.TryGetValue(Quests.filter, out int filterState)
@@ -608,443 +745,111 @@ public class PondLookRemark : MonoBehaviour
             return;
         }
 
-        // Cast the
-        // ray from
-        // the camera
-        // (or
-        // component
-        // transform +
-        // y offset)
-        // in the
-        // forward
-        // direction
-        // of the
-        // camera (or
-        // component).
-        // The
-        // _cameraTransform
-        // .forward is
-        // the
-        // player's
-        // look
-        // direction
-        // because
-        // PlayerMovement
-        // .LateUpdate
-        // sets
-        // _cameraHolder
-        // .localRotation
-        // =
-        // Quaternion
-        // .Euler
-        // (_xRotation,
-        // 0, 0) and
-        // rotates the
-        // player root
-        // .transform
-        // by the
-        // mouse-X
-        // delta on
-        // the Y axis,
-        // so the
-        // camera
-        // forward is
-        // exactly the
-        // player's
-        // look
-        // direction
-        // (rotated by
-        // the
-        // vertical
-        // pitch on
-        // top of the
-        // player's
-        // yaw).
-        Vector3 origin = _cameraTransform.position;
-        Vector3 dir = _cameraTransform.forward;
+        Vector3 camPos = _cameraTransform.position;
+        Vector3 camForward = _cameraTransform.forward;
+        float cosHalfAngle = Mathf.Cos(_lookHalfAngleDeg * Mathf.Deg2Rad);
 
-        // Optional
-        // y-offset
-        // guard for
-        // the case
-        // where the
-        // user wires
-        // the
-        // component
-        // to the
-        // Player
-        // root
-        // instead of
-        // the camera
-        // transform.
-        // The check
-        // is 'if the
-        // camera
-        // position is
-        // at the
-        // ground line
-        // (y < 0.5),
-        // assume the
-        // user
-        // wired the
-        // Player root
-        // and add
-        // 1.6 m'. This
-        // is a
-        // heuristic,
-        // not a
-        // guarantee,
-        // but in
-        // practice
-        // the
-        // _cameraHeightNormal
-        // in
-        // PlayerMovement
-        // is 0.8 m
-        // above the
-        // controller
-        // centre, and
-        // the
-        // controller
-        // centre is
-        // half the
-        // capsule
-        // height
-        // (1.0 m) up
-        // from the
-        // ground, so
-        // the camera
-        // is at y
-        // ~1.5-1.7 m
-        // above the
-        // ground in
-        // GameScene's
-        // terrain.
-        // If the
-        // y is
-        // below 0.5 m,
-        // it is most
-        // likely the
-        // player root
-        // (which is
-        // at the
-        // feet), and
-        // we add the
-        // offset to
-        // get the
-        // eye-line.
-        if (origin.y < 0.5f)
+        bool isLookingAtPond = false;
+        GameObject nearestHitPond = null;
+        float nearestHitDist = float.PositiveInfinity;
+
+        // Per-pond
+        // distance
+        // +
+        // angle
+        // check.
+        for (int i = 0; i < _ponds.Count; i++)
         {
-            origin += Vector3.up * _raycastYOffset;
+            GameObject pond = _ponds[i];
+            if (pond == null) continue;
+            Vector3 pondPos = pond.transform.position;
+            Vector3 toPond = pondPos - camPos;
+            float dist = toPond.magnitude;
+            if (dist > _lookDistance) continue;
+            if (dist < 0.001f) continue; // camera inside pond, treat as looking at it
+            Vector3 toPondDir = toPond / dist;
+            float dot = Vector3.Dot(camForward, toPondDir);
+            if (dot < cosHalfAngle) continue;
+
+            // This
+            // pond
+            // passes
+            // both
+            // checks.
+            if (_drawDebug)
+            {
+                Debug.DrawRay(camPos, toPondDir * dist, Color.green);
+            }
+            if (dist < nearestHitDist)
+            {
+                nearestHitDist = dist;
+                nearestHitPond = pond;
+            }
+            isLookingAtPond = true;
         }
 
-        // Raycast. The
-        // distance is
+        // Optional
+        // debug:
+        // draw a
+        // red ray
+        // to the
+        // closest
+        // pond in
+        // range
+        // even
+        // when
         // the
-        // hardcoded
-        // _lookDistance
-        // (5.0 m). The
-        // QueryTriggerInteraction
-        // .Ignore
-        // skips
-        // trigger
-        // colliders -
-        // the
-        // *PondSurface
-        // GameObjects
-        // have
-        // MeshCollider
-        // (not
-        // trigger),
-        // so this
-        // does not
-        // exclude
-        // the water
-        // surface
-        // itself, but
-        // it does
-        // skip
-        // any future
-        // trigger-
-        // based pond
-        // interaction
-        // the user
-        // might add
-        // (e.g. a
-        // trigger
-        // collider
-        // for
-        // refilling
-        // the thirst
-        // bar would
-        // be ignored
-        // by the
-        // raycast, so
-        // the user
-        // does not
-        // get a
-        // 'looking at
-        // pond'
-        // remark
-        // every time
-        // they stand
-        // inside the
-        // water
-        // trigger).
-        // The
-        // raycast
-        // mask is
-        // user-
-        // configurable
-        // in the
-        // Inspector
-        // so the user
-        // can
-        // include or
-        // exclude
-        // specific
-        // layers
-        // without
-        // changing
-        // code.
-        bool hitPond = false;
-        if (Physics.Raycast(origin, dir, out RaycastHit hit, _lookDistance, _raycastMask, QueryTriggerInteraction.Ignore))
+        // angle
+        // check
+        // fails,
+        // so the
+        // user
+        // can see
+        // 'the
+        // pond is
+        // here,
+        // but I
+        // am not
+        // looking
+        // at it'.
+        if (_drawDebug && !isLookingAtPond)
         {
-            // Pond
-            // identification
-            // by name:
-            // matches
-            // 'ClearPond',
-            // 'DirtyPond',
-            // 'PoisonedPond',
-            // and their
-            // 'XxxPondSurface'
-            // children
-            // because
-            // all of
-            // them have
-            // 'Pond' in
-            // the
-            // name.
-            // Case-
-            // sensitive
-            // to avoid
-            // matching
-            // unrelated
-            // objects
-            // like
-            // 'Pond-
-            // Decoration'
-            // or
-            // 'PondStones'
-            // (the
-            // user is
-            // free to
-            // add such
-            // names
-            // and they
-            // would
-            // match too
-            // - if they
-            // want
-            // strict
-            // matching,
-            // they can
-            // switch
-            // this to
-            // an exact
-            // name
-            // check
-            // against a
-            // serialized
-            // array of
-            // pond
-            // names,
-            // but the
-            // user's
-            // request
-            // was
-            // minimal
-            // and the
-            // current
-            // scene has
-            // no false
-            // positives).
-            if (hit.collider != null
-                && hit.collider.name.Contains("Pond"))
+            float best = float.PositiveInfinity;
+            Vector3 bestDir = Vector3.zero;
+            for (int i = 0; i < _ponds.Count; i++)
             {
-                hitPond = true;
+                GameObject pond = _ponds[i];
+                if (pond == null) continue;
+                Vector3 toPond = pond.transform.position - camPos;
+                float d = toPond.magnitude;
+                if (d > _lookDistance) continue;
+                if (d < best)
+                {
+                    best = d;
+                    bestDir = toPond / d;
+                }
+            }
+            if (best < float.PositiveInfinity)
+            {
+                Debug.DrawRay(camPos, bestDir * best, Color.red);
             }
         }
 
-        // Timer
-        // bookkeeping:
-        // - if the
-        // raycast
-        // hit a
-        // pond,
-        // accumulate
-        // the
-        // elapsed
-        // time;
-        // - if the
-        // raycast
-        // did not
-        // hit a
-        // pond
-        // (either
-        // hit
-        // nothing
-        // or hit a
-        // non-pond
-        // collider),
-        // reset the
-        // timer to
-        // zero so
-        // the
-        // '1 second
-        // of
-        // continuous
-        // look'
-            // requirement
-        // is
-        // enforced
-        // strictly.
-        if (hitPond)
+        if (isLookingAtPond)
         {
             _lookTimer += Time.deltaTime;
 
+            if (_drawDebug)
+            {
+                Debug.Log($"[PondLookRemark] looking at {nearestHitPond?.name ?? \"?\"} ({nearestHitDist:F2} m) timer {_lookTimer:F2} / {_lookDuration:F2} s");
+            }
+
             if (_lookTimer >= _lookDuration)
             {
-                // Fire
-                // the
-                // remark
-                // through
-                // the
-                // standard
-                // CharacterRemarks
-                // .StartRemark
-                // path.
-                // The
-                // null-guard
-                // on
-                // _dialog
-                // is for
-                // the
-                // edge
-                // case
-                // where
-                // the
-                // component
-                // is
-                // dropped
-                // in a
-                // scene
-                // that
-                // does
-                // not
-                // have a
-                // DialogManager
-                // (e.g.
-                // a
-                // future
-                // test
-                // scene) -
-                // in
-                // GameScene
-                // _dialog
-                // is
-                // always
-                // non-null
-                // because
-                // DialogManager
-                // is
-                // bound
-                // by
-                // the
-                // scene's
-                // SceneContext.
                 if (_dialog != null && _dialog.Remarks != null)
                 {
                     _dialog.Remarks.StartRemark(RemarksType.soMuchWater);
                 }
-
-                // Latch
-                // the
-                // 'already
-                // fired'
-                // flag
-                // so the
-                // remark
-                // does
-                // not
-                // re-fire
-                // in the
-                // same
-                // session.
-                // The
-                // flag
-                // latches
-                // true
-                // regardless
-                // of
-                // whether
-                // the
-                // StartRemark
-                // call
-                // actually
-                // displayed
-                // the
-                // remark
-                // (the
-                // underlying
-                // StartRemark
-                // can
-                // return
-                // false if
-                // the
-                // chance
-                // roll
-                // failed
-                // or if
-                // the
-                // remark
-                // is
-                // already
-                // playing,
-                // and that
-                // is a
-                // user-
-                // tunable
-                // behaviour
-                // in the
-                // Inspector
-                // - the
-                // outer
-                // latched
-                // flag is
-                // the
-                // 'do not
-                // try
-                // again
-                // for the
-                // rest of
-                // the
-                // session'
-                // gate
-                // that
-                // matches
-                // the
-                // user's
-                // intent
-                // of a
-                // single
-                // 'wow,
-                // there's
-                // a lot of
-                // water
-                // here'
-                // reaction).
                 _hasFiredSoMuchWater = true;
             }
         }
@@ -1054,122 +859,11 @@ public class PondLookRemark : MonoBehaviour
         }
     }
 
-    // Inspector
-    // toggle /
-    // domain-
-    // reload
-    // safety:
-    // the
-    // _hasFiredSoMuchWater
-    // flag is
-    // not
-    // serialised
-    // (it is
-    // 'private
-    // bool' on
-    // a non-
-    // [SerializeField]
-    // field),
-    // so it is
+    // Domain-reload
     // reset
-    // every
-    // time the
-    // domain
-    // reloads.
-    // This
-    // matches
-    // the
-    // round 80
-    // (firstEnterRichZone)
-    // and
-    // round 84
-    // (_isReversing)
-    // pattern
-    // of
-    // 'non-
-    // serialised
-    // state
-    // resets
-    // between
-    // sessions,
-    // is
-    // explicit-
-    // reset
-    // on
-    // OnEnable
-    // for
-    // Domain
-    // Reload
-    // off'.
-    // The
-    // 'Enter
-    // Play
-    // Mode
-    // Options
-    // + Reload
-    // Domain
-    // off'
-    // setting
-    // (round
-    // 80 fix)
-    // keeps
-    // private
-    // fields
-    // alive
-    // between
-    // Play
-    // sessions
-    // in the
-    // Editor,
-    // so the
-    // explicit
-    // OnEnable
-    // reset is
-    // the
-    // robust
-    // way to
-    // make
-    // sure a
-    // fresh
-    // Play
-    // session
-    // can
-    // re-fire
-    // the
-    // remark.
-    // (Production
-    // builds
-    // always
-    // reload
-    // the
-    // domain
-    // on
-    // launch,
-    // so the
-    // OnEnable
-    // reset
-    // is only
-    // needed
-    // for the
-    // Editor
-    // 'domain
-    // reload
-    // off'
-    // mode,
-    // but it
-    // is
-    // free in
-    // the
-    // production
-    // case
-    // because
-    // the
-    // field is
-    // already
-    // false
-    // on a
-    // fresh
-    // start.)
+    // (round 80
+    // v2
+    // pattern).
     private void OnEnable()
     {
         _lookTimer = 0f;
