@@ -133,18 +133,41 @@ public class PondLookRemark : MonoBehaviour
         if (Time.time - _lastStatusLogTime >= _statusLogInterval)
         {
             _lastStatusLogTime = Time.time;
+            // Always log the absolute nearest pond (no range filter) plus
+            // the player position, so the user can see "I am at X, nearest
+            // pond is at Y, distance Z m" even when Z > 5 m.
+            GameObject absNearest = null;
+            float absNearestDist = float.PositiveInfinity;
+            for (int i = 0; i < _ponds.Count; i++)
+            {
+                GameObject pond = _ponds[i];
+                if (pond == null) continue;
+                float d = (pond.transform.position - camPos).magnitude;
+                if (d < absNearestDist)
+                {
+                    absNearestDist = d;
+                    absNearest = pond;
+                }
+            }
+            string absName = absNearest != null ? absNearest.name : "<none>";
+            string absDist = absNearest != null ? absNearestDist.ToString("F2") + "m" : "n/a";
+
             if (isLookingAtPond)
             {
                 string pondName = nearestPond != null ? nearestPond.name : "null";
                 Debug.Log("[PondLookRemark] frame=" + _frameCount + " LOOKING at " + pondName +
-                    " dist=" + nearestDist.ToString("F2") + "m timer=" + _lookTimer.ToString("F2") + "/" + _lookDuration.ToString("F2") + "s");
+                    " dist=" + nearestDist.ToString("F2") + "m timer=" + _lookTimer.ToString("F2") + "/" + _lookDuration.ToString("F2") +
+                    "s | player=" + camPos.ToString("F1") +
+                    " absNearest=" + absName + " absDist=" + absDist);
             }
             else
             {
-                string nearestName = closestInRange != null ? closestInRange.name : "none in range";
+                string nearestName = closestInRange != null ? closestInRange.name : "<none in 5m>";
                 string distStr = closestInRange != null ? closestInRangeDist.ToString("F2") + "m" : "n/a";
-                Debug.Log("[PondLookRemark] frame=" + _frameCount + " idle nearest=" + nearestName +
-                    " dist=" + distStr + " timer=" + _lookTimer.ToString("F2"));
+                Debug.Log("[PondLookRemark] frame=" + _frameCount + " idle in-5m=" + nearestName +
+                    " dist=" + distStr + " | player=" + camPos.ToString("F1") +
+                    " absNearest=" + absName + " absDist=" + absDist +
+                    " timer=" + _lookTimer.ToString("F2"));
             }
         }
 
