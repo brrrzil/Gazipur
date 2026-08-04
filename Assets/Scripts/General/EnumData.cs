@@ -60,7 +60,8 @@ public static class EnumData
         lie,
         firstMother,
         firstEnterRichZone,
-        lowHP
+        lowHP,
+        soMuchWater
     }
     public enum FilterParts
     {
