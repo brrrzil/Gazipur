@@ -8,16 +8,17 @@ public class PondLookRemark : MonoBehaviour
     private const float _lookDistance = 5.0f;
     private const float _lookDuration = 1.0f;
     private const float _statusLogInterval = 1.0f;
+    private const int _hitsBufferSize = 16;
 
     [SerializeField] private List<GameObject> _ponds = new List<GameObject>();
     [SerializeField] private Transform _cameraTransform;
     [SerializeField] private bool _drawDebug = true;
-    [Tooltip("Layer mask for colliders that should BLOCK the look-at-pond check. " +
-        "Default: nothing (no blockers, pure bounds check from v13). " +
-        "Typical setup: tick only the Terrain layer here, so the ray stops at the ground " +
-        "but ignores walls, fences, trees, and items (the user can still 'see' the pond " +
-        "through those). The pond's own colliders are always skipped regardless of this mask.")]
-    [SerializeField] private LayerMask _blockerMask = 0;
+    [Tooltip("If true, the component casts a Physics.Raycast and treats any " +
+        "TerrainCollider hit (only terrain, not walls/items/trees) as a blocker. " +
+        "This is the canonical Unity way to do 'I cannot see the pond through " +
+        "the ground' line-of-sight for a terrain-based world. If false, the " +
+        "component falls back to v13's pure bounds check (no blockers at all).")]
+    [SerializeField] private bool _useTerrainBlocker = true;
 
     [Inject] private DialogManager _dialog;
     [Inject] private QuestManager _quest;
@@ -27,6 +28,7 @@ public class PondLookRemark : MonoBehaviour
     private bool _initialised;
     private float _lastStatusLogTime;
     private int _frameCount;
+    private RaycastHit[] _hitsBuffer = new RaycastHit[_hitsBufferSize];
 
     private void Awake()
     {
@@ -138,25 +140,63 @@ public class PondLookRemark : MonoBehaviour
         //     _blockerMask value, because the user explicitly
         //     reported in v12 that those were terminating the
         //     raycast prematurely.
+        // Round 88 v15: blocker check is now type-based (TerrainCollider
+        // only) instead of layer-based. v14 used _blockerMask to
+        // select the terrain layer, but the user reported that when
+        // the terrain was moved to a different layer the blocker
+        // check stopped working ('Если я перемещаю terrain на другой
+        // layer, то камера начинает его игнорировать'). The root
+        // cause is that the user-configured _blockerMask was either
+        // missing the terrain's actual layer (so the raycast was
+        // checking a layer that had no terrain on it) or the
+        // terrain was on a layer that the user had not ticked in
+        // the mask. The type-based check ('is the hit collider a
+        // TerrainCollider?') does not depend on the layer at all -
+        // it uses the C# type system, which is independent of the
+        // Inspector configuration. The user just needs to flip
+        // _useTerrainBlocker on/off in the Inspector, no layer
+        // configuration required.
+        //
+        // Why RaycastNonAlloc and not single Raycast: the user
+        // asked 'terrain should block, but other things should
+        // not'. That means the raycast may hit a non-terrain
+        // collider (wall, item, pond) before it hits a terrain
+        // collider (e.g. the player is standing in a fenced area
+        // and a fence post is on the line to the pond at 2 m,
+        // but the terrain that should block is at 4 m). The
+        // single Physics.Raycast would return the fence post at
+        // 2 m and we would miss the terrain at 4 m. With
+        // RaycastNonAlloc we collect every hit, filter out the
+        // non-terrain ones, and pick the nearest remaining
+        // terrain hit. That way the terrain-blocks check is
+        // independent of what other colliders the ray happens to
+        // cross first.
+        //
+        // Note: TerrainCollider is a C# class derived from
+        // Collider, so 'c is TerrainCollider' is the standard
+        // type-check. Physics.Raycast does work against
+        // TerrainCollider (the Terrain system has its own
+        // internal raycasting path that does not go through
+        // the non-convex MeshCollider limitation, so the
+        // round 88 v2 'raycast does not hit non-convex
+        // MeshCollider' caveat that hit the pond's *Surface
+        // MeshColliders does NOT apply to TerrainCollider).
         float nearestBlockerDist = -1f;
         GameObject nearestBlocker = null;
-        if (_blockerMask.value != 0)
+        if (_useTerrainBlocker)
         {
-            // Single Physics.Raycast (not RaycastNonAlloc) for the
-            // blocker check is enough - we only need the closest
-            // blocker, not the full list. The pond's colliders
-            // are skipped by adding their layer to the inverse
-            // mask, but since the pond is on the Default layer
-            // (same as most of the scene), layer-based skipping
-            // would also skip the very colliders we are trying
-            // to detect - so we use a Physics.Raycast and then
-            // filter the single hit by name in the code below.
-            if (Physics.Raycast(ray, out RaycastHit blockerHit, _lookDistance, _blockerMask, QueryTriggerInteraction.Ignore))
+            int hitCount = Physics.RaycastNonAlloc(ray, _hitsBuffer, _lookDistance, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hitCount; i++)
             {
-                if (!blockerHit.collider.name.Contains("Pond"))
+                Collider c = _hitsBuffer[i].collider;
+                if (c == null) continue;
+                if (c.name.Contains("Pond")) continue;
+                if (!(c is TerrainCollider)) continue;
+                float d = _hitsBuffer[i].distance;
+                if (nearestBlockerDist < 0f || d < nearestBlockerDist)
                 {
-                    nearestBlockerDist = blockerHit.distance;
-                    nearestBlocker = blockerHit.collider.gameObject;
+                    nearestBlockerDist = d;
+                    nearestBlocker = c.gameObject;
                 }
             }
         }
