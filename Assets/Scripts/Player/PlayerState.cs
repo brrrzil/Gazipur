@@ -124,68 +124,104 @@ public class PlayerState : MonoBehaviour
             _thirstForRemark = (int)_info.thirst;
         }
 
-        // Round 85: lowHP edge detection.
-        // The remark fires only on the
-        // falling edge of the 50%
-        // threshold - the first time the
-        // player's health drops below 50
-        // since the last time it was at
-        // or above 50. The flag is reset
-        // on the rising edge (health
-        // back to 50% or above), so a
-        // healed player who takes damage
+        // Round 85 v2: lowHP edge
+        // detection. The remark fires
+        // only on the falling edge of
+        // the 50% threshold - the first
+        // time the player's health
+        // drops below 50 since the last
+        // time it was at or above 50.
+        // The flag is reset on the
+        // rising edge (health back to
+        // 50% or above), so a healed
+        // player who takes damage
         // again will hear the remark
         // again on the second fall.
         //
+        // Round 85 v2 user correction:
+        // 'The event should not happen
+        // if health is 0 or below.' So
+        // the falling-edge condition
+        // is 'health > 0 AND health <
+        // 50', not just 'health < 50'.
+        // The check is added to the
+        // 'isLowHP' boolean (not just
+        // the if-condition) so the
+        // 'else if (!isLowHP &&
+        // _wasLowHP)' branch below
+        // also benefits from the same
+        // range: when health is at 0
+        // the player is dead, the
+        // rising-edge branch should
+        // not re-arm the flag (the
+        // health value never rises
+        // back through 50% on its
+        // way down through 0 - the
+        // only path back from 0 to
+        // 50% is via Heal, which is
+        // a separate code path, and
+        // the rising-edge branch
+        // would only matter in the
+        // edge case of a one-frame
+        // blip that drops to 0 and
+        // back up; ignoring that
+        // blip is fine).
+        //
         // 'Below half' in the user's
         // request is interpreted as
-        // strictly less than 50% of the
-        // 100-point max (the
-        // DataManager.HeroInfo default
-        // health is 100 and the
-        // _healthBar max is 100, so 50
-        // is exactly half). The
+        // strictly less than 50% of
+        // the 100-point max (the
+        // DataManager.HeroInfo
+        // default health is 100 and
+        // the _healthBar max is 100,
+        // so 50 is exactly half). The
         // threshold is a hard-coded
         // literal here, not a
-        // [SerializeField], because the
-        // user's description is 'half'
-        // and the hero's max health is
-        // not exposed as a separate
-        // variable in the project - the
-        // 100 max is implicit in
+        // [SerializeField], because
+        // the user's description is
+        // 'half' and the hero's max
+        // health is not exposed as
+        // a separate variable in
+        // the project - the 100 max
+        // is implicit in
         // _healthBar.SetAmountAndValue
-        // (call below) and the
-        // Mathf.Clamp clamps. If a
-        // future change makes the max
-        // health configurable, this
-        // constant would have to be
-        // derived from that max instead
-        // of being a literal 50.
-        bool isLowHP = _info.health < 50f;
+        // and Mathf.Clamp. If a
+        // future change makes the
+        // max health configurable,
+        // this constant would have to
+        // be derived from that max
+        // instead of being a literal
+        // 50.
+        bool isLowHP = _info.health < 50f && _info.health > 0f;
         if (isLowHP && !_wasLowHP)
         {
             // Falling edge: health just
-            // dropped below 50%. Fire
-            // the remark once. The
-            // CharacterRemarks row the
-            // user set up in HeroRemarks
-            // has 'isOneTime=false' or
+            // dropped into the (0, 50)
+            // range (the 0 case is
+            // excluded by the
+            // 'health > 0f' guard
+            // above). Fire the remark
+            // once. The CharacterRemarks
+            // row the user set up in
+            // HeroRemarks has
+            // 'isOneTime=false' or
             // isMultiRemark=true (the
             // user did not say which),
             // and the underlying
-            // CharacterRemarks.StartRemark
-            // will handle the 'do not
-            // re-fire this remark on
-            // the same Isha_Crouch
-            // visit' rule based on
-            // _isStarted / _currentType.
-            // The edge flag here is the
-            // 'should we even attempt to
-            // fire this remark at all'
-            // gate; the StartRemark
-            // method itself decides
-            // whether to actually play
-            // the audio / text based on
+            // CharacterRemarks.
+            // StartRemark will handle
+            // the 'do not re-fire this
+            // remark on the same
+            // Isha_Crouch visit' rule
+            // based on _isStarted /
+            // _currentType. The edge
+            // flag here is the 'should
+            // we even attempt to fire
+            // this remark at all' gate;
+            // the StartRemark method
+            // itself decides whether
+            // to actually play the
+            // audio / text based on
             // the row's isOneTime /
             // isMultiRemark / chance
             // settings.
