@@ -55,12 +55,14 @@ public class GarbageObject : InteractObject
             _holdBar.StartHold(_holdTaime, loop: true);
             _holdBar.OnHoldComplete += PicItem;
             _sounds.PlayerPlay(_pickSound, true);
+            PlayInteractAnimation();
         }
         else
         {
             _sounds.PlayerStop();
             _holdBar.CancelHold();
             _holdBar.OnHoldComplete -= PicItem;
+            StopInteractAnimation();
         }
     }
     protected virtual void PicItem()
@@ -74,10 +76,15 @@ public class GarbageObject : InteractObject
         if (_count == 0)
         {
             _holdBar.CancelHold();
+            StopInteractAnimation();
             Intearct(false);
             DecreaseFog();
             Destroy(gameObject);
-        }        
+        }
+        else
+        {
+            RefreshInteractAnimation();
+        }
     }
 
     private void DecreaseFog()

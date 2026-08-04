@@ -65,6 +65,8 @@ public class PlayerMovement : MonoBehaviour
     private float _slowdownEndTime;
 
     [Inject] private PlayerState _state;
+    private bool _isLocked;
+    private float _lockEndTime;
 
     private PlayerInputActions _inputActions;
     private Vector2 _moveInput;
@@ -166,6 +168,8 @@ public class PlayerMovement : MonoBehaviour
         EnforceCursorState();
 
         if (_isUIMode) return;
+        if (_isLocked && Time.time >= _lockEndTime) _isLocked = false;
+        if (_isLocked) return;
         HandleCrouch();
         ApplyGravity();
         HandleMovement();
@@ -791,5 +795,42 @@ public class PlayerMovement : MonoBehaviour
     public void SetAimSlowdown(float value)
     {
         _aimSlowdown = Mathf.Clamp(value, 0f, 1f);
+    }
+
+    // Plays a one-shot player animation and locks movement for
+    // 'duration' seconds. Called by InteractObject subclasses
+    // (GarbageObject, DangerGarbageObject, etc) via the
+    // PlayInteractAnimation() helper in the base class. While
+    // locked, Update() returns early before HandleMovement, so
+    // the player cannot walk away mid-grab. The run/walk bools
+    // are also cleared so the rig does not stay in Isha_Run
+    // after the lock ends (the Animator state would otherwise
+    // keep playing until the next transition fires).
+    public void PlayLockedAnimation(string trigger, float duration)
+    {
+        if (_legsHandsAnimator != null) _legsHandsAnimator.SetTrigger(trigger);
+        if (_wasRun)  { _legsHandsAnimator.SetBool("isRun", false);  _wasRun = false; }
+        if (_wasWalk) { _legsHandsAnimator.SetBool("isWalk", false); _wasWalk = false; }
+        _isLocked = true;
+        _lockEndTime = Time.time + duration;
+    }
+
+    // Extends an existing lock by 'duration' more seconds and
+    // re-fires the trigger. Used by GarbageObject's loop pickup
+    // (PicItem fires after every hold bar complete; we extend
+    // the lock so the player stays standing for the next pick).
+    public void RefreshLock(string trigger, float duration)
+    {
+        if (_legsHandsAnimator != null) _legsHandsAnimator.SetTrigger(trigger);
+        _lockEndTime = Time.time + duration;
+    }
+
+    // Drops the lock immediately and resets the trigger so the
+    // animation stops looping. Used when the player releases E
+    // or the interaction is cancelled.
+    public void UnlockAnimation(string trigger)
+    {
+        if (_legsHandsAnimator != null) _legsHandsAnimator.ResetTrigger(trigger);
+        _isLocked = false;
     }
 }
