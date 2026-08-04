@@ -8,15 +8,10 @@ public class PondLookRemark : MonoBehaviour
     private const float _lookDistance = 5.0f;
     private const float _lookDuration = 1.0f;
     private const float _statusLogInterval = 1.0f;
-    private const int _hitsBufferSize = 16;
 
     [SerializeField] private List<GameObject> _ponds = new List<GameObject>();
     [SerializeField] private Transform _cameraTransform;
     [SerializeField] private bool _drawDebug = true;
-    [Tooltip("Layer mask for colliders that count as 'blockers' for the look-at-pond check. " +
-        "Defaults to Physics.DefaultRaycastLayers. The pond's own colliders are always skipped " +
-        "regardless of this mask, and common scene names like 'Terrain' / 'Ground' are skipped too.")]
-    [SerializeField] private LayerMask _blockerMask = Physics.DefaultRaycastLayers;
 
     [Inject] private DialogManager _dialog;
     [Inject] private QuestManager _quest;
@@ -26,7 +21,6 @@ public class PondLookRemark : MonoBehaviour
     private bool _initialised;
     private float _lastStatusLogTime;
     private int _frameCount;
-    private RaycastHit[] _hitsBuffer = new RaycastHit[_hitsBufferSize];
 
     private void Awake()
     {
@@ -113,64 +107,61 @@ public class PondLookRemark : MonoBehaviour
         }
         Ray ray = new Ray(rayOrigin, rayDir);
 
-        // Cast along the camera forward through the centre of the
-        // screen (crosshair direction). The user-wired _blockerMask
-        // lets the user narrow what counts as a blocker, default
-        // is everything except Ignore Raycast.
-        int hitCount = Physics.RaycastNonAlloc(ray, _hitsBuffer, _lookDistance, _blockerMask, QueryTriggerInteraction.Ignore);
-
-        // Build a short log of every non-pond hit for the diagnostic
-        // so the user can see exactly what colliders the ray crossed.
-        // Throttled to once per second via the existing _statusLogInterval.
-        System.Text.StringBuilder hitLog = null;
-        if (Time.time - _lastStatusLogTime >= _statusLogInterval)
-        {
-            hitLog = new System.Text.StringBuilder();
-        }
-
-        float nearestPondHitDist = -1f;
-        GameObject nearestPondHit = null;
-        float nearestBlockerDist = -1f;
-        GameObject nearestBlocker = null;
-        for (int i = 0; i < hitCount; i++)
-        {
-            Collider c = _hitsBuffer[i].collider;
-            if (c == null) continue;
-            float d = _hitsBuffer[i].distance;
-
-            // Round 88 v12: skip pond colliders entirely. The user's
-            // report was 'невидимые коллайдеры пруда. Поэтому луч не
-            // пробивается через них' - the pond's MeshColliders were
-            // being treated as blockers and the raycast was terminating
-            // at the pond's surface. We filter the pond's own colliders
-            // out so the ray 'punches through' the pond geometry. The
-            // pond visibility check uses Bounds.IntersectRay below
-            // (which always works regardless of collider type).
-            if (c.name.Contains("Pond")) continue;
-
-            // Also skip common always-present scene objects that are
-            // not meaningful 'I am looking at the pond' blockers.
-            if (c.name == "Terrain" || c.name == "Ground") continue;
-
-            if (hitLog != null)
-            {
-                if (hitLog.Length > 0) hitLog.Append(" | ");
-                hitLog.Append(c.name).Append("@").Append(d.ToString("F2"));
-            }
-
-            if (nearestBlockerDist < 0f || d < nearestBlockerDist)
-            {
-                nearestBlockerDist = d;
-                nearestBlocker = c.gameObject;
-            }
-        }
-
-        // The ponds in GameScene have non-convex MeshColliders, and
-        // we now skip them entirely above. Visibility is computed via
-        // Bounds.IntersectRay for each pond, which works regardless
-        // of collider type.
-        float nearestBoundsDist = -1f;
-        GameObject nearestBoundsPond = null;
+        // Round 88 v13: drop Physics.Raycast entirely, use only
+        // Renderer.bounds.IntersectRay per pond. The user's
+        // feedback 'Пусть он реагирует только на MeshRenderer'
+        // (the ray should react only to MeshRenderer) is
+        // explicit - they want a pure visual / bounds-based
+        // detection that does not care about any colliders at
+        // all (not the pond's MeshCollider, not the terrain
+        // MeshCollider, not the wall BoxCollider, nothing). The
+        // check is: for each pond, does the camera ray pierce
+        // the pond's MeshRenderer world-space AABB within 5
+        // metres? If yes, the player is looking at the pond and
+        // the remark can start ticking.
+        //
+        // Why this is the right abstraction here:
+        //   - MeshRenderer.bounds.IntersectRay works on the
+        //     renderer's AABB, which is always available on any
+        //     GameObject with a MeshRenderer regardless of
+        //     collider type, convexity, trigger / non-trigger,
+        //     etc. It is the same AABB the player's eyes use to
+        //     see the mesh (the renderer is what draws the mesh
+        //     on screen, the AABB is its world-space bounding
+        //     box).
+        //   - The previous v10 / v11 / v12 attempts at using
+        //     Physics.Raycast all ran into the same issue: the
+        //     pond's MeshCollider (and / or other scene
+        //     colliders the user did not want to count as
+        //     blockers) showed up as hits in the raycast, and
+        //     either blocked the ray prematurely or were
+        //     classified as 'pond hits' that still consumed
+        //     the raycast slot. With v13 there is no raycast at
+        //     all - the question 'is the player looking at a
+        //     pond' is answered purely by 'does the camera ray
+        //     pierce the pond's AABB', which is the same
+        //     question the user's eyes answer when they look at
+        //     the pond on screen.
+        //   - Other-geometry blocking (the user's v10 request
+        //     'учитывать другие объекты. По условию их не должно
+        //     быть между взглядом и прудом') is now dropped by
+        //     user request in v13. The user has decided that
+        //     for this particular remark, 'looking at the pond'
+        //     means 'the camera ray hits the pond's AABB',
+        //     regardless of whether a wall or a tree is in
+        //     between. That is a clean, simple definition that
+        //     matches the player's perception of 'I am looking
+        //     at the pond' (the player's gaze pierces walls in
+        //     the sense that they know what they are aiming at,
+        //     and the game does not need to second-guess them
+        //     with a line-of-sight test for this particular
+        //     remark). If the user later decides they want
+        //     line-of-sight blocking, v13's logic can be
+        //     extended with a Physics.Raycast + blocker check
+        //     again, but for now the pure-bounds check is what
+        //     the user asked for.
+        GameObject nearestPond = null;
+        float nearestDist = 0f;
         for (int i = 0; i < _ponds.Count; i++)
         {
             GameObject pond = _ponds[i];
@@ -179,32 +170,15 @@ public class PondLookRemark : MonoBehaviour
             if (rend == null) continue;
             if (rend.bounds.IntersectRay(ray, out float boundsDist) && boundsDist <= _lookDistance)
             {
-                if (nearestBoundsPond == null || boundsDist < nearestBoundsDist)
+                if (nearestPond == null || boundsDist < nearestDist)
                 {
-                    nearestBoundsPond = pond;
-                    nearestBoundsDist = boundsDist;
+                    nearestPond = pond;
+                    nearestDist = boundsDist;
                 }
             }
         }
 
-        bool isLookingAtPond = false;
-        GameObject nearestPond = null;
-        float nearestDist = 0f;
-        if (nearestPondHit != null && (nearestBlockerDist < 0f || nearestBlockerDist > nearestPondHitDist))
-        {
-            nearestPond = nearestPondHit;
-            nearestDist = nearestPondHitDist;
-            isLookingAtPond = true;
-        }
-        if (nearestBoundsPond != null && (nearestBlockerDist < 0f || nearestBlockerDist > nearestBoundsDist))
-        {
-            if (!isLookingAtPond || nearestBoundsDist < nearestDist)
-            {
-                nearestPond = nearestBoundsPond;
-                nearestDist = nearestBoundsDist;
-                isLookingAtPond = true;
-            }
-        }
+        bool isLookingAtPond = nearestPond != null;
 
         if (isLookingAtPond && _drawDebug)
         {
@@ -235,11 +209,6 @@ public class PondLookRemark : MonoBehaviour
             }
         }
 
-        if (!isLookingAtPond && _drawDebug && nearestBlockerDist > 0f && nearestBlockerDist <= _lookDistance)
-        {
-            Debug.DrawRay(camPos, rayDir * nearestBlockerDist, Color.yellow, 0.1f);
-        }
-
         if (Time.time - _lastStatusLogTime >= _statusLogInterval)
         {
             _lastStatusLogTime = Time.time;
@@ -267,18 +236,13 @@ public class PondLookRemark : MonoBehaviour
             }
             string absName = absNearest != null ? absNearest.name : "<none>";
             string absDist = absNearest != null ? absNearestDist.ToString("F2") + "m" : "n/a";
-            string blockerInfo = nearestBlockerDist > 0f
-                ? nearestBlockerDist.ToString("F2") + "m (" + (nearestBlocker != null ? nearestBlocker.name : "?") + ")"
-                : "none";
-            string hitsInfo = hitLog != null && hitLog.Length > 0 ? hitLog.ToString() : "no hits";
 
             if (isLookingAtPond)
             {
                 string pondName = nearestPond != null ? nearestPond.name : "null";
                 Debug.Log("[PondLookRemark] frame=" + _frameCount + " LOOKING at " + pondName +
-                    " rayDist=" + nearestDist.ToString("F2") + "m timer=" + _lookTimer.ToString("F2") + "/" + _lookDuration.ToString("F2") +
-                    "s | hits=[" + hitsInfo + "]" +
-                    " | player=" + camPos.ToString("F1") +
+                    " boundsDist=" + nearestDist.ToString("F2") + "m timer=" + _lookTimer.ToString("F2") + "/" + _lookDuration.ToString("F2") +
+                    "s | player=" + camPos.ToString("F1") +
                     " absNearest=" + absName + " absDist=" + absDist);
             }
             else
@@ -286,8 +250,7 @@ public class PondLookRemark : MonoBehaviour
                 string nearestName = closestInRange != null ? closestInRange.name : "<none in 5m>";
                 string distStr = closestInRange != null ? closestInRangeDist.ToString("F2") + "m" : "n/a";
                 Debug.Log("[PondLookRemark] frame=" + _frameCount + " idle in-5m=" + nearestName +
-                    " dist=" + distStr + " blockerAt=" + blockerInfo +
-                    " hits=[" + hitsInfo + "]" +
+                    " dist=" + distStr +
                     " | player=" + camPos.ToString("F1") +
                     " absNearest=" + absName + " absDist=" + absDist +
                     " timer=" + _lookTimer.ToString("F2"));
