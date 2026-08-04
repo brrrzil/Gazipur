@@ -42,7 +42,7 @@ public class PondLookRemark : MonoBehaviour
         if (_ponds == null || _ponds.Count == 0)
         {
             _ponds = new List<GameObject>();
-            GameObject[] all = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            GameObject[] all = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
             for (int i = 0; i < all.Length; i++)
             {
                 GameObject go = all[i];
