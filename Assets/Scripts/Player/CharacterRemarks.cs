@@ -85,12 +85,14 @@ public class CharacterRemarks : MonoBehaviour
             _remarkText.text = rem.hasBeen ? rem.remarkAnyTime : rem.remark;
             PlayVoice(rem.hasBeen ? rem.voiceAnyTime : rem.voice);
         }
+
         rem.hasBeen = true;
         _tween?.Kill();
         _tween = _cGroup.DOFade(1, 0.5f).OnComplete(() =>
         {
             _tween = _cGroup.DOFade(0, 0.5f).SetDelay(rem.showTime).OnComplete(() => _isStarted = false);
         });
+
         return true;
     }
 
