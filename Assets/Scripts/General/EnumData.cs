@@ -63,7 +63,7 @@ public static class EnumData
         midHP,
         lowHP,
         soMuchWater,
-        iCantAnymore
+        nicePlace
     }
     public enum FilterParts
     {
