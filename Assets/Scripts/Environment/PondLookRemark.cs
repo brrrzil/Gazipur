@@ -104,8 +104,26 @@ public class PondLookRemark : MonoBehaviour
             GameObject pond = _ponds[i];
             if (pond == null) continue;
 
-            Vector3 toPond = pond.transform.position - camPos;
-            float dist = toPond.magnitude;
+            // Distance to the pond's mesh surface, not its transform
+            // position (transform.position is the GameObject pivot which
+            // for a flat pond sits at the centre of the water surface,
+            // so a player standing on the bank is 5+ metres from the
+            // pivot even when they are clearly at the pond). ClosestPoint
+            // on the MeshRenderer's world-space AABB returns the nearest
+            // point on the mesh bounds - if the player is inside the
+            // bounds it returns camPos (distance 0), if they are on the
+            // bank it returns the nearest edge of the water, if they are
+            // far it returns the nearest corner.
+            Renderer rend = pond.GetComponentInChildren<Renderer>();
+            float dist;
+            if (rend != null)
+            {
+                dist = Vector3.Distance(camPos, rend.bounds.ClosestPoint(camPos));
+            }
+            else
+            {
+                dist = (pond.transform.position - camPos).magnitude;
+            }
             if (dist > _lookDistance) continue;
 
             if (dist < closestInRangeDist)
@@ -114,8 +132,23 @@ public class PondLookRemark : MonoBehaviour
                 closestInRange = pond;
             }
 
-            if (dist < 0.001f) continue;
-            Vector3 dir = toPond / dist;
+            // Angle check still uses transform.position as the look target
+            // because ClosestPoint collapses to camPos when the player
+            // is inside the bounds (zero-length direction = undefined
+            // dot product). The pond centre is the most stable 'aim at
+            // this thing' target for first-person looking.
+            Vector3 toCentre = pond.transform.position - camPos;
+            float centreDist = toCentre.magnitude;
+            if (centreDist < 0.001f)
+            {
+                // Player is right at the pond centre - treat as looking at it.
+                isLookingAtPond = true;
+                nearestPond = pond;
+                nearestDist = dist;
+                if (_drawDebug) Debug.DrawRay(camPos, camForward * 0.5f, Color.green, 0.1f);
+                continue;
+            }
+            Vector3 dir = toCentre / centreDist;
             float dot = Vector3.Dot(camForward, dir);
             if (dot < cosHalfAngle) continue;
 
@@ -126,8 +159,17 @@ public class PondLookRemark : MonoBehaviour
 
         if (!isLookingAtPond && _drawDebug && closestInRange != null)
         {
-            Vector3 toClosest = closestInRange.transform.position - camPos;
-            Debug.DrawRay(camPos, toClosest.normalized * closestInRangeDist, Color.red, 0.1f);
+            Renderer rend = closestInRange.GetComponentInChildren<Renderer>();
+            Vector3 targetPoint;
+            if (rend != null)
+            {
+                targetPoint = rend.bounds.ClosestPoint(camPos);
+            }
+            else
+            {
+                targetPoint = closestInRange.transform.position;
+            }
+            Debug.DrawRay(camPos, (targetPoint - camPos), Color.red, 0.1f);
         }
 
         if (Time.time - _lastStatusLogTime >= _statusLogInterval)
@@ -135,14 +177,26 @@ public class PondLookRemark : MonoBehaviour
             _lastStatusLogTime = Time.time;
             // Always log the absolute nearest pond (no range filter) plus
             // the player position, so the user can see "I am at X, nearest
-            // pond is at Y, distance Z m" even when Z > 5 m.
+            // pond is at Y, distance Z m" even when Z > 5 m. Distance
+            // here is also measured to the mesh bounds, not the transform
+            // position, so the user can see "I am on the bank" vs
+            // "I am at the centre".
             GameObject absNearest = null;
             float absNearestDist = float.PositiveInfinity;
             for (int i = 0; i < _ponds.Count; i++)
             {
                 GameObject pond = _ponds[i];
                 if (pond == null) continue;
-                float d = (pond.transform.position - camPos).magnitude;
+                Renderer rend = pond.GetComponentInChildren<Renderer>();
+                float d;
+                if (rend != null)
+                {
+                    d = Vector3.Distance(camPos, rend.bounds.ClosestPoint(camPos));
+                }
+                else
+                {
+                    d = (pond.transform.position - camPos).magnitude;
+                }
                 if (d < absNearestDist)
                 {
                     absNearestDist = d;
