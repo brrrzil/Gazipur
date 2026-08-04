@@ -3,19 +3,16 @@ using UnityEngine;
 using Zenject;
 using static EnumData;
 
-// Fires the 'soMuchWater' remark when the player keeps their crosshair on
-// a pond for more than 1 second while standing within 5 metres of it.
-// Skips the remark after the filter has been built (QuestsState[Quests.filter]==2).
 public class PondLookRemark : MonoBehaviour
 {
     private const float _lookDistance = 5.0f;
     private const float _lookDuration = 1.0f;
     private const float _lookHalfAngleDeg = 30.0f;
-    private const float _statusLogInterval = 1.0f; // seconds between diagnostic logs
+    private const float _statusLogInterval = 1.0f;
 
     [SerializeField] private List<GameObject> _ponds = new List<GameObject>();
     [SerializeField] private Transform _cameraTransform;
-    [SerializeField] private bool _drawDebug = true; // default ON for round 88 v6 diagnostics
+    [SerializeField] private bool _drawDebug = true;
 
     [Inject] private DialogManager _dialog;
     [Inject] private QuestManager _quest;
@@ -48,17 +45,17 @@ public class PondLookRemark : MonoBehaviour
 
         _initialised = (_cameraTransform != null) && (_ponds != null && _ponds.Count > 0);
 
-        // Round 88 v6: log immediately on Awake so the user sees component
-        // status in the Console even if Update never logs (component disabled,
-        // scene not loaded, etc).
-        Debug.Log($"[PondLookRemark] Awake: camera={(_cameraTransform != null ? _cameraTransform.name : \"<null>\")} " +
-                  $"pondsFound={(_ponds != null ? _ponds.Count : 0)} initialised={_initialised}");
-        if (_ponds != null && _ponds.Count > 0)
+        string camName = _cameraTransform != null ? _cameraTransform.name : "null";
+        int pondCount = _ponds != null ? _ponds.Count : 0;
+        Debug.Log("[PondLookRemark] Awake: camera=" + camName + " pondsFound=" + pondCount + " initialised=" + _initialised);
+
+        if (_ponds != null)
         {
             for (int i = 0; i < _ponds.Count; i++)
             {
-                Debug.Log($"[PondLookRemark]   pond[{i}] = {(_ponds[i] != null ? _ponds[i].name : \"<null>\")} " +
-                          $"at {(_ponds[i] != null ? _ponds[i].transform.position.ToString() : \"?\")}");
+                GameObject p = _ponds[i];
+                if (p == null) continue;
+                Debug.Log("[PondLookRemark]   pond[" + i + "] = " + p.name + " at " + p.transform.position);
             }
         }
     }
@@ -69,34 +66,19 @@ public class PondLookRemark : MonoBehaviour
 
         if (!_initialised)
         {
-            // Round 88 v6: in v4/v5 we silently no-op'd if the component
-            // did not find a camera or any pond in Awake. That made
-            // debugging impossible - the user saw nothing in the Console
-            // and had no way to know whether the issue was the component
-            // not wired, the scene not loaded yet, the auto-find filter
-            // missing the ponds, etc. v6 logs every second so the user
-            // can see exactly what is wrong.
             if (Time.time - _lastStatusLogTime >= _statusLogInterval)
             {
                 _lastStatusLogTime = Time.time;
-                Debug.LogError($"[PondLookRemark] not initialised in Update: " +
-                               $"camera={(_cameraTransform != null ? _cameraTransform.name : \"<null>\")} " +
-                               $"ponds={(_ponds != null ? _ponds.Count : 0)}. " +
-                               $"Check that the GameObject is in the active scene, has a Camera.main " +
-                               $"(GameScene has 'Main Camera' with tag MainCamera), and that the ponds " +
-                               $"are named with 'Pond' in the name (e.g. DirtyPond, ClearPond, " +
-                               $"PoisonedPond, *PondSurface). If still failing, drag the ponds into " +
-                               $"the _ponds list in the Inspector explicitly.");
+                string camName = _cameraTransform != null ? _cameraTransform.name : "null";
+                int pondCount = _ponds != null ? _ponds.Count : 0;
+                Debug.LogError("[PondLookRemark] not initialised: camera=" + camName + " ponds=" + pondCount +
+                    ". Add a Camera.main in the scene, or wire _cameraTransform / _ponds in the Inspector.");
             }
             return;
         }
 
-        if (_hasFiredSoMuchWater)
-        {
-            return;
-        }
+        if (_hasFiredSoMuchWater) return;
 
-        // Skip after filter built.
         bool filterBuilt = false;
         if (_quest != null
             && _quest.QuestsState != null
@@ -148,25 +130,21 @@ public class PondLookRemark : MonoBehaviour
             Debug.DrawRay(camPos, toClosest.normalized * closestInRangeDist, Color.red, 0.1f);
         }
 
-        // Round 88 v6: periodic status log so the user can see the
-        // component is alive and what state it is in even when not
-        // looking at a pond. Once per second is enough to confirm
-        // 'it is running' without flooding the Console.
         if (Time.time - _lastStatusLogTime >= _statusLogInterval)
         {
             _lastStatusLogTime = Time.time;
             if (isLookingAtPond)
             {
-                Debug.Log($"[PondLookRemark] frame={_frameCount} LOOKING at {nearestPond?.name} " +
-                          $"dist={nearestDist:F2}m timer={_lookTimer:F2}/{_lookDuration:F2}s " +
-                          $"camera={_cameraTransform.name} camPos={camPos}");
+                string pondName = nearestPond != null ? nearestPond.name : "null";
+                Debug.Log("[PondLookRemark] frame=" + _frameCount + " LOOKING at " + pondName +
+                    " dist=" + nearestDist.ToString("F2") + "m timer=" + _lookTimer.ToString("F2") + "/" + _lookDuration.ToString("F2") + "s");
             }
             else
             {
-                string nearest = closestInRange != null ? closestInRange.name : \"<none in range>\";
-                string distStr = closestInRange != null ? closestInRangeDist.ToString(\"F2\") + \"m\" : \"n/a\";
-                Debug.Log($"[PondLookRemark] frame={_frameCount} idle nearest={nearest} dist={distStr} " +
-                          $"timer={_lookTimer:F2} camera={_cameraTransform.name} camPos={camPos}");
+                string nearestName = closestInRange != null ? closestInRange.name : "none in range";
+                string distStr = closestInRange != null ? closestInRangeDist.ToString("F2") + "m" : "n/a";
+                Debug.Log("[PondLookRemark] frame=" + _frameCount + " idle nearest=" + nearestName +
+                    " dist=" + distStr + " timer=" + _lookTimer.ToString("F2"));
             }
         }
 
