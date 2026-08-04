@@ -90,9 +90,55 @@ public class PondLookRemark : MonoBehaviour
         }
         if (filterBuilt) return;
 
-        Vector3 camPos = _cameraTransform.position;
-        Vector3 camForward = _cameraTransform.forward;
-        Ray ray = new Ray(camPos, camForward);
+        Vector3 camPos;
+        Vector3 rayOrigin;
+        Vector3 rayDir;
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            // Round 88 v11: use Camera.main.ScreenPointToRay through the
+            // centre of the screen rather than _cameraTransform.forward.
+            // The previous approach used _cameraTransform.forward, which
+            // is the world-forward of whatever Transform the user wired
+            // in the Inspector (or Camera.main.transform.forward as a
+            // fallback). That is the camera's forward direction with no
+            // pitch contribution if the wired Transform is the Player
+            // root or the _cameraHolder's parent, and it does NOT match
+            // the crosshair-on-screen direction the player sees when
+            // they look up or down. ScreenPointToRay(new Vector3(Screen
+            // .width/2, Screen.height/2, 0)) is the canonical Unity way
+            // to ask 'what world-space direction is the player aiming
+            // with their crosshair?' - it is the ray from the camera
+            // position through the centre pixel of the rendered image,
+            // which is exactly where the crosshair is rendered and
+            // exactly where the player's eyes are pointed.
+            //
+            // This also fixes the 'луч иногда прерывается' symptom
+            // the user reported: with _cameraTransform.forward, the
+            // ray went in a slightly different direction than the
+            // actual gaze, so it could miss a pond that the player's
+            // crosshair was clearly on (and could also hit a
+            // different blocker than the one the crosshair was
+            // visually on top of). With ScreenPointToRay, the
+            // ray and the crosshair are guaranteed to point the
+            // same way.
+            camPos = mainCam.transform.position;
+            Ray screenRay = mainCam.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+            rayOrigin = screenRay.origin;
+            rayDir = screenRay.direction;
+        }
+        else
+        {
+            // Defensive fallback for the case where Camera.main is null
+            // (scene is loading, no camera tagged MainCamera, etc).
+            // Use _cameraTransform if wired, else origin and direction
+            // are zero (which means no raycast - the status log will
+            // show the diagnostic).
+            camPos = _cameraTransform.position;
+            rayOrigin = _cameraTransform.position;
+            rayDir = _cameraTransform.forward;
+        }
+        Ray ray = new Ray(rayOrigin, rayDir);
 
         // Cast along the camera forward, ignore trigger colliders. We
         // collect every collider the ray crosses in _lookDistance so
@@ -104,6 +150,7 @@ public class PondLookRemark : MonoBehaviour
         float nearestPondHitDist = -1f;
         GameObject nearestPondHit = null;
         float nearestBlockerDist = -1f;
+        GameObject nearestBlocker = null;
         for (int i = 0; i < hitCount; i++)
         {
             Collider c = _hitsBuffer[i].collider;
@@ -122,6 +169,7 @@ public class PondLookRemark : MonoBehaviour
                 if (nearestBlockerDist < 0f || d < nearestBlockerDist)
                 {
                     nearestBlockerDist = d;
+                    nearestBlocker = c.gameObject;
                 }
             }
         }
@@ -179,7 +227,7 @@ public class PondLookRemark : MonoBehaviour
 
         if (isLookingAtPond && _drawDebug)
         {
-            Debug.DrawRay(camPos, camForward * nearestDist, Color.green, 0.1f);
+            Debug.DrawRay(camPos, rayDir * nearestDist, Color.green, 0.1f);
         }
 
         // For the 'closest pond in range' diagnostic, walk the ponds
@@ -214,7 +262,7 @@ public class PondLookRemark : MonoBehaviour
         {
             if (nearestBlockerDist > 0f && nearestBlockerDist <= _lookDistance)
             {
-                Debug.DrawRay(camPos, camForward * nearestBlockerDist, Color.yellow, 0.1f);
+                Debug.DrawRay(camPos, rayDir * nearestBlockerDist, Color.yellow, 0.1f);
             }
         }
 
@@ -247,7 +295,9 @@ public class PondLookRemark : MonoBehaviour
             }
             string absName = absNearest != null ? absNearest.name : "<none>";
             string absDist = absNearest != null ? absNearestDist.ToString("F2") + "m" : "n/a";
-            string blockerInfo = nearestBlockerDist > 0f ? nearestBlockerDist.ToString("F2") + "m" : "none";
+            string blockerInfo = nearestBlockerDist > 0f
+                ? nearestBlockerDist.ToString("F2") + "m (" + (nearestBlocker != null ? nearestBlocker.name : "?") + ")"
+                : "none";
 
             if (isLookingAtPond)
             {
