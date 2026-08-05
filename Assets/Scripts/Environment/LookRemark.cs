@@ -52,17 +52,7 @@ public class LookRemark : MonoBehaviour
 
         Ray ray = _camera.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
 
-        Vector3 closest = _renderer.bounds.ClosestPoint(ray.origin);
-        float dist = Vector3.Distance(ray.origin, closest);
-        if (dist > _lookDistance)
-        {
-            _lookTimer = 0f;
-            return;
-        }
-
-        Vector3 toClosest = (closest - ray.origin).normalized;
-        float dot = Vector3.Dot(ray.direction, toClosest);
-        if (dot < 0.7f)
+        if (!_renderer.bounds.IntersectRay(ray, out float dist) || dist > _lookDistance)
         {
             _lookTimer = 0f;
             return;
@@ -79,7 +69,7 @@ public class LookRemark : MonoBehaviour
         if (_lookTimer >= _lookDuration)
         {
             _dialog.Remarks.StartRemark(_remarkType);
-            Debug.Log($"[LookRemark] {gameObject.name} -> {_remarkType} (dist={dist:F2}m, dot={dot:F2})");
+            Debug.Log($"[LookRemark] {gameObject.name} -> {_remarkType}");
             _hasFired = true;
         }
     }
