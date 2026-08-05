@@ -14,8 +14,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource _jumpSource;    
 
     [Header("Crouch Settings")]
-    [SerializeField] private float _crouchHeight = 0.6667f;
     [SerializeField] private float _standingHeight = 1f;
+    private float _crouchHeight;
     [SerializeField] private float _crouchTransitionSpeed = 8f;
 
     [Header("Camera")]
@@ -111,6 +111,7 @@ public class PlayerMovement : MonoBehaviour
         _inputActions = new PlayerInputActions();
 
         _standingHeight = _controller.height;
+        _crouchHeight = _standingHeight / 1.5f;
         _currentCameraHeight = _cameraHeightNormal;
 
         _gameMode.onChangeMode += SetMode;
@@ -443,13 +444,8 @@ public class PlayerMovement : MonoBehaviour
         }
 
         float newHeight = Mathf.Lerp(_controller.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
-        float heightDelta = newHeight - _controller.height;
         _controller.height = newHeight;
-        if (heightDelta < 0f)
-            transform.position += Vector3.up * (-heightDelta) * 0.5f;
-
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraHeight, _crouchTransitionSpeed * Time.deltaTime);
-
         AdjustPositionToGround();
     }
 
