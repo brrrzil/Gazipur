@@ -14,8 +14,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource _jumpSource;    
 
     [Header("Crouch Settings")]
+    [SerializeField] private float _crouchHeight = 0.6667f;
     [SerializeField] private float _standingHeight = 1f;
-    private float _crouchHeight;
     [SerializeField] private float _crouchTransitionSpeed = 8f;
 
     [Header("Camera")]
@@ -111,7 +111,6 @@ public class PlayerMovement : MonoBehaviour
         _inputActions = new PlayerInputActions();
 
         _standingHeight = _controller.height;
-        _crouchHeight = _standingHeight / 1.5f;
         _currentCameraHeight = _cameraHeightNormal;
 
         _gameMode.onChangeMode += SetMode;
