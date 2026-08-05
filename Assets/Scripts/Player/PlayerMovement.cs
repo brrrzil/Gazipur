@@ -14,7 +14,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource _jumpSource;    
 
     [Header("Crouch Settings")]
-    [SerializeField] private float _crouchHeight = 0.6667f;
+    [SerializeField] private float _crouchHeight = 1f;
     [SerializeField] private float _standingHeight = 1f;
     [SerializeField] private float _crouchTransitionSpeed = 8f;
 
