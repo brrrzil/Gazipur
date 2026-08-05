@@ -6,7 +6,7 @@ using static EnumData;
 
 public class GarbageObject : InteractObject
 {
-    [SerializeField] private float _holdTaime = 1f;
+    [SerializeField] private float _holdTime = 1f;
     [SerializeField] private PlayerSound _pickSound;
     [SerializeField] private Vector2Int _ItemsCount = new Vector2Int(6, 10);
     [SerializeField] private Chances[] _dropChances;
@@ -52,7 +52,7 @@ public class GarbageObject : InteractObject
             // loop: true so the player can keep E held and loot multiple items
             // from the same prefab without releasing. Without this the progress
             // bar disappears after the first loot.
-            _holdBar.StartHold(_holdTaime, loop: true);
+            _holdBar.StartHold(_holdTime, loop: true);
             _holdBar.OnHoldComplete += PicItem;
             _sounds.PlayerPlay(_pickSound, true);
             PlayInteractAnimation();
