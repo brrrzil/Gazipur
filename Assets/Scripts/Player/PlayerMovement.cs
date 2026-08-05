@@ -14,7 +14,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource _jumpSource;    
 
     [Header("Crouch Settings")]
-    [SerializeField] private float _crouchHeight = 0.5f;
+    [SerializeField] private float _crouchHeight = 0.6667f;
     [SerializeField] private float _standingHeight = 1f;
     [SerializeField] private float _crouchTransitionSpeed = 8f;
 
@@ -443,7 +443,10 @@ public class PlayerMovement : MonoBehaviour
         }
 
         float newHeight = Mathf.Lerp(_controller.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
+        float heightDelta = newHeight - _controller.height;
         _controller.height = newHeight;
+        if (heightDelta < 0f)
+            transform.position += Vector3.up * (-heightDelta) * 0.5f;
 
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraHeight, _crouchTransitionSpeed * Time.deltaTime);
 
@@ -774,6 +777,7 @@ public class PlayerMovement : MonoBehaviour
         _isUIMode = GameModeManager.IsUIMode(mode);
         if (_isUIMode)
         {
+            ForceIdle();
             // UI modes (inventory, trade, dialog, die, win, etc.):
             // release cursor so the player can click UI.
             Cursor.lockState = CursorLockMode.None;
@@ -832,5 +836,32 @@ public class PlayerMovement : MonoBehaviour
     {
         if (_legsHandsAnimator != null) _legsHandsAnimator.ResetTrigger(trigger);
         _isLocked = false;
+    }
+
+    // Forces the player back to a clean idle on both Animator
+    // layers. Called by SetMode when the player enters a UI
+    // mode (trade, inventory, dialog, die, win) so that the
+    // rig does not stay frozen in the middle of a Grab /
+    // Wrench / Saw / Cutter / Pet animation while the
+    // player is reading the trade panel. Resets the lock,
+    // the run/walk bools, and the crouch intent so the
+    // player can move again immediately on exit without a
+    // stale state.
+    public void ForceIdle()
+    {
+        if (_legsHandsAnimator != null)
+        {
+            _legsHandsAnimator.Play("Isha_Idle", 0, 0f);
+            _legsHandsAnimator.Play("Idle_Upper", 1, 0f);
+            _legsHandsAnimator.SetBool("isRun", false);
+            _legsHandsAnimator.SetBool("isWalk", false);
+            _legsHandsAnimator.SetBool("isCrouch", false);
+        }
+        _isLocked = false;
+        _wasRun = false;
+        _wasWalk = false;
+        _isCrouching = false;
+        _wantsToCrouch = false;
+        _isReversing = false;
     }
 }

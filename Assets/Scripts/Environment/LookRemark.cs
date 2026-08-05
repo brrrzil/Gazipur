@@ -73,6 +73,7 @@ public class LookRemark : MonoBehaviour
         if (_lookTimer >= _lookDuration)
         {
             _dialog.Remarks.StartRemark(_remarkType);
+            Debug.Log($"[LookRemark] {gameObject.name} -> {_remarkType}");
             _hasFired = true;
         }
     }
