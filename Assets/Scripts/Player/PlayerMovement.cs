@@ -834,6 +834,20 @@ public class PlayerMovement : MonoBehaviour
         _isLocked = false;
     }
 
+    // Extends the current lock by 'extraSeconds' more seconds
+    // without changing the trigger. Used by InteractObject
+    // subclasses that need to keep the player standing for
+    // longer than the initial _animDuration (e.g. GarbageObject
+    // hold bar takes ~1s per pick, with up to N picks in a
+    // loop - the initial _animDuration only covers the
+    // first pick). GarbageObject calls this from its
+    // Update method while the hold bar is active.
+    public void KeepLockAlive(float extraSeconds)
+    {
+        if (!_isLocked) return;
+        _lockEndTime = Time.time + extraSeconds;
+    }
+
     // Forces the player back to a clean idle on both Animator
     // layers. Called by SetMode when the player enters a UI
     // mode (trade, inventory, dialog, die, win) so that the

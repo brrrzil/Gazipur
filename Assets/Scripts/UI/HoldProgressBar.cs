@@ -12,6 +12,7 @@ public class HoldProgressBar : MonoBehaviour
 
     public System.Action OnHoldComplete;
     public System.Action OnHoldCancel;
+    public bool IsActive => _tween != null && _tween.IsActive() && !_tween.IsComplete();
 
     private Tween _tween;
     private float _curTime;

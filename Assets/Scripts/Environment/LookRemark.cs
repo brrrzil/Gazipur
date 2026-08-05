@@ -52,16 +52,16 @@ public class LookRemark : MonoBehaviour
 
         Ray ray = _camera.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
 
-        Vector3 closest = _renderer.bounds.ClosestPoint(ray.origin);
-        float dist = Vector3.Distance(ray.origin, closest);
+        Vector3 center = _renderer.bounds.center;
+        float dist = Vector3.Distance(ray.origin, center);
         if (dist > _lookDistance)
         {
             _lookTimer = 0f;
             return;
         }
 
-        Vector3 toClosest = (closest - ray.origin).normalized;
-        float dot = Vector3.Dot(ray.direction, toClosest);
+        Vector3 toCenter = (center - ray.origin).normalized;
+        float dot = Vector3.Dot(ray.direction, toCenter);
         if (dot < 0.7f)
         {
             _lookTimer = 0f;

@@ -65,6 +65,11 @@ public class GarbageObject : InteractObject
             StopInteractAnimation();
         }
     }
+    private void Update()
+    {
+        if (_holdBar != null && _holdBar.IsActive)
+            KeepAnimationLockAlive();
+    }
     protected virtual void PicItem()
     {
         int rnd = Random.Range(0, _items.Count);

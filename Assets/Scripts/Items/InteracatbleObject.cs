@@ -49,5 +49,10 @@ public abstract class InteractObject : MonoBehaviour
         if (_playerAnimTrigger != "" && _movement != null)
             _movement.UnlockAnimation(_playerAnimTrigger);
     }
+    protected void KeepAnimationLockAlive()
+    {
+        if (_playerAnimTrigger != "" && _movement != null)
+            _movement.KeepLockAlive(_animDuration);
+    }
 }
 
