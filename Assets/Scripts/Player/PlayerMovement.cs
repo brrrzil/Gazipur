@@ -419,12 +419,10 @@ public class PlayerMovement : MonoBehaviour
     {
         float targetHeight;
         float targetCameraHeight;
-        float targetCenterY;
 
         if (_wantsToCrouch)
         {
             targetHeight = _crouchHeight;
-            targetCenterY = (_standingHeight - _crouchHeight) * 0.5f;
             targetCameraHeight = _cameraHeightCrouch;
             _isCrouching = true;
         }
@@ -433,14 +431,12 @@ public class PlayerMovement : MonoBehaviour
             if (CanStandUp())
             {
                 targetHeight = _standingHeight;
-                targetCenterY = 0f;
                 targetCameraHeight = _cameraHeightNormal;
                 _isCrouching = false;
             }
             else
             {
                 targetHeight = _crouchHeight;
-                targetCenterY = (_standingHeight - _crouchHeight) * 0.5f;
                 targetCameraHeight = _cameraHeightCrouch;
                 _isCrouching = true;
             }
@@ -448,7 +444,6 @@ public class PlayerMovement : MonoBehaviour
 
         float newHeight = Mathf.Lerp(_controller.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
         _controller.height = newHeight;
-        _controller.center = new Vector3(0f, Mathf.Lerp(_controller.center.y, targetCenterY, _crouchTransitionSpeed * Time.deltaTime), 0f);
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraHeight, _crouchTransitionSpeed * Time.deltaTime);
         AdjustPositionToGround();
     }
