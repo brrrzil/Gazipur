@@ -172,7 +172,15 @@ public class PlayerMovement : MonoBehaviour
 
     bool CheckIfGrounded()
     {
-        float rayLength = (_controller.height / 2) + _groundCheckDistance;
+        // Use the standing height for the raycast, not the current height:
+        // when crouched (_controller.height = 1.0), the half-height is 0.5
+        // and a 0.1 m groundCheckDistance gives a 0.6 m raycast, which is
+        // too short on uneven terrain (small dips, hills) - the ray misses
+        // the ground, the player is considered airborne, gravity pulls
+        // them down, and the visual feet end up sinking into the ground.
+        // Using the standing half-height (1.0 m + 0.1 = 1.1 m raycast)
+        // keeps the ground check consistent regardless of crouch state.
+        float rayLength = (_standingHeight / 2) + _groundCheckDistance;
         if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayLength))
         {
             float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
