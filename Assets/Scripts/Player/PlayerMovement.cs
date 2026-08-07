@@ -78,7 +78,8 @@ public class PlayerMovement : MonoBehaviour
 
     public bool IsGrounded => _isGrounded;
 
-    void Start()
+    [Inject]
+    void Init()
     {
         _controller = GetComponent<CharacterController>();
         _capsule = GetComponent<CapsuleCollider>();
