@@ -3,7 +3,6 @@ using UnityEngine.InputSystem;
 using Zenject;
 
 [RequireComponent(typeof(CharacterController))]
-[RequireComponent(typeof(CapsuleCollider))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
@@ -14,8 +13,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private AudioSource _jumpSource;
 
     [Header("Crouch")]
-    [Tooltip("CapsuleCollider height when crouched (set to half the standing height for a 50% shrink).")]
-    [SerializeField] private float _crouchCapsuleHeight = 1f;
+    [Tooltip("CharacterController height when crouched (half of the standing height for a 50% shrink).")]
+    [SerializeField] private float _crouchHeight = 1f;
     [Tooltip("How much lower the camera goes when crouched, in meters.")]
     [SerializeField] private float _crouchCameraDrop = 0.5f;
     [Tooltip("Lerp speed for the crouch/stand transition (higher = snappier).")]
@@ -47,13 +46,8 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Animator on the player's legs/hands rig. Writes isRun/isWalk/isCrouch bools each frame they change. Optional - null guard skips the write if not bound.")]
     [SerializeField] private Animator _legsHandsAnimator;
 
-    [Header("Colliders")]
-    [Tooltip("CapsuleCollider on the player (auto-found if left empty). Shrinks during crouch.")]
-    [SerializeField] private CapsuleCollider _capsule;
-
     private CharacterController _controller;
-    private float _standingCapsuleHeight;
-    private float _standingControllerHeight;
+    private float _standingHeight;
     private float _currentCameraHeight;
     private float _xRotation;
     private bool _isCrouching;
@@ -87,10 +81,7 @@ public class PlayerMovement : MonoBehaviour
     void Init()
     {
         _controller = GetComponent<CharacterController>();
-        if (_capsule == null) _capsule = GetComponent<CapsuleCollider>();
-        if (_capsule == null) Debug.LogError("[PlayerMovement] CapsuleCollider not found and not bound in Inspector - crouch will not shrink the collider.");
-        if (_capsule != null) _standingCapsuleHeight = _capsule.height;
-        if (_controller != null) _standingControllerHeight = _controller.height;
+        if (_controller != null) _standingHeight = _controller.height;
         _inputActions = new PlayerInputActions();
 
         _currentCameraHeight = _cameraHeightNormal;
@@ -221,12 +212,10 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        float targetHeight = _wantsToCrouch ? _crouchCapsuleHeight : Mathf.Max(_standingCapsuleHeight, _standingControllerHeight);
+        float targetHeight = _wantsToCrouch ? _crouchHeight : _standingHeight;
         float targetCameraY = _wantsToCrouch ? _cameraHeightNormal - _crouchCameraDrop : _cameraHeightNormal;
         _isCrouching = _wantsToCrouch;
 
-        if (_capsule != null)
-            _capsule.height = Mathf.Lerp(_capsule.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
         if (_controller != null)
             _controller.height = Mathf.Lerp(_controller.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraY, _crouchTransitionSpeed * Time.deltaTime);
