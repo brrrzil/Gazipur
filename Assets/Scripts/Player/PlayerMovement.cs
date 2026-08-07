@@ -217,13 +217,14 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        float targetCapsuleHeight = (_capsule != null && _wantsToCrouch) ? _crouchCapsuleHeight
-            : (_capsule != null ? _capsule.height : 0f);
+        float targetHeight = _wantsToCrouch ? _crouchCapsuleHeight : (_capsule != null ? _capsule.height : _controller.height);
         float targetCameraY = _wantsToCrouch ? _cameraHeightNormal - _crouchCameraDrop : _cameraHeightNormal;
         _isCrouching = _wantsToCrouch;
 
         if (_capsule != null)
-            _capsule.height = Mathf.Lerp(_capsule.height, targetCapsuleHeight, _crouchTransitionSpeed * Time.deltaTime);
+            _capsule.height = Mathf.Lerp(_capsule.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
+        if (_controller != null)
+            _controller.height = Mathf.Lerp(_controller.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraY, _crouchTransitionSpeed * Time.deltaTime);
     }
 
