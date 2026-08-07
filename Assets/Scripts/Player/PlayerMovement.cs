@@ -52,6 +52,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private CapsuleCollider _capsule;
 
     private CharacterController _controller;
+    private float _standingCapsuleHeight;
+    private float _standingControllerHeight;
     private float _currentCameraHeight;
     private float _xRotation;
     private bool _isCrouching;
@@ -87,6 +89,8 @@ public class PlayerMovement : MonoBehaviour
         _controller = GetComponent<CharacterController>();
         if (_capsule == null) _capsule = GetComponent<CapsuleCollider>();
         if (_capsule == null) Debug.LogError("[PlayerMovement] CapsuleCollider not found and not bound in Inspector - crouch will not shrink the collider.");
+        if (_capsule != null) _standingCapsuleHeight = _capsule.height;
+        if (_controller != null) _standingControllerHeight = _controller.height;
         _inputActions = new PlayerInputActions();
 
         _currentCameraHeight = _cameraHeightNormal;
@@ -217,7 +221,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        float targetHeight = _wantsToCrouch ? _crouchCapsuleHeight : (_capsule != null ? _capsule.height : _controller.height);
+        float targetHeight = _wantsToCrouch ? _crouchCapsuleHeight : Mathf.Max(_standingCapsuleHeight, _standingControllerHeight);
         float targetCameraY = _wantsToCrouch ? _cameraHeightNormal - _crouchCameraDrop : _cameraHeightNormal;
         _isCrouching = _wantsToCrouch;
 
