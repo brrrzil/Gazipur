@@ -47,8 +47,11 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Animator on the player's legs/hands rig. Writes isRun/isWalk/isCrouch bools each frame they change. Optional - null guard skips the write if not bound.")]
     [SerializeField] private Animator _legsHandsAnimator;
 
+    [Header("Colliders")]
+    [Tooltip("CapsuleCollider on the player (auto-found if left empty). Shrinks during crouch.")]
+    [SerializeField] private CapsuleCollider _capsule;
+
     private CharacterController _controller;
-    private CapsuleCollider _capsule;
     private float _currentCameraHeight;
     private float _xRotation;
     private bool _isCrouching;
@@ -82,7 +85,8 @@ public class PlayerMovement : MonoBehaviour
     void Init()
     {
         _controller = GetComponent<CharacterController>();
-        _capsule = GetComponent<CapsuleCollider>();
+        if (_capsule == null) _capsule = GetComponent<CapsuleCollider>();
+        if (_capsule == null) Debug.LogError("[PlayerMovement] CapsuleCollider not found and not bound in Inspector - crouch will not shrink the collider.");
         _inputActions = new PlayerInputActions();
 
         _currentCameraHeight = _cameraHeightNormal;
@@ -213,11 +217,13 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        float targetCapsuleHeight = _wantsToCrouch ? _crouchCapsuleHeight : _capsule.height;
+        float targetCapsuleHeight = (_capsule != null && _wantsToCrouch) ? _crouchCapsuleHeight
+            : (_capsule != null ? _capsule.height : 0f);
         float targetCameraY = _wantsToCrouch ? _cameraHeightNormal - _crouchCameraDrop : _cameraHeightNormal;
         _isCrouching = _wantsToCrouch;
 
-        _capsule.height = Mathf.Lerp(_capsule.height, targetCapsuleHeight, _crouchTransitionSpeed * Time.deltaTime);
+        if (_capsule != null)
+            _capsule.height = Mathf.Lerp(_capsule.height, targetCapsuleHeight, _crouchTransitionSpeed * Time.deltaTime);
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraY, _crouchTransitionSpeed * Time.deltaTime);
     }
 
