@@ -116240,6 +116240,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3133934714494644737, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3585007536020938776, guid: 672db997276968a48822ef49c311d4de, type: 3}
       propertyPath: _locationText
       value: 
@@ -116252,7 +116256,8 @@ PrefabInstance:
       propertyPath: _virtualCamera
       value: 
       objectReference: {fileID: 1595079869}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3133934714494644737, guid: 672db997276968a48822ef49c311d4de, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

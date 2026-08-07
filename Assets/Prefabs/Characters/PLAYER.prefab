@@ -499,17 +499,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   _walkSpeed: 4
   _runSpeed: 8
-  _crouchSpeed: 2
   _jumpHeight: 1.5
   _gravity: 20
   _jumpSource: {fileID: 6999445879945891306}
-  _crouchHeight: 2
-  _standingHeight: 2
+  _crouchCapsuleHeight: 1
+  _crouchCameraDrop: 0.25
   _crouchTransitionSpeed: 10
+  _crouchSpeed: 2
   _cameraHolder: {fileID: 7221630474262317011}
   _mouseSensitivity: 10
   _cameraHeightNormal: 0.5
-  _cameraHeightCrouch: 0.4
   _groundCheckDistance: 0.2
   _fallDamageThreshold: 2
   _fallDamagePerMeter: 7
@@ -517,6 +516,7 @@ MonoBehaviour:
   _fallSlowdownDuration: 1
   _fallSlowdownFactor: 0.5
   _legsHandsAnimator: {fileID: 2276188630717339052}
+  _capsule: {fileID: 3133934714494644737}
 --- !u!114 &7764163502447530880
 MonoBehaviour:
   m_ObjectHideFlags: 0
