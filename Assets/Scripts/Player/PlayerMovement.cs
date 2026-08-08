@@ -15,6 +15,8 @@ public class PlayerMovement : MonoBehaviour
     [Header("Crouch")]
     [Tooltip("CharacterController height when crouched (half of the standing height for a 50% shrink).")]
     [SerializeField] private float _crouchHeight = 1f;
+    [Tooltip("Y offset of the CharacterController center when crouched. Half the height delta (standing - crouch) keeps the feet on the ground and prevents the player from sinking through the terrain. Default 0.5 for 2.0 -> 1.0.")]
+    [SerializeField] private float _crouchCenterOffset = 0.5f;
     [Tooltip("How much lower the camera goes when crouched, in meters.")]
     [SerializeField] private float _crouchCameraDrop = 0.5f;
     [Tooltip("Lerp speed for the crouch/stand transition (higher = snappier).")]
@@ -221,11 +223,17 @@ public class PlayerMovement : MonoBehaviour
     void HandleCrouch()
     {
         float targetHeight = _wantsToCrouch ? _crouchHeight : _standingHeight;
+        float targetCenterY = _wantsToCrouch ? _crouchCenterOffset : 0f;
         float targetCameraY = _wantsToCrouch ? _cameraHeightNormal - _crouchCameraDrop : _cameraHeightNormal;
         _isCrouching = _wantsToCrouch;
 
         if (_controller != null)
+        {
             _controller.height = Mathf.Lerp(_controller.height, targetHeight, _crouchTransitionSpeed * Time.deltaTime);
+            Vector3 c = _controller.center;
+            c.y = Mathf.Lerp(c.y, targetCenterY, _crouchTransitionSpeed * Time.deltaTime);
+            _controller.center = c;
+        }
         _currentCameraHeight = Mathf.Lerp(_currentCameraHeight, targetCameraY, _crouchTransitionSpeed * Time.deltaTime);
     }
 
