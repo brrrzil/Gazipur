@@ -25,12 +25,14 @@ public class HoleInFance : InteractObject
                 _holdBar.StartHold(_holdTaime);
                 _holdBar.OnHoldComplete += Open;
                 _sounds.PlayerPlay(_openSound, false);
+                PlayInteractAnimation();
             }
             else
             {
                 _sounds.PlayerStop();
                 _holdBar.CancelHold();
                 _holdBar.OnHoldComplete -= Open;
+                StopInteractAnimation();
             }
         }
         else
@@ -39,12 +41,18 @@ public class HoleInFance : InteractObject
         }
     }
 
+    private void Update()
+    {
+        if (_holdBar != null && _holdBar.IsActive)
+            KeepAnimationLockAlive();
+    }
+
     private void Open()
     {
-        //_sounds.PlayerStop();
+        _sounds.PlayerStop();
         _holdBar.CancelHold();
         _holdBar.OnHoldComplete -= Open;
-        //_fance.enabled = false;
+        StopInteractAnimation();
         if (_holeFance)
         {
             Instantiate(_holeFance, transform.position, Quaternion.identity);
