@@ -10,7 +10,6 @@ public class HoleInFance : InteractObject
     [SerializeField] private PlayerSound _openSound;
     [SerializeField] private ToolsType _tool;
     [SerializeField] private RemarksType _remark;
-    [SerializeField] ToolsVisibility _tools;
 
     [Inject] Inventory _inventory;
     [Inject] HoldProgressBar _holdBar;
@@ -28,7 +27,6 @@ public class HoleInFance : InteractObject
                 _holdBar.OnHoldComplete += Open;
                 _sounds.PlayerPlay(_openSound, false);
                 PlayInteractAnimation();
-                _tools.ShowPliers();
             }
             else
             {
@@ -36,7 +34,6 @@ public class HoleInFance : InteractObject
                 _holdBar.CancelHold();
                 _holdBar.OnHoldComplete -= Open;
                 StopInteractAnimation();
-                _tools.HideAll();
             }
         }
         else
