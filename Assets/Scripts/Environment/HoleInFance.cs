@@ -61,6 +61,10 @@ public class HoleInFance : InteractObject
         {
             Instantiate(_holeFence, transform.position, Quaternion.identity);
         }
+        else
+        {
+            Debug.LogWarning($"[HoleInFance] {gameObject.name}: _holeFence prefab is not assigned. The fence is destroyed without a 'hole' replacement. Drag a hole fence prefab onto the _holeFence field in the Inspector.");
+        }
         Destroy(gameObject);
     }
 }
