@@ -1896,6 +1896,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -3635,6 +3636,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -7804,6 +7806,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 2fe5f3743143899469752121b8e44920, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &177911973
@@ -8506,6 +8509,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 4}
@@ -8759,6 +8763,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: d949dda709e51e449be6919bab402431, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &216880147
@@ -14364,13 +14369,13 @@ Transform:
   m_GameObject: {fileID: 347865100}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.221, y: 0.972, z: 0.218}
+  m_LocalPosition: {x: -0.3, y: 0.8, z: 0.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 624482605}
-  - {fileID: 20316288}
   - {fileID: 92833187}
+  - {fileID: 20316288}
   m_Father: {fileID: 139754803}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &347865102
@@ -16588,6 +16593,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 2, y: 3}
@@ -16708,6 +16714,28 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 325e01934db58f544ade785848ef53a0, type: 3}
   m_PrefabInstance: {fileID: 546526770}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &404055842
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404055841}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 28503ae231c6d3941b92a3c255a7e13a, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &404828385
 GameObject:
   m_ObjectHideFlags: 0
@@ -19597,6 +19625,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 389689db6b4ba7940a419c6fa1a6e64e, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &468728252
@@ -20175,6 +20204,7 @@ MonoBehaviour:
   _tooltipeText: "\u041D\u0430\u0436\u043C\u0438 \"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   _makeTime: 6
   _buildSound: 6
   _blueprint: {fileID: 1882184324}
@@ -20881,6 +20911,7 @@ MonoBehaviour:
   _tooltipeText: "\u041D\u0430\u0436\u043C\u0438 \"\u0415\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   _tool: 6
   _remark: 5
   _effect: {fileID: 1767183224}
@@ -22856,23 +22887,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.9
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.7660445
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0.6427876
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalRotation.y
@@ -22884,7 +22915,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: -80
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 325e01934db58f544ade785848ef53a0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
@@ -22902,10 +22933,17 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5325286513972438148, guid: 325e01934db58f544ade785848ef53a0, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 8ee45f0e987d00642a65b900cb386976, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 325e01934db58f544ade785848ef53a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 404055842}
   m_SourcePrefab: {fileID: 100100000, guid: 325e01934db58f544ade785848ef53a0, type: 3}
 --- !u!1 &546996542
 GameObject:
@@ -24302,6 +24340,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 6290db9120eda894f9140efa7f11893c, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &576344732
@@ -24672,6 +24711,7 @@ MonoBehaviour:
   _tooltipeText: 
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   _makeTime: 6
   _buildSound: 0
   _blueprint: {fileID: 1882184324}
@@ -25063,6 +25103,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 4}
@@ -32794,6 +32835,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -33732,6 +33774,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 4}
@@ -34030,6 +34073,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 2, y: 3}
@@ -35616,6 +35660,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 4, y: 4}
@@ -36801,6 +36846,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: b6743c7d88350504b8c360e832918bad, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &808087819
@@ -37476,6 +37522,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -42776,6 +42823,28 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
   m_PrefabInstance: {fileID: 1591171793}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &970181122
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 970181121}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 70644575fb31e8743ad0dbbe82710f3c, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &971181200
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44773,6 +44842,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 2, y: 3}
@@ -48546,6 +48616,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 71ad6a9b938338546a7d2dac43a5568e, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &1156657149
@@ -54657,6 +54728,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: 
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 2f400ec46b58d69458bc4f2e2ab4e272, type: 2}
   <Count>k__BackingField: 1
 --- !u!114 &1352159063
@@ -59735,6 +59807,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -61337,6 +61410,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -62683,6 +62757,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -65335,44 +65410,48 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.2304
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.0598
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.0843
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.473938
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.6119098
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.57828057
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.25795507
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 16.36
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -115.805
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -82.933
+      value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -1480014626947693641, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 8ee45f0e987d00642a65b900cb386976, type: 2}
     - target: {fileID: 919132149155446097, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
       propertyPath: m_Name
       value: Saw
@@ -65384,7 +65463,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 970181122}
   m_SourcePrefab: {fileID: 100100000, guid: 23bc9245e56a75e48900a3b32bd8b4f5, type: 3}
 --- !u!1 &1592865946
 GameObject:
@@ -72883,7 +72965,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_LocalPosition.y
@@ -72911,27 +72993,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 20.752735
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -81.00016
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 60.57749
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -4282109930306302497, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 1649bb9388af5e944b3eab4b4ac3ec24, type: 2}
+      objectReference: {fileID: 2100000, guid: 8ee45f0e987d00642a65b900cb386976, type: 2}
     - target: {fileID: 919132149155446097, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_Name
       value: Cutter
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3217342653166969918, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -72940,7 +73022,7 @@ PrefabInstance:
     - target: {fileID: 9152892128894308668, guid: 3b56f949b61704d42a8e2fbdf486ea10, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: ffec910ae109d364b9b4a888f8723a8d, type: 2}
+      objectReference: {fileID: 2100000, guid: 8ee45f0e987d00642a65b900cb386976, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -75063,6 +75145,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 4}
@@ -76976,6 +77059,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 3}
@@ -78200,6 +78284,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -78711,6 +78796,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 4, y: 4}
@@ -79984,6 +80070,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 4}
@@ -80169,6 +80256,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Wrench
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 404055841}
   _holdTime: 1
   _pickSound: 4
   _ItemsCount: {x: 3, y: 4}
@@ -80520,6 +80608,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -82624,6 +82713,7 @@ MonoBehaviour:
   _tooltipeText: "\"\u0415\" \u0438\u043B\u0438 \"\u041B\u041A\u041C\""
   _playerAnimTrigger: Saw
   _animDuration: 0.5
+  _visibleDuringInteract: {fileID: 970181121}
   _holdTime: 1
   _pickSound: 3
   _ItemsCount: {x: 4, y: 6}
@@ -99095,6 +99185,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3524603206878392979, guid: d43c2e5757ba479408354d1e2ce9c6fc, type: 3}
     - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
+      propertyPath: _fence
+      value: 
+      objectReference: {fileID: 3524603206878392979, guid: d43c2e5757ba479408354d1e2ce9c6fc, type: 3}
+    - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
+      propertyPath: _holdTime
+      value: 2.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
       propertyPath: _holdTaime
       value: 2.6
       objectReference: {fileID: 0}
@@ -99103,8 +99201,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 9215048931576321452, guid: d43c2e5757ba479408354d1e2ce9c6fc, type: 3}
     - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
+      propertyPath: _holeFence
+      value: 
+      objectReference: {fileID: 9215048931576321452, guid: d43c2e5757ba479408354d1e2ce9c6fc, type: 3}
+    - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
       propertyPath: _openSound
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
+      propertyPath: _animDuration
+      value: 2.8
       objectReference: {fileID: 0}
     - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
       propertyPath: _tooltipeText
@@ -99115,6 +99221,10 @@ PrefabInstance:
       propertyPath: _playerAnimTrigger
       value: Cutter
       objectReference: {fileID: 0}
+    - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
+      propertyPath: _visibleDuringInteract
+      value: 
+      objectReference: {fileID: 790770077}
     - target: {fileID: 9215048931576321452, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
       propertyPath: m_Name
       value: HoleFence
