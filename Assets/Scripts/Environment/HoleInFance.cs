@@ -50,7 +50,7 @@ public class HoleInFance : InteractObject
 
     private void Open()
     {
-        _sounds.PlayerStop();
+        //_sounds.PlayerStop();
         _holdBar.CancelHold();
         _holdBar.OnHoldComplete -= Open;
         StopInteractAnimation();
