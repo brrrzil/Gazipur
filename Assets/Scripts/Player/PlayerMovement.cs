@@ -271,6 +271,28 @@ public class PlayerMovement : MonoBehaviour
             bool isRun = _isRunning && !_isCrouching && isMoving;
             bool isWalk = isMoving && !_isRunning && !_isCrouching;
 
+            // 2D Blend Tree parameters: moveX (-1 = strafe left, +1 = strafe right),
+            // moveY (-1 = backward, +1 = forward). The Blend Tree inside the
+            // Isha_Run state mixes Run, Run_right, Run_left, Run_back by
+            // interpolating between the four cardinal motion clips based on
+            // these two float values - so running diagonally (e.g. W + D) gives
+            // a mix of Run and Run_right, not a hard cut to one or the other.
+            if (isRun)
+            {
+                _legsHandsAnimator.SetFloat("moveX", _moveInput.x, 0.15f, Time.deltaTime);
+                _legsHandsAnimator.SetFloat("moveY", _moveInput.y, 0.15f, Time.deltaTime);
+            }
+            else if (isWalk)
+            {
+                _legsHandsAnimator.SetFloat("moveX", _moveInput.x, 0.15f, Time.deltaTime);
+                _legsHandsAnimator.SetFloat("moveY", _moveInput.y, 0.15f, Time.deltaTime);
+            }
+            else
+            {
+                _legsHandsAnimator.SetFloat("moveX", 0f, 0.15f, Time.deltaTime);
+                _legsHandsAnimator.SetFloat("moveY", 0f, 0.15f, Time.deltaTime);
+            }
+
             if (isRun != _wasRun)
             {
                 _wasRun = isRun;
