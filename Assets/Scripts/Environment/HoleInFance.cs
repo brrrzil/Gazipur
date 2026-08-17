@@ -4,12 +4,14 @@ using static EnumData;
 
 public class HoleInFance : InteractObject
 {
-    [SerializeField] private GameObject _holeFance;
-    [SerializeField] private MeshRenderer _fance;
-    [SerializeField] private float _holdTaime;
+    [SerializeField] private GameObject _holeFence;
+    [SerializeField] private MeshRenderer _fence;
+    [SerializeField] private float _holdTime;
     [SerializeField] private PlayerSound _openSound;
     [SerializeField] private ToolsType _tool;
     [SerializeField] private RemarksType _remark;
+    [SerializeField] ToolsVisibility _tools;
+
     [Inject] Inventory _inventory;
     [Inject] HoldProgressBar _holdBar;
     [Inject] DialogManager _dialog;
@@ -22,10 +24,11 @@ public class HoleInFance : InteractObject
         {
             if (isDown)
             {
-                _holdBar.StartHold(_holdTaime);
+                _holdBar.StartHold(_holdTime);
                 _holdBar.OnHoldComplete += Open;
                 _sounds.PlayerPlay(_openSound, false);
                 PlayInteractAnimation();
+                _tools.ShowPliers();
             }
             else
             {
@@ -33,6 +36,7 @@ public class HoleInFance : InteractObject
                 _holdBar.CancelHold();
                 _holdBar.OnHoldComplete -= Open;
                 StopInteractAnimation();
+                _tools.HideAll();
             }
         }
         else
@@ -53,9 +57,9 @@ public class HoleInFance : InteractObject
         _holdBar.CancelHold();
         _holdBar.OnHoldComplete -= Open;
         StopInteractAnimation();
-        if (_holeFance)
+        if (_holeFence)
         {
-            Instantiate(_holeFance, transform.position, Quaternion.identity);
+            Instantiate(_holeFence, transform.position, Quaternion.identity);
         }
         Destroy(gameObject);
     }

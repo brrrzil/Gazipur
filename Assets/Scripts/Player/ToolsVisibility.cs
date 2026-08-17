@@ -41,18 +41,18 @@ public class ToolsVisibility : MonoBehaviour
 {
     public enum ToolType { Pliers, Saw, Screwdriver }
 
-    [SerializeField] private GameObject _pliers;
+    [SerializeField] private GameObject _cutter;
     [SerializeField] private GameObject _saw;
-    [SerializeField] private GameObject _screwdriver;
+    [SerializeField] private GameObject _wrench;
 
     private void Awake()
     {
         HideAll();
     }
 
-    public void ShowPliers() => SetOnly(_pliers);
+    public void ShowPliers() => SetOnly(_cutter);
     public void ShowSaw() => SetOnly(_saw);
-    public void ShowScrewdriver() => SetOnly(_screwdriver);
+    public void ShowScrewdriver() => SetOnly(_wrench);
 
     public void ShowTool(ToolType tool)
     {
@@ -66,16 +66,16 @@ public class ToolsVisibility : MonoBehaviour
 
     public void HideAll()
     {
-        if (_pliers != null) _pliers.SetActive(false);
+        if (_cutter != null) _cutter.SetActive(false);
         if (_saw != null) _saw.SetActive(false);
-        if (_screwdriver != null) _screwdriver.SetActive(false);
+        if (_wrench != null) _wrench.SetActive(false);
     }
 
     private void SetOnly(GameObject tool)
     {
-        if (_pliers != null && _pliers != tool) _pliers.SetActive(false);
+        if (_cutter != null && _cutter != tool) _cutter.SetActive(false);
         if (_saw != null && _saw != tool) _saw.SetActive(false);
-        if (_screwdriver != null && _screwdriver != tool) _screwdriver.SetActive(false);
+        if (_wrench != null && _wrench != tool) _wrench.SetActive(false);
         if (tool != null) tool.SetActive(true);
     }
 }
