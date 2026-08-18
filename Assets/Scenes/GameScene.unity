@@ -99190,7 +99190,7 @@ PrefabInstance:
       objectReference: {fileID: 3524603206878392979, guid: d43c2e5757ba479408354d1e2ce9c6fc, type: 3}
     - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
       propertyPath: _holdTime
-      value: 2.8
+      value: 2.6
       objectReference: {fileID: 0}
     - target: {fileID: 5013042616894711418, guid: 863be30f75c4c6848b71f579c3f8af55, type: 3}
       propertyPath: _holdTaime
