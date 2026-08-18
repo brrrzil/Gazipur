@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 1
+  m_Fog: 0
   m_FogColor: {r: 0.59607846, g: 0.4862745, b: 0.42352942, a: 1}
   m_FogMode: 2
   m_FogDensity: 0.2
@@ -7073,7 +7073,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &155440873
 Transform:
   m_ObjectHideFlags: 0
@@ -14390,9 +14390,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5c8e533169c8f54dbcb089a50f3bfe6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolsVisibility
-  _cutter: {fileID: 790770077}
-  _saw: {fileID: 970181121}
-  _wrench: {fileID: 404055841}
 --- !u!1001 &348951666
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36162,7 +36159,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 787825044}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
   m_Name: 
@@ -68754,6 +68751,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1992545326}
     m_Modifications:
+    - target: {fileID: 6604686330569613833, guid: de78e3a52ba2d3f4a857b1efd5812b4b, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8628611642258327377, guid: de78e3a52ba2d3f4a857b1efd5812b4b, type: 3}
       propertyPath: m_Name
       value: Zabor_little_hole
@@ -72194,6 +72195,10 @@ PrefabInstance:
     - target: {fileID: 4085419551579162250, guid: 63bb5edb65a5f5e45ac919729feba06e, type: 3}
       propertyPath: m_Name
       value: Zabor_base
+      objectReference: {fileID: 0}
+    - target: {fileID: 4085419551579162250, guid: 63bb5edb65a5f5e45ac919729feba06e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
