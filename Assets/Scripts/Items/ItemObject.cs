@@ -7,6 +7,7 @@ public class ItemObject : InteractObject
     [field: SerializeField] public ItemData Item { get; private set; }
     [field: SerializeField] public int Count { get; private set; }    
     [Inject] private Inventory _inventory;
+
     private void Start()
     {        
         if (Item)
@@ -14,15 +15,16 @@ public class ItemObject : InteractObject
             SetData(Item, Count);
         }
     }
+
     public void SetData(ItemData item, int count)
     {
         Count = count;
         Item = item;
     }
+
     public override void Intearct(bool isDown)
     {
         if (!isDown) return;
-
         int cnt = _inventory.AddItem(Item, Count);
         if (cnt == 0)
         {
