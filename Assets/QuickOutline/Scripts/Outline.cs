@@ -64,6 +64,9 @@ public class Outline : MonoBehaviour {
 
   [Header("Optional")]
 
+  [SerializeField, Tooltip("Renderers under these GameObjects (and their children) are skipped when building the outline. Use this to exclude particle effects, decals, or other visual FX that should not be outlined.")]
+  private List<GameObject> excludeFromOutline = new List<GameObject>();
+
   [SerializeField, Tooltip("Precompute enabled: Per-vertex calculations are performed in the editor and serialized with the object. "
   + "Precompute disabled: Per-vertex calculations are performed at runtime in Awake(). This may cause a pause for large meshes.")]
   private bool precomputeOutline;
@@ -84,6 +87,22 @@ public class Outline : MonoBehaviour {
 
     // Cache renderers
     renderers = GetComponentsInChildren<Renderer>();
+
+    // Filter out renderers under excluded GameObjects (visual FX, particles, decals)
+    if (excludeFromOutline != null && excludeFromOutline.Count > 0)
+    {
+      var excluded = new HashSet<Renderer>();
+      foreach (var go in excludeFromOutline)
+      {
+        if (go == null) continue;
+        foreach (var r in go.GetComponentsInChildren<Renderer>())
+          excluded.Add(r);
+      }
+      if (excluded.Count > 0)
+      {
+        renderers = System.Array.FindAll(renderers, r => r != null && !excluded.Contains(r));
+      }
+    }
 
     // Instantiate outline materials
     outlineMaskMaterial = Instantiate(Resources.Load<Material>(@"Materials/OutlineMask"));
