@@ -35,7 +35,11 @@ public class DialogManager : MonoBehaviour
 
     private void Start()
     {
-        StartDialog(DialogType.motherStart);
+        // The opening motherStart dialog used to fire here directly, but
+        // the game now opens with a comics sequence (a few slides + a
+        // 'Start' button) before the dialog. Wire the ComicsController's
+        // _onComicsFinished UnityEvent to this method's wrapper in the
+        // Editor so the dialog starts when the player dismisses the comics.
         _modManager.onChangeMode += m =>
         {
             if (m == GameMode.outdors)
@@ -49,6 +53,11 @@ public class DialogManager : MonoBehaviour
                 }
             }
         };
+    }
+
+    public void StartOpeningDialog()
+    {
+        StartDialog(DialogType.motherStart);
     }
 
     public bool StartDialog(DialogType dType)
