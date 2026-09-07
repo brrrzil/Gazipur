@@ -16,6 +16,7 @@ public class GameModeManager : MonoBehaviour
     public UnityEvent<bool> OnDie = new UnityEvent<bool>();
     public UnityEvent<bool> OnOtherPanels = new UnityEvent<bool>();
     public UnityEvent<bool> OnWin = new UnityEvent<bool>();
+    public UnityEvent<bool> OnComics = new UnityEvent<bool>();
     public System.Action<GameMode> onChangeMode;
 
     // Explicit list of modes where the player cannot move/look and the cursor
@@ -63,6 +64,7 @@ public class GameModeManager : MonoBehaviour
             [GameMode.die] = OnDie,
             [GameMode.otherPanels] = OnOtherPanels,
             [GameMode.win] = OnWin,
+            [GameMode.comics] = OnComics,
         };
         _control.OnEsc += () =>
         {
