@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using Zenject;
 
 [RequireComponent(typeof(CanvasGroup))]
 public class ComicsController : MonoBehaviour
@@ -28,6 +29,8 @@ public class ComicsController : MonoBehaviour
     [SerializeField] private float _fadeDuration = 1f;
     [Tooltip("If true, the comics only plays once per game install (tracked via PlayerPrefs). If false, it plays every time.")]
     [SerializeField] private bool _showOnce = false;
+    [Tooltip("If true, the game is paused (Time.timeScale = 0) and all audio is paused while the comics are showing. Use unscaledDeltaTime for UI animations in this case.")]
+    [SerializeField] private bool _pauseGame = true;
 
     [Header("Events")]
     [Tooltip("Invoked when the player clicks the Start button. Use this to start the dialog that should follow the comics.")]
@@ -37,6 +40,9 @@ public class ComicsController : MonoBehaviour
     private int _currentSlide = -1;
     private bool _finished;
     private Coroutine _transitionRoutine;
+    private float _savedTimeScale = 1f;
+
+    [Inject] private GameModeManager _modManager;
 
     private void Awake()
     {
@@ -49,7 +55,6 @@ public class ComicsController : MonoBehaviour
 
         if (_showOnce && PlayerPrefs.GetInt(PREFS_KEY, 0) == 1)
         {
-            // Comics already shown on a previous run - skip.
             _finished = true;
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;
@@ -61,6 +66,16 @@ public class ComicsController : MonoBehaviour
     private void Start()
     {
         if (_finished) return;
+
+        if (_pauseGame)
+        {
+            _savedTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            AudioListener.pause = true;
+        }
+
+        if (_modManager != null) _modManager.ChangeMode(EnumData.GameMode.comics);
+
         ShowSlideImmediate(0);
         if (_showOnce)
         {
@@ -79,7 +94,7 @@ public class ComicsController : MonoBehaviour
                 (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame);
             if (advancePressed) Advance();
         }
-        if (_autoAdvanceAfterVoice && _voiceSource != null && !_voiceSource.isPlaying
+        if (_autoAdvanceAfterVoice && _voiceSource != null && !_voiceSource.IsPlayingSafe()
             && _currentSlide >= 0 && _currentSlide < _slides.Length - 1
             && _transitionRoutine == null)
         {
@@ -126,11 +141,14 @@ public class ComicsController : MonoBehaviour
 
     private IEnumerator TransitionToSlide(int newIndex)
     {
+        // Use unscaled time so the fade works even when Time.timeScale = 0.
+        float dt = _pauseGame ? Time.unscaledDeltaTime : Time.deltaTime;
+
         // Fade out the currently visible slide.
         if (_currentSlide >= 0 && _currentSlide < _slides.Length && _slides[_currentSlide] != null)
         {
             var cgOut = GetOrAddCanvasGroup(_slides[_currentSlide]);
-            for (float t = 0f; t < _fadeDuration; t += Time.deltaTime)
+            for (float t = 0f; t < _fadeDuration; t += dt)
             {
                 cgOut.alpha = 1f - (t / _fadeDuration);
                 yield return null;
@@ -145,7 +163,7 @@ public class ComicsController : MonoBehaviour
             _slides[newIndex].SetActive(true);
             var cgIn = GetOrAddCanvasGroup(_slides[newIndex]);
             cgIn.alpha = 0f;
-            for (float t = 0f; t < _fadeDuration; t += Time.deltaTime)
+            for (float t = 0f; t < _fadeDuration; t += dt)
             {
                 cgIn.alpha = t / _fadeDuration;
                 yield return null;
@@ -175,17 +193,32 @@ public class ComicsController : MonoBehaviour
         if (_finished) return;
         _finished = true;
         if (_transitionRoutine != null) StopCoroutine(_transitionRoutine);
+
+        if (_pauseGame)
+        {
+            Time.timeScale = _savedTimeScale;
+            AudioListener.pause = false;
+        }
+
         _canvasGroup.alpha = 0f;
         _canvasGroup.blocksRaycasts = false;
         _canvasGroup.interactable = false;
         if (_voiceSource != null) _voiceSource.Stop();
+
+        // Switch to outdors first - the dialog's StartDialog will set the
+        // mode to dialog after the dialog actually opens. This avoids a
+        // flicker where the player is briefly in dialog mode with no dialog
+        // UI yet (the dialog UI initialises after ChangeMode is called).
+        if (_modManager != null) _modManager.ChangeMode(EnumData.GameMode.outdors);
+
         _onComicsFinished?.Invoke();
     }
+}
 
-    private static CanvasGroup GetOrAddCanvasGroup(GameObject go)
+public static class AudioSourceExtensions
+{
+    public static bool IsPlayingSafe(this AudioSource source)
     {
-        var cg = go.GetComponent<CanvasGroup>();
-        if (cg == null) cg = go.AddComponent<CanvasGroup>();
-        return cg;
+        return source != null && source.isPlaying;
     }
 }

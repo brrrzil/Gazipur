@@ -32,6 +32,7 @@ public class GameModeManager : MonoBehaviour
         GameMode.die,
         GameMode.otherPanels,
         GameMode.win,
+        GameMode.comics,
     };
 
     public static bool IsUIMode(GameMode mode) => UIModes.Contains(mode);

@@ -13,7 +13,8 @@ public static class EnumData
         menu,
         die,
         otherPanels,
-        win
+        win,
+        comics
     }
     public enum ToolsType
     {
