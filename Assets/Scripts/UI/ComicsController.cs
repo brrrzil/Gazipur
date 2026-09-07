@@ -213,6 +213,13 @@ public class ComicsController : MonoBehaviour
 
         _onComicsFinished?.Invoke();
     }
+
+    private static CanvasGroup GetOrAddCanvasGroup(GameObject go)
+    {
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null) cg = go.AddComponent<CanvasGroup>();
+        return cg;
+    }
 }
 
 public static class AudioSourceExtensions
