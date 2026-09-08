@@ -2,45 +2,32 @@ using UnityEngine;
 using Zenject;
 using static EnumData;
 
-// Universal 'look at object' remark trigger. Fires the configured
-// RemarksType when the player keeps the crosshair on this
-// GameObject's Collider for more than _lookDuration seconds while
-// within _lookDistance metres. The component is placed on a
-// dedicated trigger object (a separate GameObject with a Collider
-// component, typically isTrigger = true, often invisible - a
-// MeshCollider-only 'RemarkTrigger' object that defines the
-// 'look at this volume' zone for the remark).
-//
-// Two design choices to be aware of:
-//
-// 1. The component reads the Collider's AABB, not the Renderer's
-// AABB. This is the right choice for trigger objects because
-// trigger objects often have NO Renderer (they are invisible
-// volumes that only exist to detect look-at). The [RequireComponent
-// (typeof(Collider))] attribute enforces that the GameObject has
-// at least one Collider, which is also the natural choice for a
-// 'look at volume' - the volume is defined by a BoxCollider,
-// SphereCollider, or MeshCollider.
-//
-// 2. The terrain blocker check uses QueryTriggerInteraction.Ignore
-// so the RemarkTrigger's own isTrigger = true collider does NOT
-// block the raycast (it is the target, not a blocker). Terrain
-// (isTrigger = false, type TerrainCollider) DOES block, so the
-// player cannot fire the remark by looking through a hill at
-// the trigger behind it.
 [RequireComponent(typeof(Collider))]
 public class LookRemark : MonoBehaviour
 {
+    [Header("Activation")]
+    [Tooltip("Seconds after enable before the remark can fire. Prevents the remark from triggering in the first frame when the player's spawn-point camera direction happens to aim at the trigger.")]
+    [SerializeField] private float _activationDelay = 1.5f;
+    [Tooltip("If true, the player must look AWAY from the trigger (move the crosshair off it) at least once before the remark can fire. Prevents 'I was already looking at it when the scene loaded' false positives.")]
+    [SerializeField] private bool _requireLookAwayFirst = true;
+    [Tooltip("Min distance the player must move from spawn before the remark can fire. 0 disables. Prevents the remark from triggering if the player spawns already inside the look volume.")]
+    [SerializeField] private float _minMoveDistance = 2f;
+
+    [Header("Remark")]
     [SerializeField] private float _lookDistance = 25.0f;
     [SerializeField] private float _lookDuration = 1.0f;
     [SerializeField] private RemarksType _remarkType = RemarksType.soMuchWater;
 
     [Inject] private DialogManager _dialog;
     [Inject] private QuestManager _quest;
+    [Inject] private PlayerMovement _movement;
 
     private float _lookTimer;
     private bool _hasFired;
     private bool _initialised;
+    private bool _hasLookedAway;
+    private float _enabledTime;
+    private Vector3 _spawnPosition;
     private Collider _collider;
     private Camera _camera;
 
@@ -52,12 +39,31 @@ public class LookRemark : MonoBehaviour
             && _camera != null
             && _dialog != null
             && _quest != null
-            && _dialog.Remarks != null;
+            && _dialog.Remarks != null
+            && _movement != null;
+    }
+
+    private void OnEnable()
+    {
+        _lookTimer = 0f;
+        _hasFired = false;
+        _hasLookedAway = !_requireLookAwayFirst;  // if not required, treat as already satisfied
+        _enabledTime = Time.unscaledTime;
+        if (_movement != null) _spawnPosition = _movement.transform.position;
     }
 
     private void Update()
     {
         if (!_initialised || _hasFired) return;
+
+        // Wait for the activation delay to elapse before checking anything.
+        if (Time.unscaledTime - _enabledTime < _activationDelay) return;
+
+        // Require the player to have moved at least _minMoveDistance from spawn.
+        if (_minMoveDistance > 0f
+            && _movement != null
+            && Vector3.Distance(_movement.transform.position, _spawnPosition) < _minMoveDistance)
+            return;
 
         if (_quest.QuestsState.TryGetValue(Quests.filter, out int filterState) && filterState == 2) return;
 
@@ -66,6 +72,7 @@ public class LookRemark : MonoBehaviour
         if (!_collider.bounds.IntersectRay(ray, out float dist) || dist > _lookDistance)
         {
             _lookTimer = 0f;
+            _hasLookedAway = true;  // the player has looked away at least once
             return;
         }
 
@@ -76,6 +83,9 @@ public class LookRemark : MonoBehaviour
             return;
         }
 
+        // If we still require a 'look away' and the player has not done it yet, block.
+        if (_requireLookAwayFirst && !_hasLookedAway) return;
+
         _lookTimer += Time.deltaTime;
         if (_lookTimer >= _lookDuration)
         {
@@ -83,11 +93,5 @@ public class LookRemark : MonoBehaviour
             Debug.Log($"[LookRemark] {gameObject.name} -> {_remarkType}");
             _hasFired = true;
         }
-    }
-
-    private void OnEnable()
-    {
-        _lookTimer = 0f;
-        _hasFired = false;
     }
 }
