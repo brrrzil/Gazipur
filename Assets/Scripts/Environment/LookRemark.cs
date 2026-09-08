@@ -10,6 +10,8 @@ public class LookRemark : MonoBehaviour
     [SerializeField] private float _activationDelay = 1.5f;
     [Tooltip("If true, the player must look AWAY from the trigger (move the crosshair off it) at least once before the remark can fire. Prevents 'I was already looking at it when the scene loaded' false positives.")]
     [SerializeField] private bool _requireLookAwayFirst = true;
+    [Tooltip("If _requireLookAwayFirst is true and the player has not looked away yet, force the remark to fire after this many seconds of continuous look. Acts as a safety net for players who spawn staring at the lake and never look away.")]
+    [SerializeField] private float _softTriggerAfter = 3f;
     [Tooltip("Min distance the player must move from spawn before the remark can fire. 0 disables. Prevents the remark from triggering if the player spawns already inside the look volume.")]
     [SerializeField] private float _minMoveDistance = 2f;
 
@@ -84,7 +86,21 @@ public class LookRemark : MonoBehaviour
         }
 
         // If we still require a 'look away' and the player has not done it yet, block.
-        if (_requireLookAwayFirst && !_hasLookedAway) return;
+        if (_requireLookAwayFirst && !_hasLookedAway)
+        {
+            // Soft trigger: if the player has been staring at the trigger for a long time
+            // without ever looking away (eg spawn-point camera direction aimed at the lake),
+            // fire the remark anyway after _softTriggerAfter seconds. This avoids the
+            // 'I was already looking at it when the scene loaded, but the remark never
+            // fires because I never turned away' deadlock.
+            if (_lookTimer >= _softTriggerAfter)
+            {
+                _dialog.Remarks.StartRemark(_remarkType);
+                Debug.Log($"[LookRemark] {gameObject.name} -> {_remarkType} (soft trigger)");
+                _hasFired = true;
+            }
+            return;
+        }
 
         _lookTimer += Time.deltaTime;
         if (_lookTimer >= _lookDuration)
