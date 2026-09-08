@@ -17,6 +17,8 @@ public class ComicsController : MonoBehaviour
     [SerializeField] private AudioSource _voiceSource;
     [Tooltip("Voice-over clip for each slide. Index matches _slides. Optional - leave empty if no voice-over.")]
     [SerializeField] private AudioClip[] _voiceClips;
+    [Tooltip("Maximum display time per slide in seconds (parallel array to _slides). After this time the slide auto-advances. Set to 0 (or leave the slot empty) to skip the auto-advance for that slide.")]
+    [SerializeField] private float[] _slideDurations;
     [Tooltip("Button shown after the last slide. Click to dismiss the comics and invoke the finished event.")]
     [SerializeField] private Button _startButton;
 
@@ -41,6 +43,7 @@ public class ComicsController : MonoBehaviour
     private bool _finished;
     private Coroutine _transitionRoutine;
     private float _savedTimeScale = 1f;
+    private float _currentSlideTime;
 
     [Inject] private GameModeManager _modManager;
 
@@ -100,6 +103,16 @@ public class ComicsController : MonoBehaviour
         {
             Advance();
         }
+        // Auto-advance when the current slide's max display time has elapsed.
+        // Uses unscaledDeltaTime so this works even when Time.timeScale = 0.
+        if (_currentSlide >= 0 && _currentSlide < _slideDurations.Length
+            && _slideDurations[_currentSlide] > 0f
+            && _transitionRoutine == null)
+        {
+            _currentSlideTime += Time.unscaledDeltaTime;
+            if (_currentSlideTime >= _slideDurations[_currentSlide])
+                Advance();
+        }
     }
 
     public void Advance()
@@ -130,6 +143,7 @@ public class ComicsController : MonoBehaviour
             }
         }
         _currentSlide = index;
+        _currentSlideTime = 0f;
 
         if (_voiceSource != null && _voiceClips != null && index < _voiceClips.Length && _voiceClips[index] != null)
         {
@@ -171,6 +185,7 @@ public class ComicsController : MonoBehaviour
             cgIn.alpha = 1f;
         }
         _currentSlide = newIndex;
+        _currentSlideTime = 0f;
 
         if (_voiceSource != null && _voiceClips != null && newIndex < _voiceClips.Length && _voiceClips[newIndex] != null)
         {
