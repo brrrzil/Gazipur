@@ -21,6 +21,8 @@ public class ComicsController : MonoBehaviour
     [SerializeField] private float[] _slideDurations;
     [Tooltip("Button shown after the last slide. Click to dismiss the comics and invoke the finished event.")]
     [SerializeField] private Button _startButton;
+    [Tooltip("Optional skip button shown from the start. Click to dismiss the comics immediately and skip to the finished event (same as clicking Start on the last slide).")]
+    [SerializeField] private Button _skipButton;
 
     [Header("Behaviour")]
     [Tooltip("If true, advance to the next slide on left mouse click or Space. If false, only the button advances.")]
@@ -54,6 +56,11 @@ public class ComicsController : MonoBehaviour
         {
             _startButton.gameObject.SetActive(false);
             _startButton.onClick.AddListener(OnStartButtonClicked);
+        }
+        if (_skipButton != null)
+        {
+            _skipButton.gameObject.SetActive(true);
+            _skipButton.onClick.AddListener(OnStartButtonClicked);
         }
 
         if (_showOnce && PlayerPrefs.GetInt(PREFS_KEY, 0) == 1)
