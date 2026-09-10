@@ -174,16 +174,18 @@ public class PlayerMovement : MonoBehaviour
 
     bool CheckIfGrounded()
     {
-        // Use the standing height for the raycast, not the current height:
-        // when crouched (_controller.height = 1.0), the half-height is 0.5
-        // and a 0.1 m groundCheckDistance gives a 0.6 m raycast, which is
-        // too short on uneven terrain (small dips, hills) - the ray misses
-        // the ground, the player is considered airborne, gravity pulls
-        // them down, and the visual feet end up sinking into the ground.
-        // Using the standing half-height (1.0 m + 0.1 = 1.1 m raycast)
-        // keeps the ground check consistent regardless of crouch state.
-        float rayLength = (_standingHeight / 2) + _groundCheckDistance;
-        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayLength))
+        // SphereCast from the player root downward. The sphere is slightly
+        // smaller than the CharacterController capsule radius so the sphere
+        // does not get blocked by walls the player is brushing against.
+        // SphereCast is more reliable than a single raycast for ground
+        // detection: at platform edges, on slopes, and over uneven
+        // terrain, the sphere's larger cross-section reliably intersects
+        // whatever surface the player is actually standing on, where a
+        // single raycast would often thread through the gap and miss.
+        float radius = _controller.radius * 0.95f;
+        float castDistance = (_standingHeight / 2) + _groundCheckDistance;
+        if (Physics.SphereCast(transform.position, radius, Vector3.down,
+                out RaycastHit hit, castDistance, ~0, QueryTriggerInteraction.Ignore))
         {
             float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
             return slopeAngle <= _controller.slopeLimit;
