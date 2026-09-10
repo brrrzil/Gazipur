@@ -38,6 +38,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _fallDamageThreshold = 3f;
     [Tooltip("Damage per meter beyond the threshold.")]
     [SerializeField] private float _fallDamagePerMeter = 10f;
+    [Tooltip("Minimum downward velocity (m/s) to count as a real fall. Sliding on a slope inside slopeLimit produces velocity.y around -1 m/s which is below the threshold and does not trigger fall damage. A free-fall from a ledge reaches this speed in ~0.4 s.")]
+    [SerializeField] private float _fallVelocityThreshold = 4f;
     [SerializeField] private AudioClip _fallSound;
     [Tooltip("Seconds of movement slowdown after a damaging fall. 0 disables.")]
     [SerializeField] private float _fallSlowdownDuration = 1f;
@@ -63,6 +65,7 @@ public class PlayerMovement : MonoBehaviour
     private bool _jumpPressed;
     private bool _hasJumped;
     private bool _wasGrounded;
+    private bool _isFalling;
     private bool _isLocked;
     private float _lockEndTime;
     private float _fallStartY;
@@ -350,21 +353,59 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleFallDamage()
     {
-        if (_wasGrounded && !_isGrounded)
+        // Sliding down a slope inside the slopeLimit makes CharacterController
+        // report isGrounded = false (the controller 'slides' the player a
+        // small distance each frame, even on a slope it can technically stand
+        // on). The previous version used (_wasGrounded && !_isGrounded) to
+        // start a fall and (!_wasGrounded && _isGrounded) to end it - on a
+        // slope this fired at the BOTTOM of the slope, with fallDistance
+        // being the full slope height, and the player took fall damage for
+        // sliding a few metres down a hill.
+        //
+        // The fix: use CharacterController.velocity.y to detect an actual
+        // free-fall. A slide on a slope inside slopeLimit produces
+        // velocity.y around -1 m/s (small downward speed from gravity
+        // being eaten by the slope angle). A real fall produces velocity.y
+        // well below -_fallVelocityThreshold (default 4 m/s - the player
+        // reaches this speed within ~0.4 s of walking off a ledge). We
+        // only set _isFalling when the downward velocity crosses the
+        // threshold, and we only check fall damage on landing if _isFalling
+        // was set.
+        float vy = _controller != null ? _controller.velocity.y : 0f;
+
+        if (_isGrounded)
         {
-            _fallStartY = transform.position.y;
-        }
-        else if (!_wasGrounded && _isGrounded)
-        {
-            float fallDistance = _fallStartY - transform.position.y;
-            if (fallDistance > _fallDamageThreshold)
+            // Landed: if we were in a real fall (not just sliding), apply
+            // damage based on the total fall distance.
+            if (_isFalling)
             {
-                float damage = Mathf.RoundToInt((fallDistance - _fallDamageThreshold) * _fallDamagePerMeter);
-                if (_state != null) _state.TakeDamage(damage);
-                if (_fallSound != null && _jumpSource != null)
-                    _jumpSource.PlayOneShot(_fallSound);
-                if (_fallSlowdownDuration > 0f && _fallSlowdownFactor < 1f)
-                    _slowdownEndTime = Time.time + _fallSlowdownDuration;
+                float fallDistance = _fallStartY - transform.position.y;
+                if (fallDistance > _fallDamageThreshold)
+                {
+                    float damage = Mathf.RoundToInt((fallDistance - _fallDamageThreshold) * _fallDamagePerMeter);
+                    if (_state != null) _state.TakeDamage(damage);
+                    if (_fallSound != null && _jumpSource != null)
+                        _jumpSource.PlayOneShot(_fallSound);
+                    if (_fallSlowdownDuration > 0f && _fallSlowdownFactor < 1f)
+                        _slowdownEndTime = Time.time + _fallSlowdownDuration;
+                }
+                _isFalling = false;
+            }
+        }
+        else
+        {
+            // In the air: only mark the fall start when the player is
+            // actually free-falling (velocity below the threshold). A slope
+            // slide keeps velocity.y around -1 m/s which is well above
+            // -_fallVelocityThreshold, so _isFalling stays false and the
+            // slope descent is not counted as a fall.
+            if (vy < -_fallVelocityThreshold)
+            {
+                if (!_isFalling)
+                {
+                    _isFalling = true;
+                    _fallStartY = transform.position.y;
+                }
             }
         }
         _wasGrounded = _isGrounded;
