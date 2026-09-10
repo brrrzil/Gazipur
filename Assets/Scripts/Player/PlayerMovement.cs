@@ -348,6 +348,24 @@ public class PlayerMovement : MonoBehaviour
     {
         _velocity.y -= _gravity * Time.deltaTime;
         _controller.Move(new Vector3(0, _velocity.y, 0) * Time.deltaTime);
+
+        // Reset the gravity accumulator when standing on the ground. Without
+        // this, _velocity.y grows more and more negative each frame the
+        // player stands still (ApplyGravity subtracts gravity * dt every
+        // frame, CharacterController clamps the actual position to the
+        // ground so the player does not sink, but our _velocity.y field
+        // keeps accumulating). The next time the player leaves the
+        // ground (eg walks off a ledge after standing at the edge for a
+        // few seconds), _velocity.y is already at some large negative
+        // value from the standing accumulation, and the original fall
+        // damage logic interprets this as 'you have been falling for
+        // N seconds' even though the player was just standing still.
+        // Resetting _velocity.y to 0 when grounded keeps the field in
+        // sync with the actual physical state of the player.
+        if (_controller != null && _controller.isGrounded && _velocity.y < 0f)
+        {
+            _velocity.y = 0f;
+        }
     }
 
     void HandleFallDamage()
