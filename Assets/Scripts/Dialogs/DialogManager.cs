@@ -45,7 +45,7 @@ public class DialogManager : MonoBehaviour
             if (m == GameMode.outdors)
             {
                 _curQuestClip = null;
-                _speaker.Stop();
+                if (_speaker != null) _speaker.Stop();
                 if (_voiceSequence != null)
                 {
                     StopCoroutine(_voiceSequence);
@@ -92,10 +92,13 @@ public class DialogManager : MonoBehaviour
             // immediately. The previous DOTween-queue approach let a stale
             // voice play seconds later after _speaker.Stop() was called on
             // game mode change to outdors.
-            if (_speaker.isPlaying)
-                _speaker.Stop();
-            _speaker.clip = iteraton.QuestionVoice;
-            _speaker.Play();
+            if (_speaker != null)
+            {
+                if (_speaker.isPlaying)
+                    _speaker.Stop();
+                _speaker.clip = iteraton.QuestionVoice;
+                _speaker.Play();
+            }
             _curQuestClip = iteraton.QuestionVoice;
         }
 
@@ -154,10 +157,13 @@ public class DialogManager : MonoBehaviour
                         StopCoroutine(_voiceSequence);
                     if (iteraton.Answer[idx].answerVoice)
                     {
-                        if (_speaker.isPlaying)
-                            _speaker.Stop();
-                        _speaker.clip = iteraton.Answer[idx].answerVoice;
-                        _speaker.Play();
+                        if (_speaker != null)
+                        {
+                            if (_speaker.isPlaying)
+                                _speaker.Stop();
+                            _speaker.clip = iteraton.Answer[idx].answerVoice;
+                            _speaker.Play();
+                        }
                     }
                 });
             }
@@ -174,7 +180,7 @@ public class DialogManager : MonoBehaviour
     // the _voiceSequence checks in SetIteration and the mode handler).
     private IEnumerator PlayAnswerThenChain(AudioClip answerClip, DialogStructure nextChain)
     {
-        if (answerClip)
+        if (answerClip && _speaker != null)
         {
             if (_speaker.isPlaying)
                 _speaker.Stop();
