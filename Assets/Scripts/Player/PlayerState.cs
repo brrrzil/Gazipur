@@ -128,12 +128,12 @@ public class PlayerState : MonoBehaviour
         _info.health = Mathf.Clamp(_info.health, 0, 100);
         _info.hunger = Mathf.Clamp(_info.hunger, 0, 100);
         _info.thirst = Mathf.Clamp(_info.thirst, 0, 100);
-        _healthBar.SetAmountAndValue(_info.health, 100);
-        _hungerBar.SetAmountAndValue(_info.hunger, 100);
-        _thirstBar.SetAmountAndValue(_info.thirst, 100);
-        _healtToInventoryText.text = (int)_info.health + "/" + 100;
-        _hungryToInventoryText.text = (int)_info.hunger + "/" + 100;
-        _thirstToInventoryText.text = (int)_info.thirst + "/" + 100;
+        if (_healthBar != null) _healthBar.SetAmountAndValue(_info.health, 100);
+        if (_hungerBar != null) _hungerBar.SetAmountAndValue(_info.hunger, 100);
+        if (_thirstBar != null) _thirstBar.SetAmountAndValue(_info.thirst, 100);
+        if (_healtToInventoryText != null) _healtToInventoryText.text = (int)_info.health + "/" + 100;
+        if (_hungryToInventoryText != null) _hungryToInventoryText.text = (int)_info.hunger + "/" + 100;
+        if (_thirstToInventoryText != null) _thirstToInventoryText.text = (int)_info.thirst + "/" + 100;
     }
     public void Heal(int count)
     {
