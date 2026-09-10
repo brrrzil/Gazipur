@@ -4,6 +4,7 @@ using Zenject;
 public class TraderObject : InteractObject
 {
     [SerializeField] private ItemData _medicine;
+    [SerializeField] private ItemData _map;
     [Inject] private DialogManager _dialog;
     [Inject] private GameModeManager _gameMode;
     [Inject] private Inventory _inventory;
@@ -25,6 +26,15 @@ public class TraderObject : InteractObject
                 _dialog.StartDialog(EnumData.DialogType.traderAfterBuy);
             }
         };
+
+        // Always offer the map (cheaper than the medicine, available from
+        // the start of the game). The map is a one-time unlock - after
+        // purchase and use, the map UI stays open for the rest of the
+        // session, so the player only needs to buy it once.
+        if (_map != null)
+        {
+            _market.AddItem(_map, true);
+        }
     }
 
     public override void Intearct(bool isDown)
