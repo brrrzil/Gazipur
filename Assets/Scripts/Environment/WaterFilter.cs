@@ -25,12 +25,14 @@ public class WaterFilter : InteractObject
                 _holdBar.StartHold(_makeTime);
                 _holdBar.OnHoldComplete += Finish;
                 PlayBuildSound();
+                LockMovement(_makeTime);
             }
             else
             {
                 _sounds.PlayerStop();
                 _holdBar.CancelHold();
                 _holdBar.OnHoldComplete -= Finish;
+                UnlockMovement();
             }
         }
         else
@@ -38,10 +40,18 @@ public class WaterFilter : InteractObject
             _dialog.Remarks.StartRemark(EnumData.RemarksType.firstMother);
         }
     }
+
+    private void Update()
+    {
+        if (_holdBar != null && _holdBar.IsActive)
+            KeepMovementLockAlive(_makeTime);
+    }
+
     private void Finish()
     {
         _sounds.PlayerStop();
         _quest.CompleteFilter();
+        UnlockMovement();
     }
 
     // Play the build sound in a loop while the player holds the 'use' button.

@@ -417,6 +417,29 @@ public class PlayerMovement : MonoBehaviour
         if (!_isLocked) return;
         _lockEndTime = Time.time + extraSeconds;
     }
+    // Lock the player without firing any animator trigger. Used by interact
+    // objects that need the player to stand still but do not have a hand
+    // animation to play (eg the Skimmer build sequence on WaterFilter).
+    public void LockPlayer(float duration)
+    {
+        if (_wasRun)  { _legsHandsAnimator.SetBool("isRun", false);  _wasRun = false; }
+        if (_wasWalk) { _legsHandsAnimator.SetBool("isWalk", false); _wasWalk = false; }
+        _isLocked = true;
+        _lockEndTime = Time.time + duration;
+    }
+    // Refresh the lock window. Like KeepLockAlive but does not require the
+    // lock to be active - if the lock has already expired, this re-arms
+    // it for the given duration so a new hold cycle picks up where the
+    // previous one left off.
+    public void RefreshPlayerLock(float duration)
+    {
+        _isLocked = true;
+        _lockEndTime = Time.time + duration;
+    }
+    public void UnlockPlayer()
+    {
+        _isLocked = false;
+    }
 
     public void ForceIdle()
     {

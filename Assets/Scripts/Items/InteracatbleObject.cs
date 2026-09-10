@@ -58,5 +58,21 @@ public abstract class InteractObject : MonoBehaviour
         if (_playerAnimTrigger != "" && _movement != null)
             _movement.KeepLockAlive(_animDuration);
     }
+    // Movement lock without a player animation. Use for interact objects that
+    // need to freeze the player (no walk, no look) but do not have a hand
+    // animation to play (eg the Skimmer build sequence - the player just
+    // stands still while the Skimmer assembles on the table).
+    protected void LockMovement(float duration)
+    {
+        if (_movement != null) _movement.LockPlayer(duration);
+    }
+    protected void KeepMovementLockAlive(float duration)
+    {
+        if (_movement != null) _movement.RefreshPlayerLock(duration);
+    }
+    protected void UnlockMovement()
+    {
+        if (_movement != null) _movement.UnlockPlayer();
+    }
 }
 
