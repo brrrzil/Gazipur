@@ -9,23 +9,31 @@ public class MapUI : MonoBehaviour
     public static MapUI Instance { get; private set; }
 
     [Header("References")]
-    [Tooltip("Round map image. The map rotates inside this RectTransform so the icons (markers) rotate with the world while the player arrow stays fixed at the top.")]
-    [SerializeField] private RectTransform _mapImage;
-    [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. The _mapImage and _markersParent should be children of this transform so the rectangular map sprite and the marker icons get clipped to the round shape. If left empty, the map is rendered as a plain rectangle (no clipping).")]
+    [Tooltip("Parent RectTransform that moves (anti-player) and rotates (player yaw) every frame. The MapBackground sprite and the MarkersParent should be children of this transform so the whole map shifts under the player. The MapBackground sprite should be centred (anchoredPosition = 0,0) inside this transform and its size should match the full map in pixels (see _mapPixelSize).")]
+    [SerializeField] private RectTransform _mapContent;
+    [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. The _mapContent should be a child of this transform so the rectangular map sprite and the marker icons get clipped to the round shape. If left empty, the map is rendered as a plain rectangle (no clipping).")]
     [SerializeField] private RectTransform _mapMask;
-    [Tooltip("Player arrow icon. Should be a child of _mapImage (not of _mapMask) and sit at the centre. It rotates with _mapImage so the arrow always points up on the screen.")]
+    [Tooltip("Player arrow icon. Should be a child of _mapMask (not of _mapContent) and sit at the centre. It does NOT rotate with the map - the player arrow always points up on the screen because the WORLD rotates under the player.")]
     [SerializeField] private RectTransform _playerArrow;
-    [Tooltip("Parent for spawned marker icons. Should be a child of _mapImage (and therefore a child of _mapMask, so icons get clipped to the round shape).")]
+    [Tooltip("Parent for spawned marker icons. Should be a child of _mapContent (so markers rotate and pan with the map).")]
     [SerializeField] private RectTransform _markersParent;
-    [Tooltip("Optional. Parent for marker arrows (shown at the edge of the map when a marker is outside _worldRadius). Should be a child of _mapImage so the arrows rotate with the map. Leave empty if you do not want GTA-style edge arrows.")]
+    [Tooltip("Optional. Parent for marker arrows (shown at the edge of the map when a marker is outside _mapWorldSize / 2). Should be a child of _mapContent so the arrows rotate with the map. Leave empty if you do not want GTA-style edge arrows.")]
     [SerializeField] private RectTransform _markersEdgeParent;
     [Tooltip("Prefab for a single marker icon. The component is just a RectTransform + Image.")]
     [SerializeField] private RectTransform _markerIconPrefab;
-    [Tooltip("Prefab for an edge-pointing arrow shown at the rim of the map when the marker is outside _worldRadius. Same shape as the player arrow or a chevron. Leave empty if edge arrows are not wanted.")]
+    [Tooltip("Prefab for an edge-pointing arrow shown at the rim of the map when the marker is outside the visible area. Same shape as the player arrow or a chevron. Leave empty if edge arrows are not wanted.")]
     [SerializeField] private RectTransform _markerArrowPrefab;
-    [Tooltip("Half-width of the visible map area in world units. A marker 50 m from the player is drawn at half the radius of the map circle.")]
-    [SerializeField] private float _worldRadius = 50f;
-    [Tooltip("Pixel radius of the map circle on screen. Markers and arrows are positioned within this radius from the centre.")]
+
+    [Header("World ↔ Pixel mapping")]
+    [Tooltip("Full size of the location in world units (X, Z). For a 200×200 m location, set to (200, 200). This is the size that fits inside the MapBackground sprite.")]
+    [SerializeField] private Vector2 _mapWorldSize = new Vector2(200f, 200f);
+    [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size. For a 200×200 m location with a 2000×2000 px sprite, the ratio is 10 px / m.")]
+    [SerializeField] private float _mapPixelSize = 2000f;
+    [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point. Set this to the (X, _, Z) of the middle of your map - eg (100, 0, 100) for a 200×200 m location whose corner is at the origin.")]
+    [SerializeField] private Vector3 _mapCenter = Vector3.zero;
+
+    [Header("Edge arrows")]
+    [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) at OnEnable - the field is shown for reference only.")]
     [SerializeField] private float _mapPixelRadius = 150f;
 
     [Header("Persistence")]
@@ -34,9 +42,9 @@ public class MapUI : MonoBehaviour
 
     private CanvasGroup _canvasGroup;
     private readonly List<TrackedMarker> _markers = new List<TrackedMarker>();
-    private Camera _camera;
     private Transform _playerTransform;
     private bool _isOpen;
+    private float _pxPerMeter;
 
     [Inject] private PlayerMovement _movement;
 
@@ -44,16 +52,28 @@ public class MapUI : MonoBehaviour
     {
         public MapMarker Marker;
         public RectTransform Icon;
-        public RectTransform Arrow;  // null if marker is on the map (not at the edge)
+        public RectTransform Arrow;
     }
 
     private void Awake()
     {
         Instance = this;
         _canvasGroup = GetComponent<CanvasGroup>();
-        _camera = Camera.main;
         if (_movement != null) _playerTransform = _movement.transform;
         SetOpen(false);
+    }
+
+    private void OnEnable()
+    {
+        // _mapPixelRadius is half of the mask's pixel width so the edge
+        // arrows sit on the rim of the visible circle. If the user sets
+        // a different value, that takes precedence.
+        if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
+            _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
+        // _pxPerMeter converts world metres to map pixels. For a 200 m
+        // location that fits in a 2000 px sprite, this is 10 px / m.
+        _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
+        RebuildMarkers();
     }
 
     private void OnDestroy()
@@ -79,11 +99,6 @@ public class MapUI : MonoBehaviour
         SetOpen(true);
     }
 
-    private void OnEnable()
-    {
-        RebuildMarkers();
-    }
-
     private void RebuildMarkers()
     {
         for (int i = _markers.Count - 1; i >= 0; i--)
@@ -96,6 +111,10 @@ public class MapUI : MonoBehaviour
 
         if (_markerIconPrefab == null) return;
 
+        // Markers are positioned in world units inside MarkersParent. The
+        // size of the parent does not matter - we set anchoredPosition
+        // directly. We use a 0×0 RectTransform for MarkersParent so the
+        // editor shows nothing in the gizmo when no icons are spawned.
         var all = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
         foreach (var m in all)
         {
@@ -119,64 +138,63 @@ public class MapUI : MonoBehaviour
     private void Update()
     {
         if (!_isOpen) return;
-        if (_playerTransform == null) return;
+        if (_playerTransform == null || _mapContent == null) return;
+
+        // World position of the player relative to the map centre. This is
+        // the player's "offset from the centre of the location" in metres.
+        Vector3 playerDelta = _playerTransform.position - _mapCenter;
+
+        // The map content moves the OPPOSITE direction of the player so
+        // the player appears stationary at the centre of the map. We
+        // multiply by _pxPerMeter to convert metres to pixels.
+        _mapContent.localPosition = new Vector3(
+            -playerDelta.x * _pxPerMeter,
+            -playerDelta.z * _pxPerMeter,
+            0f);
 
         // Rotate the map so the player's forward direction is always at
-        // the top of the screen. The player arrow is a child of _mapImage,
-        // so it rotates with the map and stays pointing up on the screen.
+        // the top of the screen. Because the markers are children of
+        // _mapContent, they rotate with the map and stay at the correct
+        // compass direction on the screen.
         float playerYaw = _playerTransform.eulerAngles.y;
-        if (_mapImage != null)
-            _mapImage.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
+        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
 
-        // Inverse-rotate the world delta so the marker lines up with the
-        // rotated map. A marker that is physically to the player's right
-        // (x > 0) should appear on the map to the right of the arrow -
-        // the rotation moves the map under the player, so the marker is
-        // also moved.
+        // For each marker, compute its position in world metres relative
+        // to the player, then rotate that delta by the inverse of the
+        // player's yaw. The inverse-rotation makes the marker line up
+        // with the rotated map: a marker physically to the player's right
+        // appears on the map to the right of the centre, even though the
+        // map is rotated.
         float cos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
         float sin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
-        Vector3 playerPos = _playerTransform.position;
         for (int i = 0; i < _markers.Count; i++)
         {
             var t = _markers[i];
             if (t.Marker == null) continue;
-            Vector3 d = t.Marker.WorldTransform.position - playerPos;
+            Vector3 d = t.Marker.WorldTransform.position - _mapCenter - playerDelta;
             float rx = d.x * cos - d.z * sin;
             float rz = d.x * sin + d.z * cos;
-            float distance = Mathf.Sqrt(rx * rx + rz * rz);
+            float distancePixels = Mathf.Sqrt(rx * rx + rz * rz) * _pxPerMeter;
 
-            if (distance <= _worldRadius)
+            if (distancePixels <= _mapPixelRadius)
             {
-                // On the map: show the icon at the proportional position.
-                // If a _mapMask is configured, the icon is a child of
-                // _mapImage which is a child of _mapMask, so the icon gets
-                // clipped to the round shape automatically.
                 if (t.Icon != null)
                 {
-                    float nx = Mathf.Clamp(rx / _worldRadius, -1f, 1f);
-                    float ny = Mathf.Clamp(rz / _worldRadius, -1f, 1f);
                     t.Icon.gameObject.SetActive(true);
-                    t.Icon.anchoredPosition = new Vector2(nx * _mapPixelRadius, ny * _mapPixelRadius);
+                    t.Icon.anchoredPosition = new Vector2(rx * _pxPerMeter, rz * _pxPerMeter);
                 }
                 if (t.Arrow != null) t.Arrow.gameObject.SetActive(false);
             }
             else
             {
-                // Off the map (GTA-style): clamp the icon to the edge and
-                // show an arrow at the rim pointing toward the marker's
-                // direction from the player.
                 if (t.Icon != null) t.Icon.gameObject.SetActive(false);
                 if (t.Arrow != null)
                 {
                     t.Arrow.gameObject.SetActive(true);
                     float angle = Mathf.Atan2(rz, rx) * Mathf.Rad2Deg;
-                    // Position the arrow at the rim, pointing outward.
                     t.Arrow.anchoredPosition = new Vector2(
                         Mathf.Cos(angle * Mathf.Deg2Rad) * _mapPixelRadius,
                         Mathf.Sin(angle * Mathf.Deg2Rad) * _mapPixelRadius);
-                    // Rotate the arrow so its 'forward' (assumed +X or +Y in
-                    // local space) points outward. Adjust the 90 if the
-                    // arrow sprite is oriented differently.
                     t.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
                 }
             }
