@@ -38,8 +38,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _fallDamageThreshold = 3f;
     [Tooltip("Damage per meter beyond the threshold.")]
     [SerializeField] private float _fallDamagePerMeter = 10f;
-    [Tooltip("Minimum impact velocity (m/s, downward) to count as a real fall. Sliding on a slope inside slopeLimit keeps velocity.y around -0.5 to -1.0 m/s which is below the threshold and does not trigger fall damage. A free-fall from a 1m ledge reaches ~6.3 m/s (gravity=20), from a 2m ledge ~8.9 m/s.")]
-    [SerializeField] private float _fallVelocityThreshold = 3f;
     [SerializeField] private AudioClip _fallSound;
     [Tooltip("Seconds of movement slowdown after a damaging fall. 0 disables.")]
     [SerializeField] private float _fallSlowdownDuration = 1f;
@@ -400,42 +398,31 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleFallDamage()
     {
-        // Velocity-based landing check.
-        // - When the player lands (was not grounded, now grounded), look at
-        //   _velocity.y (our internal gravity field, NOT _controller.velocity.y
-        //   - CharacterController clamps its own velocity to ~0 the moment
-        //   the capsule touches the ground, so reading it on landing would
-        //   always give 0). _velocity.y holds the gravity integral that we
-        //   were applying to Move right up to the landing frame, so it is
-        //   the real 'how fast was the player falling' value.
-        // - A slope slide keeps _velocity.y around -0.5 to -1.0 m/s (the
-        //   controller clamps it on each frame, so the gravity integral
-        //   never accumulates a large negative value during a slide). A
-        //   real fall from a ledge has _velocity.y at -4 m/s or worse within
-        //   ~0.2 s of walking off. The _fallVelocityThreshold gate (default
-        //   3 m/s) separates the two cleanly.
-        // - Fall height is computed from the impact speed using h = v² / (2g),
-        //   so a 2 m fall (impact 6.3 m/s) is reported as fallHeight = 2.0 m
-        //   and a 3 m fall (impact 7.7 m/s) is reported as fallHeight = 3.0 m,
-        //   matching the user's intuition that 'fall damage scales with how
-        //   far I fell'. The damage then uses the same threshold + per-meter
-        //   formula as before.
-        if (!_wasGrounded && _isGrounded)
+        // Original logic: edge-trigger on the isGrounded bool.
+        // - was grounded, now not -> record the height we left the ground at.
+        // - was not grounded, now grounded -> compute fall distance from
+        //   the recorded height, apply damage if over the threshold.
+        // Known issue (the user is investigating): on slopes CharacterController
+        // briefly reports isGrounded = false while sliding (the controller
+        // 'sticks' the player a small distance each frame). The user wants
+        // to find a better way to detect a real fall vs a slope slide, but
+        // has rolled back the velocity-based attempt for now and wants to
+        // think through it fresh.
+        if (_wasGrounded && !_isGrounded)
         {
-            float impactVy = _velocity.y;
-            if (impactVy < -_fallVelocityThreshold)
+            _fallStartY = transform.position.y;
+        }
+        else if (!_wasGrounded && _isGrounded)
+        {
+            float fallDistance = _fallStartY - transform.position.y;
+            if (fallDistance > _fallDamageThreshold)
             {
-                float impactSpeed = -impactVy;
-                float fallHeight = (impactSpeed * impactSpeed) / (2f * _gravity);
-                if (fallHeight > _fallDamageThreshold)
-                {
-                    float damage = Mathf.RoundToInt((fallHeight - _fallDamageThreshold) * _fallDamagePerMeter);
-                    if (_state != null) _state.TakeDamage(damage);
-                    if (_fallSound != null && _jumpSource != null)
-                        _jumpSource.PlayOneShot(_fallSound);
-                    if (_fallSlowdownDuration > 0f && _fallSlowdownFactor < 1f)
-                        _slowdownEndTime = Time.time + _fallSlowdownDuration;
-                }
+                float damage = Mathf.RoundToInt((fallDistance - _fallDamageThreshold) * _fallDamagePerMeter);
+                if (_state != null) _state.TakeDamage(damage);
+                if (_fallSound != null && _jumpSource != null)
+                    _jumpSource.PlayOneShot(_fallSound);
+                if (_fallSlowdownDuration > 0f && _fallSlowdownFactor < 1f)
+                    _slowdownEndTime = Time.time + _fallSlowdownDuration;
             }
         }
         _wasGrounded = _isGrounded;
