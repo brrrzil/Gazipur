@@ -325,10 +325,21 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleJump()
     {
+        // Edge-trigger: the Input System keeps _jumpPressed = true for the
+        // entire duration the key is held (OnJumpPerformed sets it, OnJumpCanceled
+        // clears it). Without clearing _jumpPressed after we consume it, the
+        // player who holds Space would jump -> land -> jump -> land in a tight
+        // loop (one jump per frame after landing), and the player who taps Space
+        // very quickly would miss the jump entirely if OnJumpCanceled lands in
+        // the same frame as HandleJump reads _jumpPressed. Clear _jumpPressed
+        // right after the jump is consumed so each press of Space maps to
+        // exactly one jump, and the player must release and re-press for the
+        // next jump.
         if (_jumpPressed && !_isCrouching && CheckIfGrounded() && !_hasJumped)
         {
             _velocity.y = Mathf.Sqrt(_jumpHeight * 2f * _gravity);
             _hasJumped = true;
+            _jumpPressed = false;
         }
 
         if (CheckIfGrounded() && _velocity.y <= 0 && _hasJumped)
