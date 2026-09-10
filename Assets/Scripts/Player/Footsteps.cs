@@ -138,12 +138,29 @@ public class Footsteps : MonoBehaviour
     }
 
     /// <summary>
-    /// ���������, ��������� �� ����� �� �����.
-    /// ���� ����� ������ ���������� ����� ��� ����� �������� ������ � ���������� PlayerMovement.
-    /// ������������: ������� isGrounded ��������� ��������� � PlayerMovement.
+    /// Reads the CharacterController's isGrounded flag directly instead of
+    /// going through PlayerMovement.IsGrounded. The PlayerMovement.IsGrounded
+    /// property is updated at the END of PlayerMovement.Update
+    /// ('_isGrounded = CheckIfGrounded();'), so if Footsteps.Update runs
+    /// BEFORE PlayerMovement.Update in the same frame (which is the
+    /// default - script execution order is alphabetical, so 'F' in Footsteps
+    /// comes before 'P' in PlayerMovement), the cached _isGrounded is
+    /// still the value from the PREVIOUS frame. This means Footsteps would
+    /// be one frame behind on the ground check - in practice that means
+    /// the very first footstep after the player lands is missed (the player
+    /// is grounded this frame but _isGrounded says false because last frame
+    /// the player was in the air), and the very first frame after the
+    /// player leaves the ground plays a step (the player is in the air
+    /// this frame but _isGrounded says true from the previous frame).
+    ///
+    /// Reading _controller.isGrounded directly avoids the lag - the
+    /// CharacterController updates the flag right after every Move call,
+    /// so by the time Footsteps.Update runs in the same frame as a Move,
+    /// the flag is already accurate.
     /// </summary>
     private bool IsPlayerGrounded()
     {
+        if (controller != null) return controller.isGrounded;
         PlayerMovement playerMovement = GetComponent<PlayerMovement>();
         if (playerMovement != null)
         {
