@@ -66,6 +66,7 @@ public class PlayerMovement : MonoBehaviour
     private bool _hasJumped;
     private bool _wasGrounded;
     private bool _isFalling;
+    private float _fallInternalVy;  // tracked gravity velocity, not _controller.velocity
     private bool _isLocked;
     private float _lockEndTime;
     private float _fallStartY;
@@ -177,21 +178,14 @@ public class PlayerMovement : MonoBehaviour
 
     bool CheckIfGrounded()
     {
-        // Use the standing height for the raycast, not the current height:
-        // when crouched (_controller.height = 1.0), the half-height is 0.5
-        // and a 0.1 m groundCheckDistance gives a 0.6 m raycast, which is
-        // too short on uneven terrain (small dips, hills) - the ray misses
-        // the ground, the player is considered airborne, gravity pulls
-        // them down, and the visual feet end up sinking into the ground.
-        // Using the standing half-height (1.0 m + 0.1 = 1.1 m raycast)
-        // keeps the ground check consistent regardless of crouch state.
-        float rayLength = (_standingHeight / 2) + _groundCheckDistance;
-        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayLength))
-        {
-            float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
-            return slopeAngle <= _controller.slopeLimit;
-        }
-        return false;
+        // Use the CharacterController's own isGrounded flag rather than a
+        // custom raycast. The controller's internal collision check is
+        // more accurate than a raycast from the player root (the controller
+        // uses the full capsule shape, not a single ray) and updates
+        // immediately after each Move call, so there is no 'the raycast
+        // was 0.2m too short' edge case. The _groundCheckDistance field
+        // is no longer used (kept for Inspector compatibility but unused).
+        return _controller != null && _controller.isGrounded;
     }
 
     void OnCrouchPerformed(InputAction.CallbackContext context)
@@ -349,34 +343,30 @@ public class PlayerMovement : MonoBehaviour
     {
         _velocity.y -= _gravity * Time.deltaTime;
         _controller.Move(new Vector3(0, _velocity.y, 0) * Time.deltaTime);
+
+        // Track the player's vertical velocity in our own field. The
+        // CharacterController's _controller.velocity is unreliable
+        // for fall detection because it is clamped/zeroed by the
+        // controller's own internal logic (slope limit, ground
+        // sticking) and can read ~0 even when the player is clearly
+        // falling. _fallInternalVy is the gravity integral - the
+        // same value we pass to Move - so it correctly reflects
+        // 'how fast is the player falling this frame'.
+        _fallInternalVy = _velocity.y;
+        if (_controller.isGrounded) _fallInternalVy = 0f;
     }
 
     void HandleFallDamage()
     {
-        // Sliding down a slope inside the slopeLimit makes CharacterController
-        // report isGrounded = false (the controller 'slides' the player a
-        // small distance each frame, even on a slope it can technically stand
-        // on). The previous version used (_wasGrounded && !_isGrounded) to
-        // start a fall and (!_wasGrounded && _isGrounded) to end it - on a
-        // slope this fired at the BOTTOM of the slope, with fallDistance
-        // being the full slope height, and the player took fall damage for
-        // sliding a few metres down a hill.
-        //
-        // The fix: use CharacterController.velocity.y to detect an actual
-        // free-fall. A slide on a slope inside slopeLimit produces
-        // velocity.y around -1 m/s (small downward speed from gravity
-        // being eaten by the slope angle). A real fall produces velocity.y
-        // well below -_fallVelocityThreshold (default 4 m/s - the player
-        // reaches this speed within ~0.4 s of walking off a ledge). We
-        // only set _isFalling when the downward velocity crosses the
-        // threshold, and we only check fall damage on landing if _isFalling
-        // was set.
-        float vy = _controller != null ? _controller.velocity.y : 0f;
+        // _fallInternalVy is our tracked gravity velocity, set in ApplyGravity
+        // (the same value we pass to _controller.Move). It is more reliable
+        // than _controller.velocity.y for fall detection because the
+        // CharacterController clamps its own velocity when sliding on a
+        // slope or sticking to the ground - we want the pure gravity integral.
+        float vy = _fallInternalVy;
 
         if (_isGrounded)
         {
-            // Landed: if we were in a real fall (not just sliding), apply
-            // damage based on the total fall distance.
             if (_isFalling)
             {
                 float fallDistance = _fallStartY - transform.position.y;
@@ -395,11 +385,6 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            // In the air: only mark the fall start when the player is
-            // actually free-falling (velocity below the threshold). A slope
-            // slide keeps velocity.y around -1 m/s which is well above
-            // -_fallVelocityThreshold, so _isFalling stays false and the
-            // slope descent is not counted as a fall.
             if (vy < -_fallVelocityThreshold)
             {
                 if (!_isFalling)
