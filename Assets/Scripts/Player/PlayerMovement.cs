@@ -190,7 +190,20 @@ public class PlayerMovement : MonoBehaviour
             float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
             return slopeAngle <= _controller.slopeLimit;
         }
-        return false;
+        // SphereCast missed - the player is either in the air OR standing
+        // on a surface the sphere cannot reach (eg a steep slope where
+        // the CharacterController is doing slope sticking - keeping the
+        // capsule attached to the surface even though the surface is
+        // steeper than the sphere can find directly under the player).
+        // Fall back to _controller.isGrounded: the CharacterController
+        // knows about its own slope sticking and sets isGrounded = true
+        // when the capsule is in contact with a surface, regardless of
+        // whether our sphere cast can find it. This means the player
+        // can stand on a steep slope and isGrounded stays true, footstep
+        // sounds keep playing, and jumps work - while still reporting
+        // false when the player is genuinely in the air (no contact
+        // anywhere).
+        return _controller != null && _controller.isGrounded;
     }
 
     void OnCrouchPerformed(InputAction.CallbackContext context)
