@@ -188,16 +188,41 @@ public class PlayerMovement : MonoBehaviour
 
     bool CheckIfGrounded()
     {
-        // Use the standing height for the raycast, not the current height:
-        // when crouched (_controller.height = 1.0), the half-height is 0.5
-        // and a 0.1 m groundCheckDistance gives a 0.6 m raycast, which is
-        // too short on uneven terrain (small dips, hills) - the ray misses
-        // the ground, the player is considered airborne, gravity pulls
-        // them down, and the visual feet end up sinking into the ground.
-        // Using the standing half-height (1.0 m + 0.1 = 1.1 m raycast)
-        // keeps the ground check consistent regardless of crouch state.
-        float rayLength = (_standingHeight / 2) + _groundCheckDistance;
-        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayLength))
+        // SphereCast from the player root downward. The sphere is slightly
+        // smaller than the CharacterController capsule radius so the sphere
+        // does not get blocked by walls the player is brushing against -
+        // this is a 'is there ground under my feet' check, not a 'is the
+        // capsule colliding with anything' check.
+        //
+        // SphereCast is more reliable than a single raycast for ground
+        // detection because:
+        // 1. A single raycast can miss the ground when the player is
+        //    standing at the edge of a platform - the ray goes between
+        //    the player's feet and the edge and hits nothing. A sphere
+        //    of radius 0.45 m covers the full footprint area, so it
+        //    always intersects the ground the player is standing on.
+        // 2. On a slope, the raycast can hit the slope further down
+        //    than the actual contact point, which is fine, but can
+        //    also miss the slope entirely if the player's feet are
+        //    above the slope and the ray happens to thread between
+        //    the feet and the slope surface. The sphere's larger
+        //    cross-section makes this miss much less likely.
+        // 3. Over uneven terrain (small bumps, dips, stairs), the
+        //    raycast can hit a nearby bump and report a 'grounded'
+        //    result even though the player's actual contact is on
+        //    a different surface. The sphere averages over the
+        //    whole footprint area and gives a more accurate 'am I
+        //    on the ground' answer.
+        //
+        // The cast distance is the standing half-height plus a small
+        // margin so the sphere ends up at the player's feet when
+        // standing and slightly below when in the air. The character
+        // controller's skin width (default 0.01 m) handles the final
+        // touch detection.
+        float radius = _controller.radius * 0.95f;
+        float castDistance = (_standingHeight / 2) + _groundCheckDistance;
+        if (Physics.SphereCast(transform.position, radius, Vector3.down,
+                out RaycastHit hit, castDistance, ~0, QueryTriggerInteraction.Ignore))
         {
             float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
             return slopeAngle <= _controller.slopeLimit;
