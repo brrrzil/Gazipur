@@ -156,7 +156,18 @@ public class Inventory : MonoBehaviour
     public void ShowPanel(bool isShow)
     {
         _isOpen = isShow;
-        _inventoryPanel.SetActive(isShow);
+        // _inventoryPanel is a [SerializeField] reference to a UI GameObject
+        // in the scene. On scene reload (game complete -> restart), the
+        // scene is unloaded and the panel GameObject is destroyed, but
+        // the Inventory singleton survives (Zenject scene-context service).
+        // The GameModeManager.onChangeMode event fires for any subsequent
+        // mode change (eg the player presses Inventory after the restart)
+        // and routes through this method, which then calls SetActive on
+        // the destroyed panel -> MissingReferenceException. The Unity
+        // == null guard is the right fix - it returns true for destroyed
+        // objects (Unity's operator == override handles the 'fake null'
+        // case) and skips the SetActive call.
+        if (_inventoryPanel != null) _inventoryPanel.SetActive(isShow);
     }
 
     public void ChangeCellState(InventoryCell cell)

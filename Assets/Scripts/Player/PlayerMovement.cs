@@ -38,8 +38,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _fallDamageThreshold = 3f;
     [Tooltip("Damage per meter beyond the threshold.")]
     [SerializeField] private float _fallDamagePerMeter = 10f;
-    [Tooltip("Minimum downward velocity (m/s) to count as a real fall. Sliding on a slope inside slopeLimit produces velocity.y around -1 m/s which is below the threshold and does not trigger fall damage. A free-fall from a ledge reaches this speed in ~0.4 s.")]
-    [SerializeField] private float _fallVelocityThreshold = 4f;
+    [Tooltip("Minimum downward velocity (m/s) to count as a real fall. Sliding on a slope inside slopeLimit produces velocity.y around -1 m/s which is below the threshold and does not trigger fall damage. A free-fall from a 1m ledge reaches ~4.4 m/s, from a 2m ledge ~6.3 m/s.")]
+    [SerializeField] private float _fallVelocityThreshold = 3f;
     [SerializeField] private AudioClip _fallSound;
     [Tooltip("Seconds of movement slowdown after a damaging fall. 0 disables.")]
     [SerializeField] private float _fallSlowdownDuration = 1f;
@@ -380,6 +380,7 @@ public class PlayerMovement : MonoBehaviour
             if (_isFalling)
             {
                 float fallDistance = _fallStartY - transform.position.y;
+                Debug.Log($"[Fall] Landed. Distance={fallDistance:F2}m, threshold={_fallDamageThreshold}m, vy at land={vy:F2}");
                 if (fallDistance > _fallDamageThreshold)
                 {
                     float damage = Mathf.RoundToInt((fallDistance - _fallDamageThreshold) * _fallDamagePerMeter);
@@ -405,6 +406,7 @@ public class PlayerMovement : MonoBehaviour
                 {
                     _isFalling = true;
                     _fallStartY = transform.position.y;
+                    Debug.Log($"[Fall] Started at y={_fallStartY:F2}, vy={vy:F2}");
                 }
             }
         }
