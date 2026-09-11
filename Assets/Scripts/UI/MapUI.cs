@@ -219,11 +219,11 @@ public class MapUI : MonoBehaviour
         // inverse rotation to the shift here. That way, after the parent
         // rotates the shift back into world space, the result is exactly
         // (worldShiftX, worldShiftZ).
-        float cos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
-        float sin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
+        float shiftCos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
+        float shiftSin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
         _mapContent.localPosition = new Vector3(
-            worldShiftX * cos - worldShiftZ * sin,
-            worldShiftX * sin + worldShiftZ * cos,
+            worldShiftX * shiftCos - worldShiftZ * shiftSin,
+            worldShiftX * shiftSin + worldShiftZ * shiftCos,
             0f);
 
         _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
