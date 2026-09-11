@@ -76,21 +76,41 @@ public class MapUI : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    // Cache every Graphic (Image / Text / RawImage) under the host so we
-    // can toggle visibility by enabling / disabling them. We do not use
-    // a CanvasGroup because the host (eg PlayerUI) usually has its own
-    // CanvasGroup and touching it would hide the whole HUD.
+    // Cache every Graphic (Image / Text / RawImage) that belongs to the
+    // minimap so we can toggle visibility by enabling / disabling them.
+    // We collect from the two map-specific subtrees (_mapContent and
+    // _playerArrow) instead of the whole host: when MapUI is placed on
+    // PlayerUI, GetComponentsInChildren would catch every UI element on
+    // the HUD (health bar, hunger bar, inventory, etc.) and hide all of
+    // them when the map is closed.
     private void CollectGraphics()
     {
         _graphics.Clear();
         _behavioursToToggle.Clear();
-        GetComponentsInChildren(true, _graphics);
-        // Also toggle Mask components so the mask does not draw when
-        // the map is hidden (saves a draw call per frame).
-        var masks = GetComponentsInChildren<Mask>(true);
-        _behavioursToToggle.AddRange(masks);
-        var rectMasks = GetComponentsInChildren<RectMask2D>(true);
-        _behavioursToToggle.AddRange(rectMasks);
+
+        // _mapContent contains the rectangular map sprite and the marker
+        // icons. Hide its Graphics when the map is closed.
+        if (_mapContent != null)
+            _mapContent.GetComponentsInChildren(true, _graphics);
+
+        // _playerArrow is a sibling (child of _mapMask, not _mapContent)
+        // so it would not be picked up by the previous call. Add it
+        // separately.
+        if (_playerArrow != null)
+        {
+            var arrowGraphics = _playerArrow.GetComponentsInChildren<Graphic>(true);
+            _graphics.AddRange(arrowGraphics);
+        }
+
+        // Also toggle Mask components inside the map subtree so the
+        // mask's draw call is skipped when the map is hidden.
+        if (_mapMask != null)
+        {
+            var masks = _mapMask.GetComponentsInChildren<Mask>(true);
+            _behavioursToToggle.AddRange(masks);
+            var rectMasks = _mapMask.GetComponentsInChildren<RectMask2D>(true);
+            _behavioursToToggle.AddRange(rectMasks);
+        }
     }
 
     public void SetOpen(bool open)
