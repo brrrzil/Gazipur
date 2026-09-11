@@ -3,7 +3,12 @@ using UnityEngine.UI;
 using DG.Tweening;
 using Zenject;
 
-[RequireComponent(typeof(Outline))]
+// Outline is no longer required - some interactable objects (eg UI billboards
+// for pickable items, or items with no MeshFilter / no normals on their
+// mesh) cannot use QuickOutline because it would throw a
+// NullReferenceException in Outline.SmoothNormals. The outline is now
+// optional: the component is looked up with GetComponent (returns null
+// when not present) and all usages are null-guarded.
 public abstract class InteractObject : MonoBehaviour
 {
     private Outline _outline;
@@ -17,7 +22,7 @@ public abstract class InteractObject : MonoBehaviour
     [Inject] protected PlayerMovement _movement;
     public virtual void Select(bool isSelect)
     {
-        _outline.enabled = isSelect;
+        if (_outline != null) _outline.enabled = isSelect;
         if (_tooltipeText!="")
         {
             if (isSelect)
@@ -28,8 +33,8 @@ public abstract class InteractObject : MonoBehaviour
     }
     private void OnEnable()
     {
-        _outline ??= GetComponent<Outline>();
-        _outline.enabled = false;
+        _outline = GetComponent<Outline>();
+        if (_outline != null) _outline.enabled = false;
     }
     private void OnDestroy()
     {
