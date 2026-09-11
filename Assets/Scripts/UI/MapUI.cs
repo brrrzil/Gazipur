@@ -10,15 +10,17 @@ public class MapUI : MonoBehaviour
     [Header("References")]
     [Tooltip("Optional. The root GameObject that wraps the whole minimap hierarchy (MapMask + MapContent + PlayerArrow + MarkersParent). If set, the map is hidden / shown via SetActive on this GameObject. If left empty, the map falls back to toggling Graphic.enabled on each UI element.")]
     [SerializeField] private GameObject _mapRoot;
-    [Tooltip("Parent RectTransform that moves (anti-player) and rotates (player yaw) every frame. The MapBackground sprite and the MarkersParent should be children of this transform so the whole map shifts under the player.")]
+    [Tooltip("Parent RectTransform that MOVES (anti-player) every frame. The map rotator (see _mapRotator) should be a child of this transform, so movement is applied first and rotation is applied on top.")]
     [SerializeField] private RectTransform _mapContent;
+    [Tooltip("Optional. A child RectTransform of _mapContent that ROTATES (player yaw) every frame. The MapBackground sprite and the MarkersParent should be children of this transform so the rotation is applied to them but not to the movement. If left empty, rotation is applied directly to _mapContent (which only works correctly when _mapContent.pivot == (0.5, 0.5)).")]
+    [SerializeField] private RectTransform _mapRotator;
     [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. The _mapContent should be a child of this transform.")]
     [SerializeField] private RectTransform _mapMask;
     [Tooltip("Player arrow icon. Should be a child of _mapMask (not of _mapContent) and sit at the centre. It does NOT rotate with the map.")]
     [SerializeField] private RectTransform _playerArrow;
-    [Tooltip("Parent for spawned marker icons. Should be a child of _mapContent.")]
+    [Tooltip("Parent for spawned marker icons. Should be a child of _mapRotator (or _mapContent if no rotator is assigned).")]
     [SerializeField] private RectTransform _markersParent;
-    [Tooltip("Optional. Parent for marker arrows. Should be a child of _mapContent. Leave empty if you do not want GTA-style edge arrows.")]
+    [Tooltip("Optional. Parent for marker arrows. Should be a child of _mapRotator. Leave empty if you do not want GTA-style edge arrows.")]
     [SerializeField] private RectTransform _markersEdgeParent;
     [Tooltip("Prefab for a single marker icon.")]
     [SerializeField] private RectTransform _markerIconPrefab;
@@ -238,22 +240,29 @@ public class MapUI : MonoBehaviour
         float worldShiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShiftX, maxShiftX);
         float worldShiftZ = Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShiftY, maxShiftY);
 
-        // _mapContent has a local rotation of playerYaw (set below), so
-        // setting localPosition = (worldShiftX, worldShiftZ) would
-        // actually apply the rotation to the shift - the map would move
-        // along the wrong axis when the player turns. To get the desired
-        // world-space shift AFTER the rotation is applied, we apply the
-        // inverse rotation to the shift here. That way, after the parent
-        // rotates the shift back into world space, the result is exactly
-        // (worldShiftX, worldShiftZ).
-        float shiftCos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
-        float shiftSin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
-        _mapContent.localPosition = new Vector3(
-            worldShiftX * shiftCos - worldShiftZ * shiftSin,
-            worldShiftX * shiftSin + worldShiftZ * shiftCos,
-            0f);
+        // Movement goes on _mapContent. We do NOT apply any rotation to
+        // _mapContent, so its local axes stay aligned with its parent
+        // (MapMask) and the shift goes straight into the visible map.
+        // The rotation, if any, goes on _mapRotator (the child), so the
+        // rotation pivot is _mapRotator's pivot - which the user can
+        // set to (0.5, 0.5) and centred at (0, 0) inside _mapContent
+        // for a clean rotation around the radar centre.
+        _mapContent.localPosition = new Vector3(worldShiftX, worldShiftZ, 0f);
 
-        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
+        if (_mapRotator != null)
+        {
+            _mapRotator.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
+        }
+        else
+        {
+            // Fallback when no separate rotator is assigned: rotate
+            // _mapContent directly. This is correct only when
+            // _mapContent.pivot == (0.5, 0.5) and _mapContent is centred
+            // at (0, 0) inside MapMask. If the user has different
+            // anchors / pivots the rotation will appear to pivot around
+            // the wrong point - assign _mapRotator to fix it.
+            _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
+        }
 
         // Markers are children of _mapContent, which is rotated by
         // playerYaw. Their anchoredPosition is in the rotated local
