@@ -27,14 +27,12 @@ public class TraderObject : InteractObject
             }
         };
 
-        // Always offer the map (cheaper than the medicine, available from
-        // the start of the game). The map is a one-time unlock - after
-        // purchase and use, the map UI stays open for the rest of the
-        // session, so the player only needs to buy it once.
-        if (_map != null)
-        {
-            _market.AddItem(_map, true);
-        }
+        // The map is now added through the MarketManager._items array
+        // (in the Inspector) so the user can place it at any position
+        // in the shop between the other items. The _map field is still
+        // kept on this component for reference but is no longer added
+        // to the market here - the user drags the ItemData into the
+        // MarketManager's _items array directly.
     }
 
     public override void Intearct(bool isDown)
