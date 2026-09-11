@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using Zenject;
 
 public class MapUI : MonoBehaviour
@@ -10,19 +11,17 @@ public class MapUI : MonoBehaviour
     [Header("References")]
     [Tooltip("Optional. The root GameObject that wraps the whole minimap hierarchy (MapMask + MapContent + PlayerArrow + MarkersParent). If set, the map is hidden / shown via SetActive on this GameObject. If left empty, the map falls back to toggling Graphic.enabled on each UI element.")]
     [SerializeField] private GameObject _mapRoot;
-    [Tooltip("Parent RectTransform that anchors the map subtree to the centre of MapMask. Stays at localPosition (0, 0, 0) - the movement and rotation are delegated to its children (the rotator for rotation, the background and markers for movement). If you set this transform's localPosition to something non-zero, the rotation will pivot around the wrong point.")]
+    [Tooltip("Parent RectTransform that owns the rotation. The script forces its pivot to (0.5, 0.5) and anchoredPosition to (0, 0) at startup so the rotation always pivots around the centre of MapMask regardless of how it is configured in the Inspector. Stays at localPosition (0, 0, 0) - movement is delegated to its child _mapBackground.")]
     [SerializeField] private RectTransform _mapContent;
-    [Tooltip("Optional. A child RectTransform of _mapContent that ROTATES (player yaw) every frame. The MapBackground sprite and the MarkersParent should be children of this transform so the rotation is applied to them but not to the movement. If left empty, rotation is applied directly to _mapContent (which only works correctly when _mapContent.pivot == (0.5, 0.5)).")]
-    [SerializeField] private RectTransform _mapRotator;
-    [Tooltip("Required when _mapRotator is assigned. RectTransform of the rectangular map sprite. Its anchoredPosition is updated every frame so the visible part of the location stays centred on the player. Should be a child of _mapRotator.")]
-    [SerializeField] private RectTransform _mapBackground;
-    [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. The _mapContent should be a child of this transform.")]
+    [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. _mapContent should be a child of _mapMask, centred at (0, 0).")]
     [SerializeField] private RectTransform _mapMask;
     [Tooltip("Player arrow icon. Should be a child of _mapMask (not of _mapContent) and sit at the centre. It does NOT rotate with the map.")]
     [SerializeField] private RectTransform _playerArrow;
-    [Tooltip("Parent for spawned marker icons. Should be a child of _mapRotator (or _mapContent if no rotator is assigned).")]
+    [Tooltip("Required. RectTransform of the rectangular map sprite. Its anchoredPosition is updated every frame so the visible part of the location stays centred on the player. Should be a child of _mapContent.")]
+    [SerializeField] private RectTransform _mapBackground;
+    [Tooltip("Parent for spawned marker icons. Should be a child of _mapContent.")]
     [SerializeField] private RectTransform _markersParent;
-    [Tooltip("Optional. Parent for marker arrows. Should be a child of _mapRotator. Leave empty if you do not want GTA-style edge arrows.")]
+    [Tooltip("Optional. Parent for marker arrows. Should be a child of _mapContent. Leave empty if you do not want GTA-style edge arrows.")]
     [SerializeField] private RectTransform _markersEdgeParent;
     [Tooltip("Prefab for a single marker icon.")]
     [SerializeField] private RectTransform _markerIconPrefab;
@@ -32,7 +31,7 @@ public class MapUI : MonoBehaviour
     [Header("World <-> Pixel mapping")]
     [Tooltip("Full size of the location in world units (X, Z). For a 200x200 m location, set to (200, 200).")]
     [SerializeField] private Vector2 _mapWorldSize = new Vector2(200f, 200f);
-    [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size. For a 200x200 m location with a 2000x2000 px sprite, the ratio is 10 px / m.")]
+    [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size.")]
     [SerializeField] private float _mapPixelSize = 2000f;
     [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
@@ -54,6 +53,7 @@ public class MapUI : MonoBehaviour
     private bool _playerReady;
     private bool _hasRoot;
     private bool _markersBuilt;
+    private bool _graphicsCollected;
 
     [Inject] private PlayerMovement _movement;
 
@@ -69,16 +69,36 @@ public class MapUI : MonoBehaviour
         Instance = this;
         _hasRoot = _mapRoot != null;
         if (!_hasRoot) CollectGraphics();
+
+        // Force _mapContent to a clean rotation pivot: pivot (0.5, 0.5)
+        // and anchoredPosition (0, 0) inside _mapMask. Whatever the
+        // user has set in the Inspector, the rotation will now pivot
+        // around the centre of MapMask.
+        if (_mapContent != null && _mapMask != null)
+        {
+            _mapContent.SetParent(_mapMask, false);
+            _mapContent.anchorMin = new Vector2(0.5f, 0.5f);
+            _mapContent.anchorMax = new Vector2(0.5f, 0.5f);
+            _mapContent.pivot = new Vector2(0.5f, 0.5f);
+            _mapContent.anchoredPosition = Vector2.zero;
+            _mapContent.sizeDelta = Vector2.zero;
+            _mapContent.localRotation = Quaternion.identity;
+            _mapContent.localPosition = Vector3.zero;
+        }
+
         SetOpen(false);
     }
 
-    private bool _graphicsCollected;
-
-    private void EnsureGraphicsCollected()
+    private void OnEnable()
     {
-        if (_graphicsCollected) return;
-        CollectGraphics();
-        _graphicsCollected = true;
+        if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
+            _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
+        _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void CollectGraphics()
@@ -110,25 +130,17 @@ public class MapUI : MonoBehaviour
         }
     }
 
-    private void OnEnable()
+    private void EnsureGraphicsCollected()
     {
-        if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
-            _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
-    }
-
-    private void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
+        if (_graphicsCollected) return;
+        CollectGraphics();
+        _graphicsCollected = true;
     }
 
     public void SetOpen(bool open)
     {
         _isOpen = open;
 
-        // Preferred path: hide the whole map subtree via SetActive. This
-        // is more reliable than toggling Graphic.enabled because it also
-        // skips Update / OnEnable cycles on every UI element.
         if (_hasRoot)
         {
             _mapRoot.SetActive(open);
@@ -136,10 +148,6 @@ public class MapUI : MonoBehaviour
             return;
         }
 
-        // Fallback path: toggle individual UI elements. Used when the
-        // user has not assigned _mapRoot. Lazily build the marker list
-        // the first time the map opens so we do not pay the Find cost
-        // at scene load.
         if (open && !_markersBuilt) RebuildMarkers();
 
         for (int i = 0; i < _graphics.Count; i++)
@@ -178,12 +186,6 @@ public class MapUI : MonoBehaviour
             return;
         }
 
-        // Hide the marker parents during rebuild so that markers spawned
-        // in a hidden state stay hidden until the map is open. The
-        // parents are children of _mapContent / _mapRoot so SetActive
-        // toggling on _mapRoot handles visibility for us - we just have
-        // to make sure the spawned icons are not visible before the map
-        // is open.
         var all = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
         foreach (var m in all)
         {
@@ -207,10 +209,8 @@ public class MapUI : MonoBehaviour
 
     private void Update()
     {
-        // Cheat: M toggles the map (works whether the map has been bought
-        // or not - useful for debugging / testing).
-        if (UnityEngine.InputSystem.Keyboard.current != null
-            && UnityEngine.InputSystem.Keyboard.current.mKey.wasPressedThisFrame)
+        if (Keyboard.current != null
+            && Keyboard.current.mKey.wasPressedThisFrame)
         {
             Toggle();
         }
@@ -228,81 +228,41 @@ public class MapUI : MonoBehaviour
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
         float playerYaw = _playerTransform.eulerAngles.y;
 
-        // The map background sprite is _mapPixelSize wide (default 2000
-        // px). The visible map circle has radius _mapPixelRadius (default
-        // 150 px, half of the mask). For the background to always cover
-        // the mask regardless of where the player is on the map, the
-        // shift amount is clamped so that the background's edges never
-        // recede past the mask's edges.
-        float maxShiftX = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
-        float maxShiftY = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
+        // Background shift, clamped so the sprite always covers the mask.
+        float maxShift = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
+        float shiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShift, maxShift);
+        float shiftY = Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShift, maxShift);
 
-        // World-space shift we want for the background. This is what the
-        // player's delta should translate to in the visible map.
-        float worldShiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShiftX, maxShiftX);
-        float worldShiftZ = Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShiftY, maxShiftY);
+        // _mapContent stays at the centre of MapMask (Awake forced the
+        // pivot and anchoredPosition). Its rotation pivots around that
+        // centre, which is also the centre of the radar where the
+        // player arrow sits. Movement is delegated to _mapBackground.
+        _mapContent.localPosition = Vector3.zero;
+        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
 
-        // _mapContent stays at localPosition (0, 0, 0). All movement and
-        // rotation are delegated to its children (the rotator for
-        // rotation, the background and markers for movement). This
-        // keeps the rotation pivot fixed at the centre of MapMask so
-        // the map rotates around the radar centre regardless of the
-        // background's offset.
-        if (_mapContent != null) _mapContent.localPosition = Vector3.zero;
-
-        if (_mapRotator != null)
-        {
-            _mapRotator.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
-        }
-        else if (_mapContent != null)
-        {
-            // Fallback when no separate rotator is assigned: rotate
-            // _mapContent directly. This is correct only when
-            // _mapContent.pivot == (0.5, 0.5) and _mapContent is centred
-            // at (0, 0) inside MapMask.
-            _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
-        }
-
-        // Background movement: MapBackground is a child of _mapRotator
-        // (or _mapContent if no rotator). It carries the rectangular map
-        // sprite. Its anchoredPosition is in the rotated local space of
-        // its parent, so we apply the inverse rotation here so that
-        // after the parent rotates by +playerYaw, the background ends
-        // up shifted by (worldShiftX, worldShiftZ) in world coordinates.
         if (_mapBackground != null)
-        {
-            float bgCos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
-            float bgSin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
-            _mapBackground.anchoredPosition = new Vector2(
-                worldShiftX * bgCos - worldShiftZ * bgSin,
-                worldShiftX * bgSin + worldShiftZ * bgCos);
-        }
+            _mapBackground.anchoredPosition = new Vector2(shiftX, shiftY);
 
-        // Markers are children of _mapRotator / _mapContent. Their
-        // anchoredPosition is in the rotated local space of the parent.
-        // We pre-rotate the icon coordinates by -playerYaw so that after
-        // the parent rotates by +playerYaw, the icon ends up at the
-        // correct world-relative position on the visible map.
-        float iconCos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
-        float iconSin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
+        // Markers: anchoredPosition is in the local space of _mapContent.
+        // The parent's rotation (+playerYaw) will rotate the icon into
+        // world position. We use the player's position as the origin
+        // (the background sprite already carries the shift toward
+        // _mapCenter, so the marker delta is just marker - player).
         for (int i = 0; i < _markers.Count; i++)
         {
             var t = _markers[i];
             if (t.Marker == null) continue;
-            // World-space delta of the marker relative to the player.
             Vector3 d = t.Marker.WorldTransform.position - _playerTransform.position;
-            // Rotate by -playerYaw so the icon lands at the correct
-            // position in the rotated local space of _mapRotator.
-            float rx = d.x * iconCos - d.z * iconSin;
-            float rz = d.x * iconSin + d.z * iconCos;
-            float distancePixels = Mathf.Sqrt(rx * rx + rz * rz) * _pxPerMeter;
+            float rx = d.x * _pxPerMeter;
+            float rz = d.z * _pxPerMeter;
+            float distancePixels = Mathf.Sqrt(rx * rx + rz * rz);
 
             if (distancePixels <= _mapPixelRadius)
             {
                 if (t.Icon != null)
                 {
                     t.Icon.gameObject.SetActive(true);
-                    t.Icon.anchoredPosition = new Vector2(rx * _pxPerMeter, rz * _pxPerMeter);
+                    t.Icon.anchoredPosition = new Vector2(rx, rz);
                 }
                 if (t.Arrow != null) t.Arrow.gameObject.SetActive(false);
             }
