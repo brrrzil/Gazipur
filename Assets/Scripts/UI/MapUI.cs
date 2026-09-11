@@ -23,28 +23,29 @@ public class MapUI : MonoBehaviour
     [Tooltip("Prefab for an edge-pointing arrow shown at the rim of the map when the marker is outside the visible area. Same shape as the player arrow or a chevron. Leave empty if edge arrows are not wanted.")]
     [SerializeField] private RectTransform _markerArrowPrefab;
 
-    [Header("World ↔ Pixel mapping")]
-    [Tooltip("Full size of the location in world units (X, Z). For a 200×200 m location, set to (200, 200). This is the size that fits inside the MapBackground sprite.")]
+    [Header("World <-> Pixel mapping")]
+    [Tooltip("Full size of the location in world units (X, Z). For a 200x200 m location, set to (200, 200). This is the size that fits inside the MapBackground sprite.")]
     [SerializeField] private Vector2 _mapWorldSize = new Vector2(200f, 200f);
-    [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size. For a 200×200 m location with a 2000×2000 px sprite, the ratio is 10 px / m.")]
+    [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size. For a 200x200 m location with a 2000x2000 px sprite, the ratio is 10 px / m.")]
     [SerializeField] private float _mapPixelSize = 2000f;
-    [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point. Set this to the (X, _, Z) of the middle of your map - eg (100, 0, 100) for a 200×200 m location whose corner is at the origin.")]
+    [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point. Set this to the (X, _, Z) of the middle of your map - eg (100, 0, 100) for a 200x200 m location whose corner is at the origin.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Edge arrows")]
-    [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) at OnEnable - the field is shown for reference only.")]
+    [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) at OnEnable.")]
     [SerializeField] private float _mapPixelRadius = 150f;
 
     [Header("Persistence")]
     [Tooltip("PlayerPrefs key prefix for 'marker collected' state. The full key is _collectedPrefix + marker.Id.")]
     [SerializeField] private string _collectedPrefix = "map_marker_collected_";
 
-    private CanvasGroup _canvasGroup;
-    private GameObject _canvasGroupHost;
+    private readonly List<Graphic> _graphics = new List<Graphic>();
+    private readonly List<Behaviour> _behavioursToToggle = new List<Behaviour>();
     private readonly List<TrackedMarker> _markers = new List<TrackedMarker>();
     private Transform _playerTransform;
     private bool _isOpen;
     private float _pxPerMeter;
+    private bool _playerReady;
 
     [Inject] private PlayerMovement _movement;
 
@@ -58,29 +59,14 @@ public class MapUI : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-
-        // Create a child GameObject that hosts a private CanvasGroup, so
-        // the visibility of the minimap does NOT affect the parent
-        // (eg PlayerUI). This way the user can drop the MapUI component
-        // on PlayerUI directly and only the map's own group is hidden,
-        // not the whole HUD.
-        _canvasGroupHost = new GameObject("MapUI_Group", typeof(RectTransform));
-        _canvasGroupHost.transform.SetParent(transform, false);
-        _canvasGroup = _canvasGroupHost.AddComponent<CanvasGroup>();
-
-        if (_movement != null) _playerTransform = _movement.transform;
+        CollectGraphics();
         SetOpen(false);
     }
 
     private void OnEnable()
     {
-        // _mapPixelRadius is half of the mask's pixel width so the edge
-        // arrows sit on the rim of the visible circle. If the user sets
-        // a different value, that takes precedence.
         if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
             _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        // _pxPerMeter converts world metres to map pixels. For a 200 m
-        // location that fits in a 2000 px sprite, this is 10 px / m.
         _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
         RebuildMarkers();
     }
@@ -88,15 +74,36 @@ public class MapUI : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        if (_canvasGroupHost != null) Destroy(_canvasGroupHost);
+    }
+
+    // Cache every Graphic (Image / Text / RawImage) under the host so we
+    // can toggle visibility by enabling / disabling them. We do not use
+    // a CanvasGroup because the host (eg PlayerUI) usually has its own
+    // CanvasGroup and touching it would hide the whole HUD.
+    private void CollectGraphics()
+    {
+        _graphics.Clear();
+        _behavioursToToggle.Clear();
+        GetComponentsInChildren(true, _graphics);
+        // Also toggle Mask components so the mask does not draw when
+        // the map is hidden (saves a draw call per frame).
+        var masks = GetComponentsInChildren<Mask>(true);
+        _behavioursToToggle.AddRange(masks);
+        var rectMasks = GetComponentsInChildren<RectMask2D>(true);
+        _behavioursToToggle.AddRange(rectMasks);
     }
 
     public void SetOpen(bool open)
     {
         _isOpen = open;
-        _canvasGroup.alpha = open ? 1f : 0f;
-        _canvasGroup.blocksRaycasts = false;
-        _canvasGroup.interactable = false;
+        for (int i = 0; i < _graphics.Count; i++)
+        {
+            if (_graphics[i] != null) _graphics[i].enabled = open;
+        }
+        for (int i = 0; i < _behavioursToToggle.Count; i++)
+        {
+            if (_behavioursToToggle[i] != null) _behavioursToToggle[i].enabled = open;
+        }
     }
 
     public void Toggle()
@@ -121,10 +128,6 @@ public class MapUI : MonoBehaviour
 
         if (_markerIconPrefab == null) return;
 
-        // Markers are positioned in world units inside MarkersParent. The
-        // size of the parent does not matter - we set anchoredPosition
-        // directly. We use a 0×0 RectTransform for MarkersParent so the
-        // editor shows nothing in the gizmo when no icons are spawned.
         var all = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
         foreach (var m in all)
         {
@@ -148,33 +151,27 @@ public class MapUI : MonoBehaviour
     private void Update()
     {
         if (!_isOpen) return;
+
+        // Lazy init: Zenject injects AFTER Awake, so the first Update
+        // call is the earliest place we can grab the player reference.
+        if (!_playerReady)
+        {
+            if (_movement == null) return;
+            _playerTransform = _movement.transform;
+            _playerReady = true;
+        }
         if (_playerTransform == null || _mapContent == null) return;
 
-        // World position of the player relative to the map centre. This is
-        // the player's "offset from the centre of the location" in metres.
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
 
-        // The map content moves the OPPOSITE direction of the player so
-        // the player appears stationary at the centre of the map. We
-        // multiply by _pxPerMeter to convert metres to pixels.
         _mapContent.localPosition = new Vector3(
             -playerDelta.x * _pxPerMeter,
             -playerDelta.z * _pxPerMeter,
             0f);
 
-        // Rotate the map so the player's forward direction is always at
-        // the top of the screen. Because the markers are children of
-        // _mapContent, they rotate with the map and stay at the correct
-        // compass direction on the screen.
         float playerYaw = _playerTransform.eulerAngles.y;
         _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
 
-        // For each marker, compute its position in world metres relative
-        // to the player, then rotate that delta by the inverse of the
-        // player's yaw. The inverse-rotation makes the marker line up
-        // with the rotated map: a marker physically to the player's right
-        // appears on the map to the right of the centre, even though the
-        // map is rotated.
         float cos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
         float sin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
         for (int i = 0; i < _markers.Count; i++)
