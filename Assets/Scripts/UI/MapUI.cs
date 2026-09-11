@@ -8,27 +8,29 @@ public class MapUI : MonoBehaviour
     public static MapUI Instance { get; private set; }
 
     [Header("References")]
-    [Tooltip("Parent RectTransform that moves (anti-player) and rotates (player yaw) every frame. The MapBackground sprite and the MarkersParent should be children of this transform so the whole map shifts under the player. The MapBackground sprite should be centred (anchoredPosition = 0,0) inside this transform and its size should match the full map in pixels (see _mapPixelSize).")]
+    [Tooltip("Optional. The root GameObject that wraps the whole minimap hierarchy (MapMask + MapContent + PlayerArrow + MarkersParent). If set, the map is hidden / shown via SetActive on this GameObject. If left empty, the map falls back to toggling Graphic.enabled on each UI element.")]
+    [SerializeField] private GameObject _mapRoot;
+    [Tooltip("Parent RectTransform that moves (anti-player) and rotates (player yaw) every frame. The MapBackground sprite and the MarkersParent should be children of this transform so the whole map shifts under the player.")]
     [SerializeField] private RectTransform _mapContent;
-    [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. The _mapContent should be a child of this transform so the rectangular map sprite and the marker icons get clipped to the round shape. If left empty, the map is rendered as a plain rectangle (no clipping).")]
+    [Tooltip("Optional. A parent RectTransform that has a circular Image + Mask component on it. The _mapContent should be a child of this transform.")]
     [SerializeField] private RectTransform _mapMask;
-    [Tooltip("Player arrow icon. Should be a child of _mapMask (not of _mapContent) and sit at the centre. It does NOT rotate with the map - the player arrow always points up on the screen because the WORLD rotates under the player.")]
+    [Tooltip("Player arrow icon. Should be a child of _mapMask (not of _mapContent) and sit at the centre. It does NOT rotate with the map.")]
     [SerializeField] private RectTransform _playerArrow;
-    [Tooltip("Parent for spawned marker icons. Should be a child of _mapContent (so markers rotate and pan with the map).")]
+    [Tooltip("Parent for spawned marker icons. Should be a child of _mapContent.")]
     [SerializeField] private RectTransform _markersParent;
-    [Tooltip("Optional. Parent for marker arrows (shown at the edge of the map when a marker is outside _mapWorldSize / 2). Should be a child of _mapContent so the arrows rotate with the map. Leave empty if you do not want GTA-style edge arrows.")]
+    [Tooltip("Optional. Parent for marker arrows. Should be a child of _mapContent. Leave empty if you do not want GTA-style edge arrows.")]
     [SerializeField] private RectTransform _markersEdgeParent;
-    [Tooltip("Prefab for a single marker icon. The component is just a RectTransform + Image.")]
+    [Tooltip("Prefab for a single marker icon.")]
     [SerializeField] private RectTransform _markerIconPrefab;
-    [Tooltip("Prefab for an edge-pointing arrow shown at the rim of the map when the marker is outside the visible area. Same shape as the player arrow or a chevron. Leave empty if edge arrows are not wanted.")]
+    [Tooltip("Prefab for an edge-pointing arrow. Leave empty if edge arrows are not wanted.")]
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("World <-> Pixel mapping")]
-    [Tooltip("Full size of the location in world units (X, Z). For a 200x200 m location, set to (200, 200). This is the size that fits inside the MapBackground sprite.")]
+    [Tooltip("Full size of the location in world units (X, Z). For a 200x200 m location, set to (200, 200).")]
     [SerializeField] private Vector2 _mapWorldSize = new Vector2(200f, 200f);
     [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size. For a 200x200 m location with a 2000x2000 px sprite, the ratio is 10 px / m.")]
     [SerializeField] private float _mapPixelSize = 2000f;
-    [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point. Set this to the (X, _, Z) of the middle of your map - eg (100, 0, 100) for a 200x200 m location whose corner is at the origin.")]
+    [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Edge arrows")]
@@ -46,6 +48,7 @@ public class MapUI : MonoBehaviour
     private bool _isOpen;
     private float _pxPerMeter;
     private bool _playerReady;
+    private bool _hasRoot;
 
     [Inject] private PlayerMovement _movement;
 
@@ -59,7 +62,8 @@ public class MapUI : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        CollectGraphics();
+        _hasRoot = _mapRoot != null;
+        if (!_hasRoot) CollectGraphics();
         SetOpen(false);
     }
 
@@ -76,45 +80,26 @@ public class MapUI : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    // Cache every Graphic (Image / Text / RawImage) that belongs to the
-    // minimap so we can toggle visibility by enabling / disabling them.
-    // We collect from the three map-specific subtrees (_mapContent,
-    // _playerArrow, and the Image on _mapMask itself) instead of the
-    // whole host: when MapUI is placed on PlayerUI, GetComponentsInChildren
-    // would catch every UI element on the HUD (health bar, hunger bar,
-    // inventory, etc.) and hide all of them when the map is closed.
     private void CollectGraphics()
     {
         _graphics.Clear();
         _behavioursToToggle.Clear();
 
-        // _mapMask itself has an Image (the round sprite that shows the
-        // mask outline). It is a sibling of _mapContent (both are children
-        // of PlayerUI when MapUI lives on PlayerUI), so neither of the
-        // subtree scans below picks it up. Add it explicitly so the
-        // circle disappears with the rest of the minimap.
         if (_mapMask != null)
         {
             var maskImage = _mapMask.GetComponent<Graphic>();
             if (maskImage != null) _graphics.Add(maskImage);
         }
 
-        // _mapContent contains the rectangular map sprite and the marker
-        // icons. Hide its Graphics when the map is closed.
         if (_mapContent != null)
             _mapContent.GetComponentsInChildren(true, _graphics);
 
-        // _playerArrow is a sibling (child of _mapMask, not _mapContent)
-        // so it would not be picked up by the previous call. Add it
-        // separately.
         if (_playerArrow != null)
         {
             var arrowGraphics = _playerArrow.GetComponentsInChildren<Graphic>(true);
             _graphics.AddRange(arrowGraphics);
         }
 
-        // Also toggle Mask components inside the map subtree so the
-        // mask's draw call is skipped when the map is hidden.
         if (_mapMask != null)
         {
             var masks = _mapMask.GetComponentsInChildren<Mask>(true);
@@ -127,6 +112,18 @@ public class MapUI : MonoBehaviour
     public void SetOpen(bool open)
     {
         _isOpen = open;
+
+        // Preferred path: hide the whole map subtree via SetActive. This
+        // is more reliable than toggling Graphic.enabled because it also
+        // skips Update / OnEnable cycles on every UI element.
+        if (_hasRoot)
+        {
+            _mapRoot.SetActive(open);
+            return;
+        }
+
+        // Fallback path: toggle individual UI elements. Used when the
+        // user has not assigned _mapRoot.
         for (int i = 0; i < _graphics.Count; i++)
         {
             if (_graphics[i] != null) _graphics[i].enabled = open;
@@ -159,6 +156,12 @@ public class MapUI : MonoBehaviour
 
         if (_markerIconPrefab == null) return;
 
+        // Hide the marker parents during rebuild so that markers spawned
+        // in a hidden state stay hidden until the map is open. The
+        // parents are children of _mapContent / _mapRoot so SetActive
+        // toggling on _mapRoot handles visibility for us - we just have
+        // to make sure the spawned icons are not visible before the map
+        // is open.
         var all = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
         foreach (var m in all)
         {
@@ -183,8 +186,6 @@ public class MapUI : MonoBehaviour
     {
         if (!_isOpen) return;
 
-        // Lazy init: Zenject injects AFTER Awake, so the first Update
-        // call is the earliest place we can grab the player reference.
         if (!_playerReady)
         {
             if (_movement == null) return;
@@ -195,9 +196,18 @@ public class MapUI : MonoBehaviour
 
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
 
+        // The map background sprite is _mapPixelSize wide (default 2000
+        // px). The visible map circle has radius _mapPixelRadius (default
+        // 150 px, half of the mask). For the background to always cover
+        // the mask regardless of where the player is on the map, the
+        // shift amount is clamped so that the background's edges never
+        // recede past the mask's edges.
+        float maxShiftX = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
+        float maxShiftY = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
+
         _mapContent.localPosition = new Vector3(
-            -playerDelta.x * _pxPerMeter,
-            -playerDelta.z * _pxPerMeter,
+            Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShiftX, maxShiftX),
+            Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShiftY, maxShiftY),
             0f);
 
         float playerYaw = _playerTransform.eulerAngles.y;
