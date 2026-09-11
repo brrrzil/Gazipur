@@ -49,6 +49,7 @@ public class MapUI : MonoBehaviour
     private float _pxPerMeter;
     private bool _playerReady;
     private bool _hasRoot;
+    private bool _markersBuilt;
 
     [Inject] private PlayerMovement _movement;
 
@@ -67,17 +68,13 @@ public class MapUI : MonoBehaviour
         SetOpen(false);
     }
 
-    private void OnEnable()
-    {
-        if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
-            _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
-        RebuildMarkers();
-    }
+    private bool _graphicsCollected;
 
-    private void OnDestroy()
+    private void EnsureGraphicsCollected()
     {
-        if (Instance == this) Instance = null;
+        if (_graphicsCollected) return;
+        CollectGraphics();
+        _graphicsCollected = true;
     }
 
     private void CollectGraphics()
@@ -109,6 +106,18 @@ public class MapUI : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
+            _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
+        _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     public void SetOpen(bool open)
     {
         _isOpen = open;
@@ -119,11 +128,16 @@ public class MapUI : MonoBehaviour
         if (_hasRoot)
         {
             _mapRoot.SetActive(open);
+            if (open && !_markersBuilt) RebuildMarkers();
             return;
         }
 
         // Fallback path: toggle individual UI elements. Used when the
-        // user has not assigned _mapRoot.
+        // user has not assigned _mapRoot. Lazily build the marker list
+        // the first time the map opens so we do not pay the Find cost
+        // at scene load.
+        if (open && !_markersBuilt) RebuildMarkers();
+
         for (int i = 0; i < _graphics.Count; i++)
         {
             if (_graphics[i] != null) _graphics[i].enabled = open;
@@ -154,7 +168,11 @@ public class MapUI : MonoBehaviour
         }
         _markers.Clear();
 
-        if (_markerIconPrefab == null) return;
+        if (_markerIconPrefab == null)
+        {
+            _markersBuilt = true;
+            return;
+        }
 
         // Hide the marker parents during rebuild so that markers spawned
         // in a hidden state stay hidden until the map is open. The
@@ -180,6 +198,7 @@ public class MapUI : MonoBehaviour
 
             _markers.Add(new TrackedMarker { Marker = m, Icon = icon, Arrow = arrow });
         }
+        _markersBuilt = true;
     }
 
     private void Update()
