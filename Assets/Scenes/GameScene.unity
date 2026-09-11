@@ -4716,7 +4716,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &102783010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45211,6 +45211,22 @@ PrefabInstance:
       propertyPath: _buyItemsPanel
       value: 
       objectReference: {fileID: 7300481391976509978}
+    - target: {fileID: 5047724525042763040, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _items.Array.size
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 5047724525042763040, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _items.Array.data[10].item
+      value: 
+      objectReference: {fileID: 11400000, guid: 757f0d7d81834a744a0881f9f23670a6, type: 2}
+    - target: {fileID: 5047724525042763040, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _items.Array.data[11].item
+      value: 
+      objectReference: {fileID: 11400000, guid: a6bca6b13e9c32b44919b4987e3fba27, type: 2}
+    - target: {fileID: 5047724525042763040, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
+      propertyPath: _items.Array.data[11].isSingle
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5866731703769001172, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
       propertyPath: m_Name
       value: GameManager
@@ -93070,8 +93086,8 @@ MonoBehaviour:
   _markerIconPrefab: {fileID: 8154647190314918618, guid: 3898f462a44680e4f99188865a8b6848, type: 3}
   _markerArrowPrefab: {fileID: 1579537487295723615, guid: 7ec90bae77f10534280a5b991025c39d, type: 3}
   _mapWorldSize: {x: 200, y: 200}
-  _mapPixelSize: 1000
-  _mapCenter: {x: 0, y: 0, z: 0}
+  _mapPixelSize: 550
+  _mapCenter: {x: 449, y: 0, z: 369}
   _mapPixelRadius: 150
   _collectedPrefix: map_marker_collected_
 --- !u!224 &1543783955576237892
@@ -104758,11 +104774,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 1000
+      value: 550
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 1000
+      value: 550
       objectReference: {fileID: 0}
     - target: {fileID: 6399660856721933543, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_SizeDelta.x
