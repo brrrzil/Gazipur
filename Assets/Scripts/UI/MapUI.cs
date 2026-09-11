@@ -203,6 +203,14 @@ public class MapUI : MonoBehaviour
 
     private void Update()
     {
+        // Cheat: M toggles the map (works whether the map has been bought
+        // or not - useful for debugging / testing).
+        if (UnityEngine.InputSystem.Keyboard.current != null
+            && UnityEngine.InputSystem.Keyboard.current.mKey.wasPressedThisFrame)
+        {
+            Toggle();
+        }
+
         if (!_isOpen) return;
 
         if (!_playerReady)
