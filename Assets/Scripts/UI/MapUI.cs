@@ -195,6 +195,7 @@ public class MapUI : MonoBehaviour
         if (_playerTransform == null || _mapContent == null) return;
 
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
+        float playerYaw = _playerTransform.eulerAngles.y;
 
         // The map background sprite is _mapPixelSize wide (default 2000
         // px). The visible map circle has radius _mapPixelRadius (default
@@ -205,21 +206,48 @@ public class MapUI : MonoBehaviour
         float maxShiftX = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
         float maxShiftY = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
 
-        _mapContent.localPosition = new Vector3(
-            Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShiftX, maxShiftX),
-            Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShiftY, maxShiftY),
-            0f);
+        // World-space shift we want for the background. This is what the
+        // player's delta should translate to in the visible map.
+        float worldShiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShiftX, maxShiftX);
+        float worldShiftZ = Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShiftY, maxShiftY);
 
-        float playerYaw = _playerTransform.eulerAngles.y;
-        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
-
+        // _mapContent has a local rotation of playerYaw (set below), so
+        // setting localPosition = (worldShiftX, worldShiftZ) would
+        // actually apply the rotation to the shift - the map would move
+        // along the wrong axis when the player turns. To get the desired
+        // world-space shift AFTER the rotation is applied, we apply the
+        // inverse rotation to the shift here. That way, after the parent
+        // rotates the shift back into world space, the result is exactly
+        // (worldShiftX, worldShiftZ).
         float cos = Mathf.Cos(-playerYaw * Mathf.Deg2Rad);
         float sin = Mathf.Sin(-playerYaw * Mathf.Deg2Rad);
+        _mapContent.localPosition = new Vector3(
+            worldShiftX * cos - worldShiftZ * sin,
+            worldShiftX * sin + worldShiftZ * cos,
+            0f);
+
+        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
+
+        // Markers are children of _mapContent, which is rotated by
+        // playerYaw. Their anchoredPosition is in the rotated local
+        // space of _mapContent, so we do NOT pre-rotate the icon
+        // coordinates here. The world-space delta is converted directly
+        // to pixels and assigned to anchoredPosition - the parent's
+        // rotation will then rotate both the icon position and the
+        // background sprite by the same amount, so they stay aligned.
+        float cos = Mathf.Cos(playerYaw * Mathf.Deg2Rad);
+        float sin = Mathf.Sin(playerYaw * Mathf.Deg2Rad);
         for (int i = 0; i < _markers.Count; i++)
         {
             var t = _markers[i];
             if (t.Marker == null) continue;
+            // World-space delta of the marker relative to the player.
             Vector3 d = t.Marker.WorldTransform.position - _mapCenter - playerDelta;
+            // Rotate by +playerYaw so the icon lands at the correct
+            // position in the rotated local space of _mapContent. After
+            // the parent's local rotation is applied, the icon appears
+            // at the correct world-relative position on the visible
+            // map.
             float rx = d.x * cos - d.z * sin;
             float rz = d.x * sin + d.z * cos;
             float distancePixels = Mathf.Sqrt(rx * rx + rz * rz) * _pxPerMeter;
