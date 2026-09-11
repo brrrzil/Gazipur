@@ -40,6 +40,10 @@ public class MapUI : MonoBehaviour
     [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) at OnEnable.")]
     [SerializeField] private float _mapPixelRadius = 150f;
 
+    [Header("Rotation")]
+    [Tooltip("Extra rotation in degrees added to the player's yaw when the map rotates. Default 0. Set this to compensate for a map sprite that is drawn upside-down (set 180), or to flip the rotation direction (set 180), or to align the sprite's 'north' to the world's '+Z' (typically 0 for a sprite that already has north pointing up).")]
+    [SerializeField] private float _mapRotationOffset = 0f;
+
     [Header("Persistence")]
     [Tooltip("PlayerPrefs key prefix for 'marker collected' state. The full key is _collectedPrefix + marker.Id.")]
     [SerializeField] private string _collectedPrefix = "map_marker_collected_";
@@ -238,7 +242,7 @@ public class MapUI : MonoBehaviour
         // centre, which is also the centre of the radar where the
         // player arrow sits. Movement is delegated to _mapBackground.
         _mapContent.localPosition = Vector3.zero;
-        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw);
+        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw + _mapRotationOffset);
 
         if (_mapBackground != null)
             _mapBackground.anchoredPosition = new Vector2(shiftX, shiftY);
