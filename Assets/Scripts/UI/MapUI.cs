@@ -78,15 +78,26 @@ public class MapUI : MonoBehaviour
 
     // Cache every Graphic (Image / Text / RawImage) that belongs to the
     // minimap so we can toggle visibility by enabling / disabling them.
-    // We collect from the two map-specific subtrees (_mapContent and
-    // _playerArrow) instead of the whole host: when MapUI is placed on
-    // PlayerUI, GetComponentsInChildren would catch every UI element on
-    // the HUD (health bar, hunger bar, inventory, etc.) and hide all of
-    // them when the map is closed.
+    // We collect from the three map-specific subtrees (_mapContent,
+    // _playerArrow, and the Image on _mapMask itself) instead of the
+    // whole host: when MapUI is placed on PlayerUI, GetComponentsInChildren
+    // would catch every UI element on the HUD (health bar, hunger bar,
+    // inventory, etc.) and hide all of them when the map is closed.
     private void CollectGraphics()
     {
         _graphics.Clear();
         _behavioursToToggle.Clear();
+
+        // _mapMask itself has an Image (the round sprite that shows the
+        // mask outline). It is a sibling of _mapContent (both are children
+        // of PlayerUI when MapUI lives on PlayerUI), so neither of the
+        // subtree scans below picks it up. Add it explicitly so the
+        // circle disappears with the rest of the minimap.
+        if (_mapMask != null)
+        {
+            var maskImage = _mapMask.GetComponent<Graphic>();
+            if (maskImage != null) _graphics.Add(maskImage);
+        }
 
         // _mapContent contains the rectangular map sprite and the marker
         // icons. Hide its Graphics when the map is closed.

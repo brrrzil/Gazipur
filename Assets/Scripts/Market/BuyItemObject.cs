@@ -37,6 +37,20 @@ public class BuyItemObject : MonoBehaviour, IPointerClickHandler
     }
     private void Buy()
     {
+        // MapItem is consumed immediately on purchase - it opens the
+        // minimap and is NOT added to the inventory. The player does
+        // not need to keep the item in their bags: once bought, the
+        // minimap is permanently unlocked for the session.
+        if (_item.ItemPrefab is MapItem)
+        {
+            if (MapUI.Instance != null)
+                MapUI.Instance.Unlock();
+            if (_isSingle) gameObject.SetActive(false);
+            _data.ChangeMoney(-_price);
+            _sound.UIPlay(EnumData.UISound.buy);
+            return;
+        }
+
         if (_inventory.AddItem(_item, 1) > 0)
         {
             return;
