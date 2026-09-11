@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
 
-[RequireComponent(typeof(CanvasGroup))]
 public class MapUI : MonoBehaviour
 {
     public static MapUI Instance { get; private set; }
@@ -41,6 +40,7 @@ public class MapUI : MonoBehaviour
     [SerializeField] private string _collectedPrefix = "map_marker_collected_";
 
     private CanvasGroup _canvasGroup;
+    private GameObject _canvasGroupHost;
     private readonly List<TrackedMarker> _markers = new List<TrackedMarker>();
     private Transform _playerTransform;
     private bool _isOpen;
@@ -58,7 +58,16 @@ public class MapUI : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        _canvasGroup = GetComponent<CanvasGroup>();
+
+        // Create a child GameObject that hosts a private CanvasGroup, so
+        // the visibility of the minimap does NOT affect the parent
+        // (eg PlayerUI). This way the user can drop the MapUI component
+        // on PlayerUI directly and only the map's own group is hidden,
+        // not the whole HUD.
+        _canvasGroupHost = new GameObject("MapUI_Group", typeof(RectTransform));
+        _canvasGroupHost.transform.SetParent(transform, false);
+        _canvasGroup = _canvasGroupHost.AddComponent<CanvasGroup>();
+
         if (_movement != null) _playerTransform = _movement.transform;
         SetOpen(false);
     }
@@ -79,6 +88,7 @@ public class MapUI : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        if (_canvasGroupHost != null) Destroy(_canvasGroupHost);
     }
 
     public void SetOpen(bool open)
