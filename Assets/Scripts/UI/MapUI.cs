@@ -45,7 +45,7 @@ public class MapUI : MonoBehaviour
     [SerializeField] private float _mapRotationOffset = 0f;
 
     [Header("Zoom")]
-    [Tooltip("Map zoom factor. 1 = default scale (everything you see on the radar represents _mapPixelRadius metres around the player). 2 = the radar covers half as much world distance (closer view, larger icons). 0.5 = the radar covers twice as much world distance (wider view, smaller icons). The map sprite is also scaled by this factor so it never reveals empty space outside the sprite.")]
+    [Tooltip("Scale factor for the entire map subtree (background sprite + marker icons). 1 = default scale. 2 = everything is twice as big (you see less of the world in the same radar area, but each visible element is larger). 0.5 = everything is half as big (you see more of the world). Set this once in the Inspector for a static scale.")]
     [SerializeField] private float _zoom = 1f;
 
     [Header("Persistence")]
@@ -226,11 +226,10 @@ public class MapUI : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null)
+        if (Keyboard.current != null
+            && Keyboard.current.mKey.wasPressedThisFrame)
         {
-            if (Keyboard.current.mKey.wasPressedThisFrame) Toggle();
-            if (Keyboard.current.zKey.wasPressedThisFrame) _zoom = Mathf.Min(_zoom * 1.5f, 4f);
-            if (Keyboard.current.xKey.wasPressedThisFrame) _zoom = Mathf.Max(_zoom / 1.5f, 0.25f);
+            Toggle();
         }
 
         if (!_isOpen) return;
@@ -250,16 +249,10 @@ public class MapUI : MonoBehaviour
         // Each axis uses its own pxPerMeter (X for world X, Y for world Z)
         // so the background aligns with the world even when the map
         // sprite is non-square (eg 1024x823).
-        // The zoom factor scales the world-to-pixel conversion: higher
-        // zoom = fewer metres per pixel = closer view, larger icons.
-        float effectivePxPerMeterX = _pxPerMeter.x * _zoom;
-        float effectivePxPerMeterY = _pxPerMeter.y * _zoom;
-        float effectiveHalfX = _mapPixelSize.x * 0.5f;
-        float effectiveHalfY = _mapPixelSize.y * 0.5f;
-        float maxShiftX = Mathf.Max(0f, effectiveHalfX - _mapPixelRadius);
-        float maxShiftY = Mathf.Max(0f, effectiveHalfY - _mapPixelRadius);
-        float shiftX = Mathf.Clamp(-playerDelta.x * effectivePxPerMeterX, -maxShiftX, maxShiftX);
-        float shiftY = Mathf.Clamp(-playerDelta.z * effectivePxPerMeterY, -maxShiftY, maxShiftY);
+        float maxShiftX = Mathf.Max(0f, _mapPixelSize.x * 0.5f - _mapPixelRadius);
+        float maxShiftY = Mathf.Max(0f, _mapPixelSize.y * 0.5f - _mapPixelRadius);
+        float shiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter.x, -maxShiftX, maxShiftX);
+        float shiftY = Mathf.Clamp(-playerDelta.z * _pxPerMeter.y, -maxShiftY, maxShiftY);
 
         // _mapContent stays at the centre of MapMask (Awake forced the
         // pivot and anchoredPosition). Its rotation pivots around that
@@ -267,6 +260,12 @@ public class MapUI : MonoBehaviour
         // player arrow sits. Movement is delegated to _mapBackground.
         _mapContent.localPosition = Vector3.zero;
         _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw + _mapRotationOffset);
+        // Scale-based zoom: scale the entire map subtree so icons and
+        // background both grow together. The player's world delta is
+        // mapped to the same number of pixels regardless of zoom, so
+        // the player stays centred and the world does not appear to
+        // 'pan faster' at higher zoom.
+        if (_zoom > 0f) _mapContent.localScale = new Vector3(_zoom, _zoom, 1f);
 
         if (_mapBackground != null)
             _mapBackground.anchoredPosition = new Vector2(shiftX, shiftY);
@@ -281,8 +280,8 @@ public class MapUI : MonoBehaviour
             var t = _markers[i];
             if (t.Marker == null) continue;
             Vector3 d = t.Marker.WorldTransform.position - _playerTransform.position;
-            float rx = d.x * _pxPerMeter.x * _zoom;
-            float rz = d.z * _pxPerMeter.y * _zoom;
+            float rx = d.x * _pxPerMeter.x;
+            float rz = d.z * _pxPerMeter.y;
             float distancePixels = Mathf.Sqrt(rx * rx + rz * rz);
 
             if (distancePixels <= _mapPixelRadius)
