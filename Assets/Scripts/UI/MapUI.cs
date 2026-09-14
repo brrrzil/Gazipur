@@ -33,7 +33,7 @@ public class MapUI : MonoBehaviour
     [SerializeField] private Vector2 _mapWorldSize = new Vector2(270f, 270f);
     [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. For a 1024x823 sprite, set to (1024, 823). The map sprite IS the location, stretched over _mapWorldSize metres.")]
     [SerializeField] private Vector2 _mapPixelSize = new Vector2(1024f, 823f);
-    [Tooltip("World position used as the map's origin. The sprite's bottom-left corner in local space corresponds to this world point. If left at (0, 0, 0), the script auto-uses the player's position when the map is first opened so the player starts at the centre of the visible mask regardless of where they spawned. Set to a specific world point (eg the literal corner of the location) if you want to fix the projection.")]
+    [Tooltip("World position of the SPRITE'S BOTTOM-LEFT CORNER. The sprite's local (0, 0) in pixels corresponds to this world point. For a sprite that is drawn 1:1 with the location, set this to the world coordinates of the location's bottom-left corner.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Map Center helpers (Editor only)")]
@@ -193,8 +193,6 @@ public class MapUI : MonoBehaviour
         SetOpen(true);
     }
 
-    private bool _initialCenterSet;
-
     private void RebuildMarkers()
     {
         for (int i = _markers.Count - 1; i >= 0; i--)
@@ -249,20 +247,6 @@ public class MapUI : MonoBehaviour
             _playerReady = true;
         }
         if (_playerTransform == null || _mapContent == null) return;
-
-        // Auto-centre: if the user left _mapCenter at (0, 0, 0), treat
-        // it as 'unset' and lock it to the player's current world
-        // position the first time the map is open. This way the player
-        // always appears at the centre of the mask regardless of
-        // where they spawned, and walking the player keeps the world
-        // map drifting around them. The user can override by setting
-        // _mapCenter to a non-zero world point - in that case the
-        // player will appear off-centre when they walk away from it.
-        if (!_initialCenterSet && _mapCenter == Vector3.zero)
-        {
-            _mapCenter = _playerTransform.position;
-            _initialCenterSet = true;
-        }
 
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
         float playerYaw = _playerTransform.eulerAngles.y;
@@ -404,12 +388,47 @@ public class MapUI : MonoBehaviour
         if (go == null)
         {
             Debug.LogWarning("[MapUI] No GameObject selected in the Hierarchy. " +
-                "Select an empty GameObject placed at the visual centre of the location, " +
+                "Select an empty GameObject placed at the visual bottom-left corner of the location, " +
                 "then right-click the MapUI component and pick this menu item.");
             return;
         }
         _mapCenter = go.transform.position;
-        Debug.Log($"[MapUI] _mapCenter set to {_mapCenter} (from selected object '{go.name}').");
+        Debug.Log($"[MapUI] _mapCenter set to {_mapCenter} (from selected object '{go.name}'). " +
+            "This is treated as the sprite's bottom-left corner in world space.");
+#endif
+    }
+
+    // Inspector context menu: 'Set Map Center To Terrain Bottom-Left'.
+    // Editor-only. Picks the terrain with the largest bounds in the
+    // scene and uses its bottom-left XZ corner as the sprite origin.
+    // Convenient when the location is a single terrain object.
+    [ContextMenu("Set Map Center To Terrain Bottom-Left")]
+    private void SetMapCenterToTerrainBottomLeft()
+    {
+#if UNITY_EDITOR
+        var terrains = UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        Terrain best = null;
+        Bounds bestBounds = new Bounds();
+        foreach (var t in terrains)
+        {
+            var b = t.terrainData.bounds;
+            b.center += t.transform.position;
+            if (best == null || b.size.sqrMagnitude > bestBounds.size.sqrMagnitude)
+            {
+                best = t;
+                bestBounds = b;
+            }
+        }
+        if (best == null)
+        {
+            Debug.LogWarning("[MapUI] No Terrain found in the scene. " +
+                "Place an empty GameObject at the bottom-left corner of the location, " +
+                "select it, and use 'Set Map Center From Selected Object'.");
+            return;
+        }
+        Vector3 origin = new Vector3(bestBounds.min.x, 0f, bestBounds.min.z);
+        _mapCenter = origin;
+        Debug.Log($"[MapUI] _mapCenter set to {origin} (bottom-left XZ corner of terrain '{best.name}', bounds {bestBounds.size}).");
 #endif
     }
 }
