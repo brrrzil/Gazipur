@@ -64409,12 +64409,13 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 971419240}
+  - {fileID: 7801160313171472245}
   m_Father: {fileID: 1543082017960989017}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 180, y: -180}
+  m_SizeDelta: {x: 320, y: 320}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1525078461
 GameObject:
@@ -93047,7 +93048,6 @@ RectTransform:
   - {fileID: 5012313736217270127}
   - {fileID: 7918876443315356166}
   - {fileID: 174635649940036625}
-  - {fileID: 7801160313171472245}
   - {fileID: 6095854945409903135}
   - {fileID: 8859007342623307832}
   - {fileID: 1524791604}
@@ -93092,10 +93092,11 @@ MonoBehaviour:
   _markerIconPrefab: {fileID: 8154647190314918618, guid: 3898f462a44680e4f99188865a8b6848, type: 3}
   _markerArrowPrefab: {fileID: 1579537487295723615, guid: 7ec90bae77f10534280a5b991025c39d, type: 3}
   _mapWorldSize: {x: 270, y: 270}
-  _mapPixelSize: 512
+  _mapPixelSize: {x: 1024, y: 823}
   _mapCenter: {x: 458, y: 0, z: 407}
   _mapPixelRadius: 160
   _mapRotationOffset: 0
+  _zoom: 1
   _collectedPrefix: map_marker_collected_
 --- !u!224 &1543783955576237892
 RectTransform:
@@ -94715,7 +94716,7 @@ MonoBehaviour:
     m_BestFit: 1
     m_MinSize: 35
     m_MaxSize: 50
-    m_Alignment: 3
+    m_Alignment: 1
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
@@ -104881,11 +104882,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7111226153861327818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -768
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7111226153861327818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 280.80005
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7111226153861327818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -114311,17 +114312,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2885219065056888824}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1543082017960989017}
+  m_Father: {fileID: 1524791604}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.9261482}
-  m_AnchorMax: {x: 0.19681258, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -24.4, y: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -10, y: 0}
+  m_SizeDelta: {x: 0, y: 80}
   m_Pivot: {x: 1, y: 1}
 --- !u!224 &7815403716734200644
 RectTransform:
