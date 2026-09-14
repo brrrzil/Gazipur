@@ -41,8 +41,8 @@ public class MapUI : MonoBehaviour
     [SerializeField] private float _mapPixelRadius = 150f;
 
     [Header("Rotation")]
-    [Tooltip("Extra rotation in degrees added to the player's yaw when the map rotates. Default 0. Set this to compensate for a map sprite that is drawn upside-down (set 180), or to flip the rotation direction (set 180), or to align the sprite's 'north' to the world's '+Z' (typically 0 for a sprite that already has north pointing up).")]
-    [SerializeField] private float _mapRotationOffset = 0f;
+    [Tooltip("Extra degrees added to the player arrow rotation. Default 0. Use this if the arrow sprite is drawn pointing in a direction other than 'up' (eg if it points right, set 90 so it points up when the player faces north; if it points down, set 180). The map sprite itself is NOT rotated any more - only the arrow rotates.")]
+    [SerializeField] private float _playerArrowBaseAngle = 0f;
 
     [Header("Zoom")]
     [Tooltip("Scale factor for the entire map subtree (background sprite + marker icons). 1 = default scale. 2 = everything is twice as big (you see less of the world in the same radar area, but each visible element is larger). 0.5 = everything is half as big (you see more of the world). Set this once in the Inspector for a static scale.")]
@@ -259,13 +259,27 @@ public class MapUI : MonoBehaviour
         // centre, which is also the centre of the radar where the
         // player arrow sits. Movement is delegated to _mapBackground.
         _mapContent.localPosition = Vector3.zero;
-        _mapContent.localRotation = Quaternion.Euler(0f, 0f, playerYaw + _mapRotationOffset);
+        // The map sprite is drawn with a perspective baked in, so it
+        // must NOT rotate. Player facing direction is conveyed by
+        // rotating the arrow, not the map.
+        _mapContent.localRotation = Quaternion.identity;
         // Scale-based zoom: scale the entire map subtree so icons and
         // background both grow together. The player's world delta is
         // mapped to the same number of pixels regardless of zoom, so
         // the player stays centred and the world does not appear to
         // 'pan faster' at higher zoom.
         if (_zoom > 0f) _mapContent.localScale = new Vector3(_zoom, _zoom, 1f);
+
+        // Rotate the player arrow to show the facing direction. The
+        // arrow is a child of _mapMask (not _mapContent) so it is not
+        // affected by the zoom scale; we apply the rotation directly
+        // in MapMask local space. -playerYaw because the arrow sprite
+        // is typically drawn pointing up (+Y), and we want it to point
+        // 'up' when the player faces the sprite's 'up' direction; a
+        // positive playerYaw (player turns east) should rotate the
+        // arrow clockwise on the screen.
+        if (_playerArrow != null)
+            _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -playerYaw + _playerArrowBaseAngle);
 
         if (_mapBackground != null)
             _mapBackground.anchoredPosition = new Vector2(shiftX, shiftY);
