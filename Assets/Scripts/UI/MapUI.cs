@@ -44,6 +44,10 @@ public class MapUI : MonoBehaviour
     [Tooltip("Extra rotation in degrees added to the player's yaw when the map rotates. Default 0. Set this to compensate for a map sprite that is drawn upside-down (set 180), or to flip the rotation direction (set 180), or to align the sprite's 'north' to the world's '+Z' (typically 0 for a sprite that already has north pointing up).")]
     [SerializeField] private float _mapRotationOffset = 0f;
 
+    [Header("Zoom")]
+    [Tooltip("Map zoom factor. 1 = default scale (everything you see on the radar represents _mapPixelRadius metres around the player). 2 = the radar covers half as much world distance (closer view, larger icons). 0.5 = the radar covers twice as much world distance (wider view, smaller icons). The map sprite is also scaled by this factor so it never reveals empty space outside the sprite.")]
+    [SerializeField] private float _zoom = 1f;
+
     [Header("Persistence")]
     [Tooltip("PlayerPrefs key prefix for 'marker collected' state. The full key is _collectedPrefix + marker.Id.")]
     [SerializeField] private string _collectedPrefix = "map_marker_collected_";
@@ -222,10 +226,11 @@ public class MapUI : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null
-            && Keyboard.current.mKey.wasPressedThisFrame)
+        if (Keyboard.current != null)
         {
-            Toggle();
+            if (Keyboard.current.mKey.wasPressedThisFrame) Toggle();
+            if (Keyboard.current.zKey.wasPressedThisFrame) _zoom = Mathf.Min(_zoom * 1.5f, 4f);
+            if (Keyboard.current.xKey.wasPressedThisFrame) _zoom = Mathf.Max(_zoom / 1.5f, 0.25f);
         }
 
         if (!_isOpen) return;
@@ -245,10 +250,16 @@ public class MapUI : MonoBehaviour
         // Each axis uses its own pxPerMeter (X for world X, Y for world Z)
         // so the background aligns with the world even when the map
         // sprite is non-square (eg 1024x823).
-        float maxShiftX = Mathf.Max(0f, _mapPixelSize.x * 0.5f - _mapPixelRadius);
-        float maxShiftY = Mathf.Max(0f, _mapPixelSize.y * 0.5f - _mapPixelRadius);
-        float shiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter.x, -maxShiftX, maxShiftX);
-        float shiftY = Mathf.Clamp(-playerDelta.z * _pxPerMeter.y, -maxShiftY, maxShiftY);
+        // The zoom factor scales the world-to-pixel conversion: higher
+        // zoom = fewer metres per pixel = closer view, larger icons.
+        float effectivePxPerMeterX = _pxPerMeter.x * _zoom;
+        float effectivePxPerMeterY = _pxPerMeter.y * _zoom;
+        float effectiveHalfX = _mapPixelSize.x * 0.5f;
+        float effectiveHalfY = _mapPixelSize.y * 0.5f;
+        float maxShiftX = Mathf.Max(0f, effectiveHalfX - _mapPixelRadius);
+        float maxShiftY = Mathf.Max(0f, effectiveHalfY - _mapPixelRadius);
+        float shiftX = Mathf.Clamp(-playerDelta.x * effectivePxPerMeterX, -maxShiftX, maxShiftX);
+        float shiftY = Mathf.Clamp(-playerDelta.z * effectivePxPerMeterY, -maxShiftY, maxShiftY);
 
         // _mapContent stays at the centre of MapMask (Awake forced the
         // pivot and anchoredPosition). Its rotation pivots around that
@@ -270,8 +281,8 @@ public class MapUI : MonoBehaviour
             var t = _markers[i];
             if (t.Marker == null) continue;
             Vector3 d = t.Marker.WorldTransform.position - _playerTransform.position;
-            float rx = d.x * _pxPerMeter.x;
-            float rz = d.z * _pxPerMeter.y;
+            float rx = d.x * _pxPerMeter.x * _zoom;
+            float rz = d.z * _pxPerMeter.y * _zoom;
             float distancePixels = Mathf.Sqrt(rx * rx + rz * rz);
 
             if (distancePixels <= _mapPixelRadius)
