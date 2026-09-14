@@ -2338,7 +2338,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1713007941602344510, guid: 6e508a09a20059549bf9781e67ac0dee, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -133.16025
+      value: -134.5
       objectReference: {fileID: 0}
     - target: {fileID: 1713007941602344510, guid: 6e508a09a20059549bf9781e67ac0dee, type: 3}
       propertyPath: m_LocalPosition.y
@@ -4716,7 +4716,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &102783010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39285,6 +39285,11 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.6242957, y: 50, z: 0.24954376}
   m_Center: {x: 0, y: 24, z: 0}
+--- !u!224 &841267281 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &841471139
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -88972,7 +88977,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_TargetDisplay: 0
 --- !u!224 &615356492048519372
 RectTransform:
@@ -93081,14 +93086,16 @@ MonoBehaviour:
   _mapContent: {fileID: 240693423}
   _mapMask: {fileID: 971419240}
   _playerArrow: {fileID: 1483512212}
+  _mapBackground: {fileID: 841267281}
   _markersParent: {fileID: 393479153}
   _markersEdgeParent: {fileID: 816569468}
   _markerIconPrefab: {fileID: 8154647190314918618, guid: 3898f462a44680e4f99188865a8b6848, type: 3}
   _markerArrowPrefab: {fileID: 1579537487295723615, guid: 7ec90bae77f10534280a5b991025c39d, type: 3}
-  _mapWorldSize: {x: 200, y: 200}
-  _mapPixelSize: 550
-  _mapCenter: {x: 449, y: 0, z: 369}
-  _mapPixelRadius: 150
+  _mapWorldSize: {x: 270, y: 270}
+  _mapPixelSize: 512
+  _mapCenter: {x: 458, y: 0, z: 407}
+  _mapPixelRadius: 160
+  _mapRotationOffset: 0
   _collectedPrefix: map_marker_collected_
 --- !u!224 &1543783955576237892
 RectTransform:
@@ -104768,25 +104775,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1524791604}
     m_Modifications:
+    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7065b66c607828a42ae590168cf8f7fe, type: 3}
+    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_PreserveAspect
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2903127805141434633, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_Name
       value: MapMask
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 550
-      objectReference: {fileID: 0}
-    - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 550
-      objectReference: {fileID: 0}
-    - target: {fileID: 6399660856721933543, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 6399660856721933543, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7111226153861327818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_Pivot.x
@@ -104868,13 +104899,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7547807564325118954, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 7547807564325118954, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 10
+    - target: {fileID: 8332421684926136741, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 453952a17cea08a40af9d20c588592a8, type: 3}
+    - target: {fileID: 8634568627047266801, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7095d8a7a1fd7cc468fa16e3699084e1, type: 3}
+    - target: {fileID: 8634568627047266801, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_PreserveAspect
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
