@@ -36,6 +36,10 @@ public class MapUI : MonoBehaviour
     [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
+    [Header("Map Center helpers (Editor only)")]
+    [Tooltip("Editor-only: right-click the MapUI component header in the Inspector and pick 'Set Map Center To Player Position' to capture the player's current world position into _mapCenter. Place the player at the visual centre of the location before running the game.")]
+    [SerializeField] private bool _mapCenterEditorHelpers;
+
     [Header("Edge arrows")]
     [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) on the first OnEnable, then preserved across runs - the user's value is not overwritten afterwards. To force re-computation, set the field to 0 in the Inspector before entering Play mode.")]
     [SerializeField] private float _mapPixelRadius = 150f;
@@ -334,5 +338,49 @@ public class MapUI : MonoBehaviour
         if (string.IsNullOrEmpty(id)) return;
         PlayerPrefs.SetInt(_collectedPrefix + id, 1);
         PlayerPrefs.Save();
+    }
+
+    // Inspector context menu: 'Set Map Center To Player Position'.
+    // Available in the Editor at runtime - right-click the MapUI
+    // component header in the Inspector. Walks the scene for a
+    // PlayerMovement, reads its world position, and stores it as
+    // _mapCenter. Use this when the player stands at the visual
+    // centre of the location.
+    [ContextMenu("Set Map Center To Player Position")]
+    private void SetMapCenterToPlayerPosition()
+    {
+        var pm = FindFirstObjectByType<PlayerMovement>();
+        if (pm == null)
+        {
+            Debug.LogWarning("[MapUI] No PlayerMovement in the scene - " +
+                "enter Play mode and place the player at the centre of the location, " +
+                "then right-click the MapUI component and pick 'Set Map Center To Player Position'.");
+            return;
+        }
+        _mapCenter = pm.transform.position;
+        Debug.Log($"[MapUI] _mapCenter set to {_mapCenter} (player world position).");
+    }
+
+    // Inspector context menu: 'Set Map Center From Selected Object'.
+    // Use this in Edit mode: select a GameObject in the Hierarchy that
+    // sits at the visual centre of the location (eg an empty
+    // 'LocationCenter' GameObject the user drops into the scene), then
+    // pick this menu item. The selected transform's world position
+    // becomes _mapCenter.
+    [ContextMenu("Set Map Center From Selected Object")]
+    private void SetMapCenterFromSelection()
+    {
+#if UNITY_EDITOR
+        var go = UnityEditor.Selection.activeGameObject;
+        if (go == null)
+        {
+            Debug.LogWarning("[MapUI] No GameObject selected in the Hierarchy. " +
+                "Select an empty GameObject placed at the visual centre of the location, " +
+                "then right-click the MapUI component and pick this menu item.");
+            return;
+        }
+        _mapCenter = go.transform.position;
+        Debug.Log($"[MapUI] _mapCenter set to {_mapCenter} (from selected object '{go.name}').");
+#endif
     }
 }
