@@ -29,11 +29,11 @@ public class MapUI : MonoBehaviour
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("World <-> Pixel mapping")]
-    [Tooltip("Full size of the location in world units (X, Z). For a 200x200 m location, set to (200, 200).")]
-    [SerializeField] private Vector2 _mapWorldSize = new Vector2(200f, 200f);
-    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). The whole _mapWorldSize fits inside this pixel size. For a 200x200 m location with a 2000x2000 px sprite, set to (2000, 2000). For a non-square sprite (eg 1024x823) set both components - each axis scales independently.")]
+    [Tooltip("Radius in metres that fits inside the mask (from the player arrow at the centre to the rim of the radar). 30 = the player sees a 60 m diameter circle around themselves. The map sprite is scaled automatically so that this radius exactly fills the mask. Walking one metre shifts the map by _mapPixelRadius / _visibleWorldRadius pixels.")]
+    [SerializeField] private float _visibleWorldRadius = 30f;
+    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). For a 2000x2000 px sprite, set to (2000, 2000). For a non-square sprite (eg 1024x823) set both components - each axis scales independently.")]
     [SerializeField] private Vector2 _mapPixelSize = new Vector2(2000f, 2000f);
-    [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point.")]
+    [Tooltip("World position used as the 'centre' for the visible map area. If left at (0, 0, 0) the script uses the player's position at the moment the map is first opened (so the player starts at the centre of the mask regardless of where they spawned). Set this explicitly to fix the centre to a specific world point - eg the centre of the location - and the player will appear offset from the centre when they walk away from it.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Map Center helpers (Editor only)")]
@@ -110,11 +110,15 @@ public class MapUI : MonoBehaviour
         // radius to control which markers get the GTA-style rim arrow.
         if (_mapPixelRadius <= 0f && _mapMask != null && _mapMask.sizeDelta.x > 0f)
             _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        // _pxPerMeter is now a Vector2 (X, Y) so each world axis can
-        // scale independently to a non-square map sprite.
-        _pxPerMeter = new Vector2(
-            _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x),
-            _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y));
+        // pxPerMeter is derived from the visible-world-radius, NOT
+        // from the full sprite size. This is the key insight: the user
+        // cares about 'how many world metres fit inside the visible
+        // circle of the radar', not 'how many metres the entire sprite
+        // represents'. Setting _visibleWorldRadius to 30 means the
+        // mask shows a 60 m diameter around the player, regardless of
+        // how big the sprite is in the Inspector.
+        float pxPerUnit = _mapPixelRadius / Mathf.Max(0.01f, _visibleWorldRadius);
+        _pxPerMeter = new Vector2(pxPerUnit, pxPerUnit);
     }
 
     private void OnDestroy()
@@ -191,6 +195,8 @@ public class MapUI : MonoBehaviour
         SetOpen(true);
     }
 
+    private bool _initialCenterSet;
+
     private void RebuildMarkers()
     {
         for (int i = _markers.Count - 1; i >= 0; i--)
@@ -245,6 +251,20 @@ public class MapUI : MonoBehaviour
             _playerReady = true;
         }
         if (_playerTransform == null || _mapContent == null) return;
+
+        // Auto-centre: if the user left _mapCenter at (0, 0, 0), treat
+        // it as 'unset' and lock it to the player's current world
+        // position the first time the map is open. This way the player
+        // always appears at the centre of the mask regardless of
+        // where they spawned, and walking the player keeps the world
+        // map drifting around them. The user can override by setting
+        // _mapCenter to a non-zero world point - in that case the
+        // player will appear off-centre when they walk away from it.
+        if (!_initialCenterSet && _mapCenter == Vector3.zero)
+        {
+            _mapCenter = _playerTransform.position;
+            _initialCenterSet = true;
+        }
 
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
         float playerYaw = _playerTransform.eulerAngles.y;
