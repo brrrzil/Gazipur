@@ -29,11 +29,11 @@ public class MapUI : MonoBehaviour
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("World <-> Pixel mapping")]
-    [Tooltip("Radius in metres that fits inside the mask (from the player arrow at the centre to the rim of the radar). 30 = the player sees a 60 m diameter circle around themselves. The map sprite is scaled automatically so that this radius exactly fills the mask. Walking one metre shifts the map by _mapPixelRadius / _visibleWorldRadius pixels.")]
-    [SerializeField] private float _visibleWorldRadius = 30f;
-    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). For a 2000x2000 px sprite, set to (2000, 2000). For a non-square sprite (eg 1024x823) set both components - each axis scales independently.")]
-    [SerializeField] private Vector2 _mapPixelSize = new Vector2(2000f, 2000f);
-    [Tooltip("World position used as the 'centre' for the visible map area. If left at (0, 0, 0) the script uses the player's position at the moment the map is first opened (so the player starts at the centre of the mask regardless of where they spawned). Set this explicitly to fix the centre to a specific world point - eg the centre of the location - and the player will appear offset from the centre when they walk away from it.")]
+    [Tooltip("Size of the location in world metres (X, Z). The map sprite represents exactly this rectangle. For a 270x270 m location, set to (270, 270). The player walks through this rectangle and the map shows their position by projecting world metres to sprite pixels.")]
+    [SerializeField] private Vector2 _mapWorldSize = new Vector2(270f, 270f);
+    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. For a 1024x823 sprite, set to (1024, 823). The map sprite IS the location, stretched over _mapWorldSize metres.")]
+    [SerializeField] private Vector2 _mapPixelSize = new Vector2(1024f, 823f);
+    [Tooltip("World position used as the map's origin. The sprite's bottom-left corner in local space corresponds to this world point. If left at (0, 0, 0), the script auto-uses the player's position when the map is first opened so the player starts at the centre of the visible mask regardless of where they spawned. Set to a specific world point (eg the literal corner of the location) if you want to fix the projection.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Map Center helpers (Editor only)")]
@@ -110,15 +110,13 @@ public class MapUI : MonoBehaviour
         // radius to control which markers get the GTA-style rim arrow.
         if (_mapPixelRadius <= 0f && _mapMask != null && _mapMask.sizeDelta.x > 0f)
             _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        // pxPerMeter is derived from the visible-world-radius, NOT
-        // from the full sprite size. This is the key insight: the user
-        // cares about 'how many world metres fit inside the visible
-        // circle of the radar', not 'how many metres the entire sprite
-        // represents'. Setting _visibleWorldRadius to 30 means the
-        // mask shows a 60 m diameter around the player, regardless of
-        // how big the sprite is in the Inspector.
-        float pxPerUnit = _mapPixelRadius / Mathf.Max(0.01f, _visibleWorldRadius);
-        _pxPerMeter = new Vector2(pxPerUnit, pxPerUnit);
+        // pxPerMeter is derived directly from the location size and
+        // the sprite size. The sprite IS the location - 1 metre of
+        // world distance maps to exactly (_mapPixelSize / _mapWorldSize)
+        // pixels on the sprite.
+        _pxPerMeter = new Vector2(
+            _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x),
+            _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y));
     }
 
     private void OnDestroy()
@@ -269,12 +267,23 @@ public class MapUI : MonoBehaviour
         Vector3 playerDelta = _playerTransform.position - _mapCenter;
         float playerYaw = _playerTransform.eulerAngles.y;
 
-        // Background shift, clamped so the sprite always covers the mask.
-        // Each axis uses its own pxPerMeter (X for world X, Y for world Z)
-        // so the background aligns with the world even when the map
-        // sprite is non-square (eg 1024x823).
-        float maxShiftX = Mathf.Max(0f, _mapPixelSize.x * 0.5f - _mapPixelRadius);
-        float maxShiftY = Mathf.Max(0f, _mapPixelSize.y * 0.5f - _mapPixelRadius);
+        // Direct projection: the sprite IS the location, and the
+        // player's world position is mapped to the sprite's local
+        // pixel position via _pxPerMeter. The sprite shifts the
+        // opposite direction of the player so the player stays at the
+        // centre of the mask. No 'visible world radius' or extra
+        // scaling is involved - changing _mapWorldSize or _mapPixelSize
+        // just changes the zoom factor of the map (how many metres per
+        // pixel), nothing else.
+        //
+        // Clamp the shift to the sprite's half-size so the sprite
+        // never disappears entirely from behind the mask. Beyond the
+        // clamp the sprite stops moving and the player effectively
+        // 'walks off the edge' of the map - that is the correct
+        // behaviour when the player leaves the location represented by
+        // the sprite.
+        float maxShiftX = _mapPixelSize.x * 0.5f;
+        float maxShiftY = _mapPixelSize.y * 0.5f;
         float shiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter.x, -maxShiftX, maxShiftX);
         float shiftY = Mathf.Clamp(-playerDelta.z * _pxPerMeter.y, -maxShiftY, maxShiftY);
 
