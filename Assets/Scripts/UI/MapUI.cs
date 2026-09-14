@@ -31,13 +31,13 @@ public class MapUI : MonoBehaviour
     [Header("World <-> Pixel mapping")]
     [Tooltip("Full size of the location in world units (X, Z). For a 200x200 m location, set to (200, 200).")]
     [SerializeField] private Vector2 _mapWorldSize = new Vector2(200f, 200f);
-    [Tooltip("Size of the MapBackground sprite in pixels. The whole _mapWorldSize fits inside this pixel size.")]
-    [SerializeField] private float _mapPixelSize = 2000f;
+    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). The whole _mapWorldSize fits inside this pixel size. For a 200x200 m location with a 2000x2000 px sprite, set to (2000, 2000). For a non-square sprite (eg 1024x823) set both components - each axis scales independently.")]
+    [SerializeField] private Vector2 _mapPixelSize = new Vector2(2000f, 2000f);
     [Tooltip("World position of the centre of the location. The player and all markers are measured relative to this point.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Edge arrows")]
-    [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) at OnEnable.")]
+    [Tooltip("Pixel radius at which an edge-pointing arrow is shown for an important marker outside the visible map. Auto-computed from the _mapMask RectTransform (half of its size) on the first OnEnable, then preserved across runs - the user's value is not overwritten afterwards. To force re-computation, set the field to 0 in the Inspector before entering Play mode.")]
     [SerializeField] private float _mapPixelRadius = 150f;
 
     [Header("Rotation")]
@@ -53,7 +53,7 @@ public class MapUI : MonoBehaviour
     private readonly List<TrackedMarker> _markers = new List<TrackedMarker>();
     private Transform _playerTransform;
     private bool _isOpen;
-    private float _pxPerMeter;
+    private Vector2 _pxPerMeter;
     private bool _playerReady;
     private bool _hasRoot;
     private bool _markersBuilt;
@@ -95,9 +95,18 @@ public class MapUI : MonoBehaviour
 
     private void OnEnable()
     {
-        if (_mapMask != null && _mapMask.sizeDelta.x > 0f)
+        // Only auto-compute _mapPixelRadius on the very first OnEnable
+        // (the default value of 150 is the sentinel). After the user has
+        // set a value in the Inspector, respect it - even across runs,
+        // since Unity serialises the value. This lets the user tune the
+        // radius to control which markers get the GTA-style rim arrow.
+        if (_mapPixelRadius <= 0f && _mapMask != null && _mapMask.sizeDelta.x > 0f)
             _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        _pxPerMeter = _mapPixelSize / Mathf.Max(_mapWorldSize.x, _mapWorldSize.y);
+        // _pxPerMeter is now a Vector2 (X, Y) so each world axis can
+        // scale independently to a non-square map sprite.
+        _pxPerMeter = new Vector2(
+            _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x),
+            _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y));
     }
 
     private void OnDestroy()
@@ -233,9 +242,13 @@ public class MapUI : MonoBehaviour
         float playerYaw = _playerTransform.eulerAngles.y;
 
         // Background shift, clamped so the sprite always covers the mask.
-        float maxShift = Mathf.Max(0f, _mapPixelSize * 0.5f - _mapPixelRadius);
-        float shiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter, -maxShift, maxShift);
-        float shiftY = Mathf.Clamp(-playerDelta.z * _pxPerMeter, -maxShift, maxShift);
+        // Each axis uses its own pxPerMeter (X for world X, Y for world Z)
+        // so the background aligns with the world even when the map
+        // sprite is non-square (eg 1024x823).
+        float maxShiftX = Mathf.Max(0f, _mapPixelSize.x * 0.5f - _mapPixelRadius);
+        float maxShiftY = Mathf.Max(0f, _mapPixelSize.y * 0.5f - _mapPixelRadius);
+        float shiftX = Mathf.Clamp(-playerDelta.x * _pxPerMeter.x, -maxShiftX, maxShiftX);
+        float shiftY = Mathf.Clamp(-playerDelta.z * _pxPerMeter.y, -maxShiftY, maxShiftY);
 
         // _mapContent stays at the centre of MapMask (Awake forced the
         // pivot and anchoredPosition). Its rotation pivots around that
@@ -257,8 +270,8 @@ public class MapUI : MonoBehaviour
             var t = _markers[i];
             if (t.Marker == null) continue;
             Vector3 d = t.Marker.WorldTransform.position - _playerTransform.position;
-            float rx = d.x * _pxPerMeter;
-            float rz = d.z * _pxPerMeter;
+            float rx = d.x * _pxPerMeter.x;
+            float rz = d.z * _pxPerMeter.y;
             float distancePixels = Mathf.Sqrt(rx * rx + rz * rz);
 
             if (distancePixels <= _mapPixelRadius)
