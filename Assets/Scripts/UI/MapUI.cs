@@ -110,13 +110,28 @@ public class MapUI : MonoBehaviour
         // radius to control which markers get the GTA-style rim arrow.
         if (_mapPixelRadius <= 0f && _mapMask != null && _mapMask.sizeDelta.x > 0f)
             _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        // pxPerMeter is derived directly from the location size and
-        // the sprite size. The sprite IS the location - 1 metre of
-        // world distance maps to exactly (_mapPixelSize / _mapWorldSize)
-        // pixels on the sprite.
-        _pxPerMeter = new Vector2(
-            _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x),
-            _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y));
+        // pxPerMeter is the direct world-to-pixel ratio for each
+        // axis. For a sprite drawn exactly 1:1 with the location,
+        // both axes give the same value (eg a 1024x1024 sprite for
+        // a 256x256 m location gives 4 px/m on both axes). If the
+        // sprite is non-square but the sprite's aspect ratio matches
+        // the location's aspect ratio (eg 1024x1024 sprite for
+        // 256x256 m, OR 2048x1024 sprite for 512x256 m), the two
+        // values are still equal.
+        //
+        // If the sprite's aspect ratio does NOT match the
+        // location's, no pxPerMeter value makes the sprite cover
+        // the location exactly 1:1 - some axes must stretch or
+        // compress. The user has to either:
+        //   - change the sprite to match the location's aspect, or
+        //   - change the location's X / Z to match the sprite's
+        //     aspect ratio.
+        // The script will happily use whatever values the user sets
+        // and the map will work as long as the sprite's aspect
+        // matches the location's aspect.
+        float pxPerMeterX = _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x);
+        float pxPerMeterY = _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y);
+        _pxPerMeter = new Vector2(pxPerMeterX, pxPerMeterY);
     }
 
     private void OnDestroy()
