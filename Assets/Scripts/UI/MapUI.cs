@@ -33,8 +33,8 @@ public class MapUI : MonoBehaviour
     [SerializeField] private Vector2 _mapWorldSize = new Vector2(540f, 540f);
     [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. Use a square sprite (eg 1080x1080) with each side a multiple of the playable location's grid size (eg 270 m) for clean pxPerMeter values.")]
     [SerializeField] private Vector2 _mapPixelSize = new Vector2(1080f, 1080f);
-    [Tooltip("World position of the SPRITE'S BOTTOM-LEFT CORNER. The sprite's local (0, 0) in pixels corresponds to this world point. For a sprite centred on the playable area (eg a 540x540 m sprite that shows a 270x270 m playable area in the middle), set this to (playableBottomLeftX - 135, 0, playableBottomLeftZ - 135) - the bottom-left of the sprite is 135 m to the south-west of the playable area's bottom-left.")]
-    [SerializeField] private Vector3 _mapCenter = Vector3.zero;
+    [Tooltip("World position of the CENTRE of the playable location (in-game area). For the user's 270x270 m location centred on (500, 500), set this to (500, 0, 500). The script uses this to figure out the sprite's bottom-left corner automatically - the user does NOT have to compute it by hand.")]
+    [SerializeField] private Vector3 _mapCenter = new Vector3(500f, 0f, 500f);
 
     [Header("Map Center helpers (Editor only)")]
     [Tooltip("Editor-only: right-click the MapUI component header in the Inspector and pick 'Set Map Center To Player Position' to capture the player's current world position into _mapCenter. Place the player at the visual centre of the location before running the game.")]
@@ -265,7 +265,20 @@ public class MapUI : MonoBehaviour
         }
         if (_playerTransform == null || _mapContent == null) return;
 
-        Vector3 playerDelta = _playerTransform.position - _mapCenter;
+        // _mapCenter is the world position of the centre of the in-game
+        // location (eg (500, 0, 500) for a 270x270 m location centred
+        // on (500, 500)). The sprite is centred on this point. The
+        // sprite's bottom-left corner in world space is therefore:
+        //   _mapCenter - (spritePixelSize / 2) * worldPerPixel
+        // We compute that and use it as the projection origin.
+        Vector2 worldPerPixel = new Vector2(
+            _mapWorldSize.x / Mathf.Max(1f, _mapPixelSize.x),
+            _mapWorldSize.y / Mathf.Max(1f, _mapPixelSize.y));
+        Vector3 spriteOrigin = new Vector3(
+            _mapCenter.x - _mapPixelSize.x * 0.5f * worldPerPixel.x,
+            0f,
+            _mapCenter.z - _mapPixelSize.y * 0.5f * worldPerPixel.y);
+        Vector3 playerDelta = _playerTransform.position - spriteOrigin;
         float playerYaw = _playerTransform.eulerAngles.y;
 
         // Direct projection: the sprite IS the location, and the
