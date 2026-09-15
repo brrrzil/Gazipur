@@ -29,11 +29,11 @@ public class MapUI : MonoBehaviour
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("World <-> Pixel mapping")]
-    [Tooltip("Size of the location in world metres (X, Z). The map sprite represents exactly this rectangle. For a 270x270 m location, set to (270, 270). The player walks through this rectangle and the map shows their position by projecting world metres to sprite pixels.")]
-    [SerializeField] private Vector2 _mapWorldSize = new Vector2(270f, 270f);
-    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. For a 1024x823 sprite, set to (1024, 823). The map sprite IS the location, stretched over _mapWorldSize metres.")]
-    [SerializeField] private Vector2 _mapPixelSize = new Vector2(1024f, 823f);
-    [Tooltip("World position of the SPRITE'S BOTTOM-LEFT CORNER. The sprite's local (0, 0) in pixels corresponds to this world point. For a sprite that is drawn 1:1 with the location, set this to the world coordinates of the location's bottom-left corner.")]
+    [Tooltip("Size of the area represented by the map sprite in world metres (X, Z). This is NOT just the in-game playable area inside the fence - it is the full rectangle that the map sprite shows, including the surrounding area beyond the fence. For a sprite that shows 540x540 m of world with a 270x270 m playable area in the centre, set to (540, 540).")]
+    [SerializeField] private Vector2 _mapWorldSize = new Vector2(540f, 540f);
+    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. Use a square sprite (eg 1080x1080) with each side a multiple of the playable location's grid size (eg 270 m) for clean pxPerMeter values.")]
+    [SerializeField] private Vector2 _mapPixelSize = new Vector2(1080f, 1080f);
+    [Tooltip("World position of the SPRITE'S BOTTOM-LEFT CORNER. The sprite's local (0, 0) in pixels corresponds to this world point. For a sprite centred on the playable area (eg a 540x540 m sprite that shows a 270x270 m playable area in the middle), set this to (playableBottomLeftX - 135, 0, playableBottomLeftZ - 135) - the bottom-left of the sprite is 135 m to the south-west of the playable area's bottom-left.")]
     [SerializeField] private Vector3 _mapCenter = Vector3.zero;
 
     [Header("Map Center helpers (Editor only)")]
@@ -113,22 +113,24 @@ public class MapUI : MonoBehaviour
         // pxPerMeter is the direct world-to-pixel ratio for each
         // axis. For a sprite drawn exactly 1:1 with the location,
         // both axes give the same value (eg a 1024x1024 sprite for
-        // a 256x256 m location gives 4 px/m on both axes). If the
-        // sprite is non-square but the sprite's aspect ratio matches
-        // the location's aspect ratio (eg 1024x1024 sprite for
-        // 256x256 m, OR 2048x1024 sprite for 512x256 m), the two
-        // values are still equal.
+        // a 256x256 m location gives 4 px/m on both axes).
         //
-        // If the sprite's aspect ratio does NOT match the
-        // location's, no pxPerMeter value makes the sprite cover
-        // the location exactly 1:1 - some axes must stretch or
-        // compress. The user has to either:
-        //   - change the sprite to match the location's aspect, or
-        //   - change the location's X / Z to match the sprite's
-        //     aspect ratio.
-        // The script will happily use whatever values the user sets
-        // and the map will work as long as the sprite's aspect
-        // matches the location's aspect.
+        // The sprite does not have to map 1:1 to the IN-GAME
+        // location only - the map sprite usually shows the
+        // surrounding area too (the world beyond the fence). The
+        // user sets:
+        //   - _mapWorldSize = the size of the entire map sprite
+        //     area in world metres (including the surrounding
+        //     area shown on the map but unreachable in-game).
+        //   - _mapPixelSize = the size of the sprite in pixels.
+        // For the projection to be uniform on both axes, the
+        // sprite must be square (width == height) AND the
+        // _mapWorldSize X and Z must match the sprite's aspect
+        // ratio. The simplest choice is to make the sprite square
+        // (eg 1080x1080 px) with each side a multiple of the
+        // in-game location's grid (eg 270x270 m, 540x540 m,
+        // 1080x1080 m) - that gives a clean pxPerMeter = N px/m
+        // on both axes with no distortion.
         float pxPerMeterX = _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x);
         float pxPerMeterY = _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y);
         _pxPerMeter = new Vector2(pxPerMeterX, pxPerMeterY);
