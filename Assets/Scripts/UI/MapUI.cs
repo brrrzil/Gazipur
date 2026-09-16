@@ -11,39 +11,39 @@ public class MapUI : MonoBehaviour
     [Header("References")]
     [Tooltip("Optional. The root GameObject that wraps the whole minimap hierarchy. If set, the map is hidden / shown via SetActive on this GameObject.")]
     [SerializeField] private GameObject _mapRoot;
-    [Tooltip("Parent RectTransform. The map sprite and marker icons live under this. Its position / rotation / pivot / anchor are configured entirely in the Inspector (RectTransform). The script does NOT touch its position or rotation - the user sets those.")]
+    [Tooltip("Parent RectTransform of the map sprite. Its position / rotation / pivot / anchor are configured in the Inspector (RectTransform). At runtime this gets shifted: anchoredPosition = basePos - playerDelta * pixelsPerMeter.")]
     [SerializeField] private RectTransform _mapContent;
-    [Tooltip("Optional. Parent of MapMask. The mask clips the map to a circle.")]
+    [Tooltip("Parent of MapMask. The mask clips the map to a circle.")]
     [SerializeField] private RectTransform _mapMask;
-    [Tooltip("Player arrow icon. Should be a child of _mapMask and sit at the centre (anchoredPosition (0, 0)). Its rotation tracks the player's facing direction.")]
+    [Tooltip("Player arrow icon. Should be a child of _mapMask and sit at the centre (anchoredPosition (0, 0)). Rotated by -playerYaw every frame.")]
     [SerializeField] private RectTransform _playerArrow;
-    [Tooltip("RectTransform of the rectangular map sprite. Its anchoredPosition / pivot / size are configured in the Inspector (RectTransform). The user drags the sprite to the right position - the script does NOT touch its anchoredPosition.")]
-    [SerializeField] private RectTransform _mapBackground;
-    [Tooltip("Parent for spawned marker icons. Should be a child of _mapContent.")]
+    [Tooltip("Parent for spawned marker icons. Should be a child of _mapMask (NOT _mapContent), so markers don't get pushed around by the sprite pan.")]
     [SerializeField] private RectTransform _markersParent;
-    [Tooltip("Optional. Parent for marker arrows.")]
+    [Tooltip("Optional. Parent for marker arrows pointing at off-screen markers.")]
     [SerializeField] private RectTransform _markersEdgeParent;
     [Tooltip("Prefab for a single marker icon.")]
     [SerializeField] private RectTransform _markerIconPrefab;
     [Tooltip("Prefab for an edge-pointing arrow.")]
     [SerializeField] private RectTransform _markerArrowPrefab;
 
+    [Header("World anchor")]
+    [Tooltip("The world position at which the map sprite sits at its designed RectTransform position (the value you set in the Inspector). When the player is here, the sprite does not pan.")]
+    [SerializeField] private Vector3 _mapCenter = new Vector3(500f, 0f, 500f);
+
     [Header("Zoom")]
-    [Tooltip("How many sprite pixels correspond to one metre of world distance. For a sprite drawn at the same scale as the world (1 m of world distance = 10 px on the sprite), set to 10. The map zoom is controlled entirely by this single number.")]
+    [Tooltip("How many sprite pixels correspond to one metre of world distance. 10 means 1 m = 10 sprite pixels. Increasing this zooms in (you see less area around the player).")]
     [SerializeField] private float _pixelsPerMeter = 10f;
 
-    [Header("Player Arrow")]
-    [Tooltip("Extra degrees added to the player arrow rotation. Default 0. Set this if the arrow sprite is not drawn pointing 'up' (eg if it points right, set 90 so it points up when the player faces north).")]
-    [SerializeField] private float _playerArrowBaseAngle = 0f;
-
     [Header("Persistence")]
-    [Tooltip("PlayerPrefs key prefix for 'marker collected' state. The full key is _collectedPrefix + marker.Id.")]
+    [Tooltip("PlayerPrefs key prefix for 'marker collected' state.")]
     [SerializeField] private string _collectedPrefix = "map_marker_collected_";
 
     private readonly List<Graphic> _graphics = new List<Graphic>();
     private readonly List<Behaviour> _behavioursToToggle = new List<Behaviour>();
     private readonly List<TrackedMarker> _markers = new List<TrackedMarker>();
     private Transform _playerTransform;
+    private Vector2 _spriteBasePos;
+    private float _mapPixelRadius = -1f;
     private bool _isOpen;
     private bool _playerReady;
     private bool _hasRoot;
@@ -64,14 +64,15 @@ public class MapUI : MonoBehaviour
         Instance = this;
         _hasRoot = _mapRoot != null;
         if (!_hasRoot) CollectGraphics();
-        SetOpen(false);
-    }
 
-    private void OnEnable()
-    {
-        // Auto-compute _mapPixelRadius from the mask size on the
-        // first OnEnable (sentinel value 150 or below = unset).
-        // The user can override by setting a positive value.
+        // Remember where the sprite is configured to sit in the
+        // Inspector. At runtime we offset this by the player's offset
+        // from _mapCenter, scaled by _pixelsPerMeter. Sprite pixels per
+        // metre works because the sprite's drawn at scale 1 m = 10 px,
+        // which is the contract the user has chosen.
+        if (_mapContent != null) _spriteBasePos = _mapContent.anchoredPosition;
+
+        SetOpen(false);
     }
 
     private void OnDestroy()
@@ -83,36 +84,22 @@ public class MapUI : MonoBehaviour
     {
         _graphics.Clear();
         _behavioursToToggle.Clear();
-
         if (_mapMask != null)
         {
             var maskImage = _mapMask.GetComponent<Graphic>();
             if (maskImage != null) _graphics.Add(maskImage);
-        }
-
-        if (_mapContent != null)
-            _mapContent.GetComponentsInChildren(true, _graphics);
-
-        if (_playerArrow != null)
-        {
-            var arrowGraphics = _playerArrow.GetComponentsInChildren<Graphic>(true);
-            _graphics.AddRange(arrowGraphics);
-        }
-
-        if (_mapMask != null)
-        {
             var masks = _mapMask.GetComponentsInChildren<Mask>(true);
             _behavioursToToggle.AddRange(masks);
             var rectMasks = _mapMask.GetComponentsInChildren<RectMask2D>(true);
             _behavioursToToggle.AddRange(rectMasks);
         }
-    }
-
-    private void EnsureGraphicsCollected()
-    {
-        if (_graphicsCollected) return;
-        CollectGraphics();
-        _graphicsCollected = true;
+        if (_playerArrow != null)
+        {
+            var arrowGraphics = _playerArrow.GetComponentsInChildren<Graphic>(true);
+            _graphics.AddRange(arrowGraphics);
+        }
+        // Note: _markersParent is rebuilt at runtime, don't pre-collect
+        // its graphics. Same for _markersEdgeParent.
     }
 
     public void SetOpen(bool open)
@@ -129,29 +116,18 @@ public class MapUI : MonoBehaviour
         if (open && !_markersBuilt) RebuildMarkers();
 
         for (int i = 0; i < _graphics.Count; i++)
-        {
             if (_graphics[i] != null) _graphics[i].enabled = open;
-        }
         for (int i = 0; i < _behavioursToToggle.Count; i++)
-        {
             if (_behavioursToToggle[i] != null) _behavioursToToggle[i].enabled = open;
-        }
     }
 
-    public void Toggle()
-    {
-        SetOpen(!_isOpen);
-    }
-
-    public void Unlock()
-    {
-        SetOpen(true);
-    }
+    public void Toggle() => SetOpen(!_isOpen);
+    public void Unlock() => SetOpen(true);
 
     private void RebuildMarkers()
     {
         if (_mapPixelRadius <= 0f && _mapMask != null)
-            _mapPixelRadius = _mapMask.rect.width * 0.5f;
+            _mapPixelRadius = _mapMask.rect.width * 0.5f - 4f;
 
         for (int i = _markers.Count - 1; i >= 0; i--)
         {
@@ -161,7 +137,7 @@ public class MapUI : MonoBehaviour
         }
         _markers.Clear();
 
-        if (_markerIconPrefab == null)
+        if (_markerIconPrefab == null || _markersParent == null)
         {
             _markersBuilt = true;
             return;
@@ -190,12 +166,8 @@ public class MapUI : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null
-            && Keyboard.current.mKey.wasPressedThisFrame)
-        {
+        if (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame)
             Toggle();
-        }
-
         if (!_isOpen) return;
 
         if (!_playerReady)
@@ -207,38 +179,40 @@ public class MapUI : MonoBehaviour
         if (_playerTransform == null || _mapContent == null) return;
 
         float playerYaw = _playerTransform.eulerAngles.y;
+        Vector3 d = _playerTransform.position - _mapCenter;
 
-        // The sprite does NOT move - it sits at whatever position the
-        // user configured in the Inspector (RectTransform). The script
-        // only handles:
-        //   1. The player arrow rotation, which tracks the player's
-        //      facing direction (-playerYaw + baseAngle).
-        //   2. The marker icon positions, which are computed as the
-        //      delta between the marker and the player in world space,
-        //      scaled by _pixelsPerMeter. This is the GTA-style 'cursor
-        //      stays in the centre of the radar, markers move around
-        //      it' projection.
+        // Sprite pan: when the player drifts away from _mapCenter, the
+        // sprite shifts in the opposite direction so the marker at
+        // _mapCenter stays under the cursor (the centre of the mask).
+        // 1 m of world distance = -_pixelsPerMeter px in both axes.
+        float dx = d.x * _pixelsPerMeter;
+        float dz = d.z * _pixelsPerMeter;
+        _mapContent.anchoredPosition = new Vector2(
+            _spriteBasePos.x - dx,
+            _spriteBasePos.y - dz);
 
-        // Rotate the player arrow to show the facing direction.
+        // The arrow rotates only (anchoredPosition (0, 0) in the mask).
         if (_playerArrow != null)
-            _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -playerYaw + _playerArrowBaseAngle);
+            _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -playerYaw);
 
-        // Markers: positioned by their offset from the player.
+        // Markers and edge arrows are children of _mapMask, so their
+        // anchoredPosition is delta * pixelsPerMeter directly (no need
+        // to subtract sprite pan or use _mapCenter).
         for (int i = 0; i < _markers.Count; i++)
         {
             var t = _markers[i];
             if (t.Marker == null) continue;
-            Vector3 d = t.Marker.WorldTransform.position - _playerTransform.position;
-            float rx = d.x * _pixelsPerMeter;
-            float rz = d.z * _pixelsPerMeter;
-            float distancePixels = Mathf.Sqrt(rx * rx + rz * rz);
+            Vector3 md = t.Marker.WorldTransform.position - _playerTransform.position;
+            float mx = md.x * _pixelsPerMeter;
+            float mz = md.z * _pixelsPerMeter;
+            float dist = Mathf.Sqrt(mx * mx + mz * mz);
 
-            if (distancePixels <= _mapPixelRadius)
+            if (dist <= _mapPixelRadius)
             {
                 if (t.Icon != null)
                 {
                     t.Icon.gameObject.SetActive(true);
-                    t.Icon.anchoredPosition = new Vector2(rx, rz);
+                    t.Icon.anchoredPosition = new Vector2(mx, mz);
                 }
                 if (t.Arrow != null) t.Arrow.gameObject.SetActive(false);
             }
@@ -248,17 +222,16 @@ public class MapUI : MonoBehaviour
                 if (t.Arrow != null)
                 {
                     t.Arrow.gameObject.SetActive(true);
-                    float angle = Mathf.Atan2(rz, rx) * Mathf.Rad2Deg;
+                    float angle = Mathf.Atan2(mz, mx) * Mathf.Rad2Deg;
+                    float rad = angle * Mathf.Deg2Rad;
                     t.Arrow.anchoredPosition = new Vector2(
-                        Mathf.Cos(angle * Mathf.Deg2Rad) * _mapPixelRadius,
-                        Mathf.Sin(angle * Mathf.Deg2Rad) * _mapPixelRadius);
+                        Mathf.Cos(rad) * _mapPixelRadius,
+                        Mathf.Sin(rad) * _mapPixelRadius);
                     t.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
                 }
             }
         }
     }
-
-    private float _mapPixelRadius = 150f;
 
     private bool IsCollected(string id)
     {
