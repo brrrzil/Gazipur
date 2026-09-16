@@ -30,8 +30,8 @@ public class MapCoordDebug : MonoBehaviour
     private Vector3 _mapCenter;
     private float _pixelsPerMeter;
     private float _mapPixelRadius;
-    private float _spriteShiftX;
-    private float _spriteShiftY;
+    private float _deltaX;
+    private float _deltaZ;
     private Vector2 _mapBackgroundActualPos;
     private float _playerArrowActualRotZ;
     private bool _backgroundFound;
@@ -67,14 +67,12 @@ public class MapCoordDebug : MonoBehaviour
         _pixelsPerMeter = (float)t.GetField("_pixelsPerMeter", bf).GetValue(map);
         _mapPixelRadius = (float)t.GetField("_mapPixelRadius", bf).GetValue(map);
 
-        // Sprite pan at runtime: anchoredPosition = _spriteBasePos - delta * pixelsPerMeter.
-        float dx = (_playerPos.x - _mapCenter.x) * _pixelsPerMeter;
-        float dz = (_playerPos.z - _mapCenter.z) * _pixelsPerMeter;
-        _spriteShiftX = -dx;
-        _spriteShiftY = -dz;
+        // GTA-style centring: anchoredPosition = -(player - mapCenter) * pixelsPerMeter.
+        _deltaX = _playerPos.x - _mapCenter.x;
+        _deltaZ = _playerPos.z - _mapCenter.z;
 
-        // Read the live RectTransform.anchoredPosition of the map
-        // background to verify that the script really is moving it.
+        // Read the live RectTransform.anchoredPosition to verify the
+        // script is actually moving it as expected.
         _backgroundFound = false;
         var bgField = t.GetField("_mapBackground", bf);
         if (bgField != null)
@@ -135,9 +133,9 @@ public class MapCoordDebug : MonoBehaviour
         GUI.Label(new Rect(x, y, w - 16, line),
             $"Map center     : X {_mapCenter.x,7:0.00}   Z {_mapCenter.z,7:0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Delta          : X {(_playerPos.x - _mapCenter.x),7:+0.00;-0.00}   Z {(_playerPos.z - _mapCenter.z),7:+0.00;-0.00}", _style); y += line;
+            $"Delta          : X {_deltaX,7:+0.00;-0.00} m   Z {_deltaZ,7:+0.00;-0.00} m", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Pan shift      : X {_spriteShiftX,7:+0.0;-0.0} px  Y {_spriteShiftY,7:+0.0;-0.0} px", _style); y += line;
+            $"Expected pan   : X {-_deltaX * _pixelsPerMeter,7:+0.0;-0.0} px  Y {-_deltaZ * _pixelsPerMeter,7:+0.0;-0.0} px", _style); y += line;
         if (_backgroundFound)
             GUI.Label(new Rect(x, y, w - 16, line),
                 $"BG actual      : X {_mapBackgroundActualPos.x,7:+0.0;-0.0} px  Y {_mapBackgroundActualPos.y,7:+0.0;-0.0} px  <-- LIVE", _style);
