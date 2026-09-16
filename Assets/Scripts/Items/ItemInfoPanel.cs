@@ -1,6 +1,6 @@
 using Assets.SimpleLocalization.Scripts;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using Zenject;
 
 
@@ -9,8 +9,8 @@ public class ItemInfoPanel : MonoBehaviour
     [SerializeField] private LocalizedText _name;
     [SerializeField] private LocalizedText _description;
     [SerializeField] private Image _icon;
-    [SerializeField] private Text _priceText;
-    [SerializeField] private Text _weightText;
+    [SerializeField] private TMP_Text _priceText;
+    [SerializeField] private TMP_Text _weightText;
     [SerializeField] private Button _useButton;
     [SerializeField] private Button _dropButton;
     [SerializeField] private Button _sellButton;
