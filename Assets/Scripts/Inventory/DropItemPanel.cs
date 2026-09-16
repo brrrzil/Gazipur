@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -5,8 +6,8 @@ using Zenject;
 public class DropItemPanel : MonoBehaviour
 {
     [SerializeField] private Slider _countSlider;
-    [SerializeField] private Text _curCountText;
-    [SerializeField] private Text _dropCountText;
+    [SerializeField] private TMP_Text _curCountText;
+    [SerializeField] private TMP_Text _dropCountText;
     [SerializeField] private Button _dropButton;
     [SerializeField] private Button _cancelButton;
     [SerializeField] private float _spawnRadius;

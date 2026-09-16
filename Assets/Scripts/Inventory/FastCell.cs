@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -5,7 +6,7 @@ using Zenject;
 public class FastCell : MonoBehaviour
 {
     [SerializeField] private Image _itemIcon;
-    [SerializeField] private Text _countText;
+    [SerializeField] private TMP_Text _countText;
     [SerializeField] private Image _noUsebleImage;
     
     public void SetItem(ItemData item, int count)
