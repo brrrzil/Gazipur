@@ -27,9 +27,11 @@ public class MapCoordDebug : MonoBehaviour
     private float _accum;
     private Vector3 _playerPos;
     private float _playerYaw;
+    private Vector3 _mapCenter;
     private float _pixelsPerMeter;
-    private float _playerArrowBaseAngle;
     private float _mapPixelRadius;
+    private float _spriteShiftX;
+    private float _spriteShiftY;
     private GUIStyle _style;
     private GUIStyle _headerStyle;
 
@@ -57,9 +59,15 @@ public class MapCoordDebug : MonoBehaviour
 
         var t = typeof(MapUI);
         var bf = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        _mapCenter = (Vector3)t.GetField("_mapCenter", bf).GetValue(map);
         _pixelsPerMeter = (float)t.GetField("_pixelsPerMeter", bf).GetValue(map);
-        _playerArrowBaseAngle = (float)t.GetField("_playerArrowBaseAngle", bf).GetValue(map);
         _mapPixelRadius = (float)t.GetField("_mapPixelRadius", bf).GetValue(map);
+
+        // Sprite pan at runtime: anchoredPosition = _spriteBasePos - delta * pixelsPerMeter.
+        float dx = (_playerPos.x - _mapCenter.x) * _pixelsPerMeter;
+        float dz = (_playerPos.z - _mapCenter.z) * _pixelsPerMeter;
+        _spriteShiftX = -dx;
+        _spriteShiftY = -dz;
     }
 
     void OnGUI()
@@ -81,7 +89,7 @@ public class MapCoordDebug : MonoBehaviour
         }
 
         const float w = 280f;
-        const float h = 110f;
+        const float h = 130f;
         var bg = new Rect(Screen.width - w - 8, 8, w, h);
         GUI.color = new Color(0, 0, 0, 0.6f);
         GUI.DrawTexture(bg, Texture2D.whiteTexture);
@@ -95,10 +103,12 @@ public class MapCoordDebug : MonoBehaviour
         GUI.Label(new Rect(x, y, w - 16, line),
             $"Player world : X {_playerPos.x,7:0.00}   Z {_playerPos.z,7:0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Player yaw   : {_playerYaw,7:0.0}", _style); y += line;
+            $"Map center   : X {_mapCenter.x,7:0.00}   Z {_mapCenter.z,7:0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Arrow rot    : {-_playerYaw + _playerArrowBaseAngle,7:0.0}  ({-_playerYaw + _playerArrowBaseAngle + 360f,7:0.0})", _style); y += line;
+            $"Pan delta    : X {(_playerPos.x - _mapCenter.x),7:+0.00;-0.00}   Z {(_playerPos.z - _mapCenter.z),7:+0.00;-0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Pixels/m     : {_pixelsPerMeter:0.0}    Radius: {_mapPixelRadius:0}", _style);
+            $"Sprite shift : X {_spriteShiftX,7:+0.0;-0.0} px  Y {_spriteShiftY,7:+0.0;-0.0} px", _style); y += line;
+        GUI.Label(new Rect(x, y, w - 16, line),
+            $"Pixels/m     : {_pixelsPerMeter:0.0}    Mask radius: {_mapPixelRadius:0}", _style);
     }
 }
