@@ -42,7 +42,6 @@ public class MapUI : MonoBehaviour
     private readonly List<Behaviour> _behavioursToToggle = new List<Behaviour>();
     private readonly List<TrackedMarker> _markers = new List<TrackedMarker>();
     private Transform _playerTransform;
-    private Vector2 _spriteBasePos;
     private float _mapPixelRadius = -1f;
     private bool _isOpen;
     private bool _playerReady;
@@ -81,10 +80,6 @@ public class MapUI : MonoBehaviour
                 }
             }
         }
-
-        // Remember where the sprite is configured to sit in the
-        // Inspector. At runtime we shift it by -(player - _mapCenter) * pxPerMeter.
-        if (_mapBackground != null) _spriteBasePos = _mapBackground.anchoredPosition;
 
         SetOpen(false);
     }
@@ -194,17 +189,14 @@ public class MapUI : MonoBehaviour
         float playerYaw = _playerTransform.eulerAngles.y;
         Vector3 d = _playerTransform.position - _mapCenter;
 
-        // Sprite pan: shift the sprite's anchoredPosition by
-        // -(player - mapCenter) * pixelsPerMeter so the marker at
-        // _mapCenter stays under the cursor (centre of the mask).
-        // basePos = whatever you set in the RectTransform Inspector.
+        // GTA-style centring on player: shift the sprite so the point
+        // under the cursor (centre of the mask) is the player's world
+        // position. sprite.anchoredPosition = -(player - mapCenter) * pixelsPerMeter.
+        // When player == mapCenter the sprite sits at (0, 0) and the
+        // cursor in the centre of the mask sees the world _mapCenter.
         // Runs every frame regardless of _isOpen so the sprite stays
         // panned to the player position even when the map is hidden.
-        float dx = d.x * _pixelsPerMeter;
-        float dz = d.z * _pixelsPerMeter;
-        _mapBackground.anchoredPosition = new Vector2(
-            _spriteBasePos.x - dx,
-            _spriteBasePos.y - dz);
+        _mapBackground.anchoredPosition = new Vector2(-d.x * _pixelsPerMeter, -d.z * _pixelsPerMeter);
 
         if (_playerArrow != null)
             _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -playerYaw);
