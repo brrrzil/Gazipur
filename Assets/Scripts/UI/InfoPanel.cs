@@ -1,17 +1,16 @@
-using Assets.SimpleLocalization.Scripts;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 
 public class InfoPanel : MonoBehaviour
 {
-    public LocalizedText[] Texts => _descriptions; 
+    public Text[] Texts => _descriptions;
     [SerializeField] private CanvasGroup _cGroup;
     [SerializeField] float _showDuration;
     [SerializeField, Range(0,1)] float _alpha;
     [SerializeField] private Image _image;
-    [SerializeField] private LocalizedText[] _descriptions;
-      
+    [SerializeField] private Text[] _descriptions;
+
     private Tween _tween;
     private void Start()
     {
@@ -62,7 +61,7 @@ public class InfoPanel : MonoBehaviour
             if (i <= text.Length - 1)
             {
                 _descriptions[i].gameObject.SetActive(true);
-                _descriptions[i].Text = text[i];
+                _descriptions[i].text = text[i];
                 continue;
             }
             _descriptions[i].gameObject.SetActive(false);
