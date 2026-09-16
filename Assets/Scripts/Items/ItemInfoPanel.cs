@@ -1,3 +1,4 @@
+using Assets.SimpleLocalization.Scripts;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -5,8 +6,8 @@ using Zenject;
 
 public class ItemInfoPanel : MonoBehaviour
 {
-    [SerializeField] private Text _name;
-    [SerializeField] private Text _description;
+    [SerializeField] private LocalizedText _name;
+    [SerializeField] private LocalizedText _description;
     [SerializeField] private Image _icon;
     [SerializeField] private Text _priceText;
     [SerializeField] private Text _weightText;
@@ -37,8 +38,8 @@ public class ItemInfoPanel : MonoBehaviour
 
         if (!item)
         {
-            _name.text = "";
-            _description.text = "";
+            _name.Text = "";
+            _description.Text = "";
             _priceText.text = "";
             _weightText.text = "";
             _useButton.interactable = false;
@@ -73,8 +74,8 @@ public class ItemInfoPanel : MonoBehaviour
     }
     private void SetInfo(ItemData item)
     {
-        _name.text = item.Name;
-        _description.text = item.Description;
+        _name.Text = item.Name;
+        _description.Text = item.Description;
         _priceText.text = item.Price.ToString();
         // BUGFIX (round 21): use '0.#' so whole numbers display as '3'
         // instead of '3.0'. Fractional values like 0.3 still show as '0.3'.
