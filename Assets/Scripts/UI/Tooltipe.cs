@@ -1,11 +1,11 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using DG.Tweening;
 
 [RequireComponent(typeof(CanvasGroup))]
 public class Tooltipe : MonoBehaviour
 {
-    [SerializeField] private Text _text;
+    [SerializeField] private TMP_Text _text;
     private CanvasGroup _group;
     private Tween _tween;
     private void Start()
