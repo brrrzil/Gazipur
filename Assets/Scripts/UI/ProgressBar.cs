@@ -1,10 +1,10 @@
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ProgressBar : MonoBehaviour
 {
     [SerializeField] private Image _bar;
-    [SerializeField] private TMP_Text _count;
+    [SerializeField] private Text _count;
     private float _nominalWidth;
     public void SetAmount(float curren, float max)
     {
