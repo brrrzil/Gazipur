@@ -43,27 +43,26 @@ namespace Gazipur.Player
         [SerializeField] private float _aimSlowdown = 0.25f;
 
         [Header("Fog (round 58/59)")]
-        [Tooltip("If true, also drive RenderSettings.fogDensity while aiming and back to the captured scene value on release. Fog is a per-fragment uniform in URP, so this is essentially free at runtime.")]
+        [Tooltip("If true, thin the fog while right-mouse is held. Driven through FogController.Instance so pickup-driven thinning is preserved across aim press/release.")]
         [SerializeField] private bool _affectFog = true;
-        [Tooltip("Multiplier applied to the captured default fog density while right mouse is held. 0.5 = half density (fog thins out, recommended default), 0 = no fog, 1 = unchanged, >1 = thicker. 0.5 matches the source project intent: aim-zoom thins the fog without erasing it.")]
+        [Tooltip("Multiplier applied to the cleared fog density (the value pickups have thined to) while right mouse is held. 0.5 = half density, 0 = no fog, 1 = unchanged.")]
         [Range(0f, 2f)]
         [SerializeField] private float _zoomFogMultiplier = 0.5f;
 
         private PlayerMovement _movement;
         private InputAction _aimAction;
         private bool _isAiming;
-        // (round 58) Default FoV and default fog density are both
-        // captured from the scene at first OnEnable (see
-        // CaptureDefaults) so the Inspector does not need to
-        // duplicate values that already live in CinemachineCamera
-        // and RenderSettings.
+        // (round 58) Default FoV is captured from the scene at first
+        // OnEnable so the Inspector does not need to duplicate values
+        // that already live in CinemachineCamera.
+        //
+        // Fog density is no longer cached here — FogController owns
+        // the cleared value and tracks the live lerp. AimController
+        // only pushes a multiplier while held, and resets to 1 on
+        // release. This preserves the work pickups did even after an
+        // aim cycle.
         private float _defaultFoV;
-        private float _defaultFogDensity;
-        // Sentinel bools to avoid overwriting the captured values
-        // every frame. Float defaults are 60 / 0.01 which are valid,
-        // so we need a separate 'have we captured yet' flag.
         private bool _defaultFoVCaptured;
-        private bool _defaultFogCaptured;
 
         [Inject]
         public void Construct(PlayerMovement movement)
@@ -120,12 +119,11 @@ namespace Gazipur.Player
             {
                 _movement.SetAimSlowdown(1f);
             }
-            // Restore fog density so the next enable (or another
-            // system that reads RenderSettings.fogDensity) sees the
-            // scene's original value, not a leftover 0 from zoom.
-            if (_affectFog && _defaultFogCaptured && RenderSettings.fog)
+            // Hand fog back to the cleared baseline so pickups
+            // survive a hot-swap of this component.
+            if (_affectFog && FogController.Instance != null)
             {
-                RenderSettings.fogDensity = _defaultFogDensity;
+                FogController.Instance.RestoreDefault();
             }
         }
 
@@ -160,18 +158,6 @@ namespace Gazipur.Player
                 _defaultFoV = _virtualCamera.Lens.FieldOfView;
                 _defaultFoVCaptured = true;
             }
-            // Fog: capture once, regardless of fog state. If the
-            // scene has fog disabled, RenderSettings.fogDensity is
-            // still a valid number we can write back; the URP
-            // fragment shader just ignores it because the global
-            // 'fog' keyword is off. The guard in Update() and
-            // OnDisable() checks RenderSettings.fog before pushing
-            // the value, so this is safe.
-            if (!_defaultFogCaptured && _affectFog)
-            {
-                _defaultFogDensity = RenderSettings.fogDensity;
-                _defaultFogCaptured = true;
-            }
         }
 
         private void Update()
@@ -188,25 +174,13 @@ namespace Gazipur.Player
                 _virtualCamera.Lens = lens;
             }
 
-            // Drive fog density on the same lerp. We guard on
-            // RenderSettings.fog so we do not turn fog on for a
-            // scene that intentionally has it off — if the user
-            // wants aim-zoom fog in such a scene, they can tick
-            // 'Fog' in Lighting > Scene tab and re-enable _affectFog.
-            //
-            // (round 59) target density is now a multiplier of the
-            // captured default, not an absolute 0. 0.5 means
-            // 'fog thins out by half while aiming' — that matches
-            // the visual intent (the scene still has atmospheric
-            // depth, you just see further through the scope) without
-            // the harsh 'fog vanishes completely' feel of 0.
-            if (_affectFog && _defaultFogCaptured && RenderSettings.fog)
+            // Push the aim fog state through FogController. While
+            // held we ask for cleared * multiplier, on release we
+            // ask for cleared * 1. The single owner handles the
+            // lerp and the actual RenderSettings write.
+            if (_affectFog && FogController.Instance != null)
             {
-                float targetDensity = _isAiming
-                    ? _defaultFogDensity * _zoomFogMultiplier
-                    : _defaultFogDensity;
-                RenderSettings.fogDensity = Mathf.Lerp(
-                    RenderSettings.fogDensity, targetDensity, _zoomLerpSpeed);
+                FogController.Instance.AimMultiply(_isAiming ? _zoomFogMultiplier : 1f);
             }
 
             // Drive the movement slowdown. We do it every frame
