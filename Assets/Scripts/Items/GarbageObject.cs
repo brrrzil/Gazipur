@@ -10,6 +10,9 @@ public class GarbageObject : InteractObject
     [SerializeField] private PlayerSound _pickSound;
     [SerializeField] private Vector2Int _ItemsCount = new Vector2Int(6, 10);
     [SerializeField] private Chances[] _dropChances;
+    [Header("Fog")]
+    [Tooltip("How much RenderSettings.fogDensity is reduced every time this GarbageObject is fully picked clean. Default 0.005 — bump it up if you want each pickup to make a more visible dent in the fog.")]
+    [SerializeField] private float _fogDecreasePerObject = 0.005f;
 
     private List<ItemData> _items = new List<ItemData>();
     private int _count;
@@ -94,7 +97,7 @@ public class GarbageObject : InteractObject
 
     private void DecreaseFog()
     {
-        RenderSettings.fogDensity -= 0.005f;
+        RenderSettings.fogDensity -= _fogDecreasePerObject;
         if (RenderSettings.fogDensity < 0f) RenderSettings.fogDensity = 0f;
     }
 }
