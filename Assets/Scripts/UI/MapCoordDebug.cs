@@ -33,7 +33,7 @@ public class MapCoordDebug : MonoBehaviour
     private float _spriteShiftX;
     private float _spriteShiftY;
     private Vector2 _mapBackgroundActualPos;
-    private Vector2 _playerArrowActualRot;
+    private float _playerArrowActualRotZ;
     private bool _backgroundFound;
     private bool _arrowFound;
     private GUIStyle _style;
@@ -94,7 +94,7 @@ public class MapCoordDebug : MonoBehaviour
             var arrow = arrowField.GetValue(map) as RectTransform;
             if (arrow != null)
             {
-                _playerArrowActualRot = arrow.localRotation.eulerAngles;
+                _playerArrowActualRotZ = arrow.localRotation.eulerAngles.z;
                 _arrowFound = true;
             }
         }
@@ -147,7 +147,7 @@ public class MapCoordDebug : MonoBehaviour
         y += line;
         if (_arrowFound)
             GUI.Label(new Rect(x, y, w - 16, line),
-                $"Arrow rot      : Z {_playerArrowActualRot.z,7:0.0}  <-- LIVE", _style);
+                $"Arrow rot      : Z {_playerArrowActualRotZ,7:0.0}  <-- LIVE", _style);
         else
             GUI.Label(new Rect(x, y, w - 16, line),
                 "Arrow rot      : <missing _playerArrow ref>", _style);
