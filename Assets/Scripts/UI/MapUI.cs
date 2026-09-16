@@ -11,13 +11,13 @@ public class MapUI : MonoBehaviour
     [Header("References")]
     [Tooltip("Optional. The root GameObject that wraps the whole minimap hierarchy. If set, the map is hidden / shown via SetActive on this GameObject.")]
     [SerializeField] private GameObject _mapRoot;
-    [Tooltip("Parent RectTransform of the map sprite. Its position / rotation / pivot / anchor are configured in the Inspector (RectTransform). At runtime this gets shifted: anchoredPosition = basePos - playerDelta * pixelsPerMeter.")]
-    [SerializeField] private RectTransform _mapContent;
-    [Tooltip("Parent of MapMask. The mask clips the map to a circle.")]
+    [Tooltip("RectTransform that hosts the rounded mask. The map background and player arrow live inside it. Position / pivot / anchor are configured in the Inspector; the script does not move it.")]
     [SerializeField] private RectTransform _mapMask;
     [Tooltip("Player arrow icon. Should be a child of _mapMask and sit at the centre (anchoredPosition (0, 0)). Rotated by -playerYaw every frame.")]
     [SerializeField] private RectTransform _playerArrow;
-    [Tooltip("Parent for spawned marker icons. Should be a child of _mapMask (NOT _mapContent), so markers don't get pushed around by the sprite pan.")]
+    [Tooltip("The image that shows the world map sprite. Its anchoredPosition IS panned at runtime: basePos - delta * pixelsPerMeter. Pivot should be (0.5, 0.5) so the sprite pans from its own centre. basePos (Inspector value) is where the sprite sits when the player is at _mapCenter.")]
+    [SerializeField] private RectTransform _mapBackground;
+    [Tooltip("Parent for spawned marker icons. Should be a child of _mapMask, so markers don't get pushed around by the sprite pan.")]
     [SerializeField] private RectTransform _markersParent;
     [Tooltip("Optional. Parent for marker arrows pointing at off-screen markers.")]
     [SerializeField] private RectTransform _markersEdgeParent;
@@ -66,11 +66,8 @@ public class MapUI : MonoBehaviour
         if (!_hasRoot) CollectGraphics();
 
         // Remember where the sprite is configured to sit in the
-        // Inspector. At runtime we offset this by the player's offset
-        // from _mapCenter, scaled by _pixelsPerMeter. Sprite pixels per
-        // metre works because the sprite's drawn at scale 1 m = 10 px,
-        // which is the contract the user has chosen.
-        if (_mapContent != null) _spriteBasePos = _mapContent.anchoredPosition;
+        // Inspector. At runtime we shift it by -(player - _mapCenter) * pxPerMeter.
+        if (_mapBackground != null) _spriteBasePos = _mapBackground.anchoredPosition;
 
         SetOpen(false);
     }
@@ -176,18 +173,18 @@ public class MapUI : MonoBehaviour
             _playerTransform = _movement.transform;
             _playerReady = true;
         }
-        if (_playerTransform == null || _mapContent == null) return;
+        if (_playerTransform == null || _mapBackground == null) return;
 
         float playerYaw = _playerTransform.eulerAngles.y;
         Vector3 d = _playerTransform.position - _mapCenter;
 
-        // Sprite pan: when the player drifts away from _mapCenter, the
-        // sprite shifts in the opposite direction so the marker at
-        // _mapCenter stays under the cursor (the centre of the mask).
-        // 1 m of world distance = -_pixelsPerMeter px in both axes.
+        // Sprite pan: shift the sprite's anchoredPosition by
+        // -(player - mapCenter) * pixelsPerMeter so the marker at
+        // _mapCenter stays under the cursor (centre of the mask).
+        // basePos = whatever you set in the RectTransform Inspector.
         float dx = d.x * _pixelsPerMeter;
         float dz = d.z * _pixelsPerMeter;
-        _mapContent.anchoredPosition = new Vector2(
+        _mapBackground.anchoredPosition = new Vector2(
             _spriteBasePos.x - dx,
             _spriteBasePos.y - dz);
 
