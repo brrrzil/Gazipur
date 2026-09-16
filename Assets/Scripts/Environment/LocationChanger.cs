@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -6,7 +7,7 @@ using static EnumData;
 public class LocationChanger : MonoBehaviour
 {
     [Inject] private Sounds _sounds;
-    [SerializeField] private Text _locationText;
+    [SerializeField] private TMP_Text _locationText;
 
     private string currentTag;
     // Round 80: simple one-shot guard so the
@@ -82,12 +83,12 @@ public class LocationChanger : MonoBehaviour
             {
                 case "AreaVillage":
                     _sounds.ChangeBackground(_sounds.Background[0]);
-                    _locationText.text = "Сурьятал";
+                    _locationText.text = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ";
                     break;
 
                 case "AreaRich":
                     _sounds.ChangeBackground(_sounds.Background[1]);
-                    _locationText.text = "Рангаредди";
+                    _locationText.text = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ";
                     // Round 80: simple one-shot gate
                     // in front of the StartRemark
                     // call. After the first entry
@@ -111,7 +112,7 @@ public class LocationChanger : MonoBehaviour
 
                 case "AreaDanger":
                     _sounds.ChangeBackground(_sounds.Background[2]);
-                    _locationText.text = "Роро-Хиллз";
+                    _locationText.text = "пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅ";
                     break;
             }
 

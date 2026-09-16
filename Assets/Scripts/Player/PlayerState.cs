@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -17,9 +18,9 @@ public class PlayerState : MonoBehaviour
     [SerializeField] private ProgressBar _healthBar;
     [SerializeField] private ProgressBar _hungerBar;
     [SerializeField] private ProgressBar _thirstBar;
-    [SerializeField] private Text _healtToInventoryText;
-    [SerializeField] private Text _hungryToInventoryText;
-    [SerializeField] private Text _thirstToInventoryText;
+    [SerializeField] private TMP_Text _healtToInventoryText;
+    [SerializeField] private TMP_Text _hungryToInventoryText;
+    [SerializeField] private TMP_Text _thirstToInventoryText;
 
     [Inject] private DataManager _data;
     [Inject] private GameModeManager _modeManager;
