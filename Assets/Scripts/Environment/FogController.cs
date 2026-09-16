@@ -106,7 +106,10 @@ public static class FogControllerBootstrap
     {
         if (FogController.Instance != null) return;
         var go = new GameObject("[FogController]");
-        DontDestroyOnLoad(go);
+        // DontDestroyOnLoad is an instance method on Object, so call
+        // it through UnityEngine.Object explicitly from this static
+        // helper.
+        UnityEngine.Object.DontDestroyOnLoad(go);
         go.AddComponent<FogController>();
     }
 }
