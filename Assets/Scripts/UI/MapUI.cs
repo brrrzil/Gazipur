@@ -33,6 +33,9 @@ public class MapUI : MonoBehaviour
     [SerializeField] private float _pixelsPerMeter = 10f;
     [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. The sprite is centred on _mapCenter in world space - the script automatically figures out the sprite's bottom-left corner from the centre + pixel size + pixelsPerMeter.")]
     [SerializeField] private Vector2 _mapPixelSize = new Vector2(2700f, 2700f);
+    [Tooltip("Computed: the size of the area the sprite covers in world metres. Equals (_mapPixelSize.x / _pixelsPerMeter, _mapPixelSize.y / _pixelsPerMeter). Read-only - it updates automatically whenever you change Pixels Per Meter or Map Pixel Size.")]
+    [SerializeField] private Vector2 _mapWorldSize = new Vector2(540f, 540f);
+
     [Tooltip("World position of the CENTRE of the in-game location. For the user's 270x270 m location centred on (500, 500), set this to (500, 0, 500). The red pixel (sprite centre) should correspond to this world point.")]
     [SerializeField] private Vector3 _mapCenter = new Vector3(500f, 0f, 500f);
 
@@ -113,6 +116,27 @@ public class MapUI : MonoBehaviour
         // over a 270x270 m location). Both sprite axes use the
         // same scale, so 1 m east = 1 m north in pixels.
         _pxPerMeter = new Vector2(_pixelsPerMeter, _pixelsPerMeter);
+        // Compute _mapWorldSize from sprite pixel size and px/m so
+        // the Inspector field always shows the current area covered
+        // by the sprite (in metres). Read-only - the Inspector's
+        // field is overwritten every time the component enables.
+        RecomputeWorldSize();
+    }
+
+    private void OnValidate()
+    {
+        // Same recompute runs in the Editor when the user changes
+        // a field - so _mapWorldSize is always up to date in the
+        // Inspector even when not in Play mode.
+        RecomputeWorldSize();
+    }
+
+    private void RecomputeWorldSize()
+    {
+        if (_pixelsPerMeter <= 0f) return;
+        _mapWorldSize = new Vector2(
+            _mapPixelSize.x / _pixelsPerMeter,
+            _mapPixelSize.y / _pixelsPerMeter);
     }
 
     private void OnDestroy()
