@@ -1,7 +1,6 @@
 using NaughtyAttributes;
 using System.Collections;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -11,7 +10,7 @@ public class DialogManager : MonoBehaviour
 {
     public DialogType Dialog { get; private set; }
     [field: SerializeField] public CharacterRemarks Remarks { get; private set; }
-    [SerializeField] private TMP_Text _questionText;
+    [SerializeField] private Text _questionText;
     [SerializeField] private Button[] _ansverButtons;
 
     [SerializeField] private DialogData[] _dialogs;

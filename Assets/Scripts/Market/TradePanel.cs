@@ -1,4 +1,3 @@
-using TMPro;
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -6,9 +5,9 @@ using static EnumData;
 
 public class TradePanel : MonoBehaviour
 {
-    [SerializeField] private TMP_Text _curCountText;
-    [SerializeField] private TMP_Text _sellCountText;
-    [SerializeField] private TMP_Text _priceText;
+    [SerializeField] private Text _curCountText;
+    [SerializeField] private Text _sellCountText;
+    [SerializeField] private Text _priceText;
     [SerializeField] private Slider _slider;
 
     private int _price => _cell.Item.Price;

@@ -1,5 +1,4 @@
 using System.Linq;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static EnumData;
@@ -10,7 +9,7 @@ using Zenject;
 public class CharacterRemarks : MonoBehaviour
 {
     [SerializeField] private CanvasGroup _cGroup;
-    [SerializeField] private TMP_Text _remarkText;
+    [SerializeField] private Text _remarkText;
     [SerializeField] private RemarkData[] _remarks;
     [SerializeField] private AudioSource _remarkAudioSource; // Используем этот источник из-за бага с Рахулом
 

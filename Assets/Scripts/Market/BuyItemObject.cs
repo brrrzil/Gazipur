@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -8,7 +7,7 @@ public class BuyItemObject : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private Image _itemIcon;
     [SerializeField] private Button _buyButton;
-    [SerializeField] private TMP_Text _priceText;
+    [SerializeField] private Text _priceText;
     [Inject] private MarketManager _market;
     [Inject] private Inventory _inventory;
     [Inject] private DataManager _data;
