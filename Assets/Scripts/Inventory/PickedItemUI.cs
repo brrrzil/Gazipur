@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
@@ -7,7 +6,7 @@ using DG.Tweening;
 public class PickedItemUI : MonoBehaviour
 {
     [SerializeField] private Image _itemIcon;
-    [SerializeField] private TMP_Text _itemCountText;
+    [SerializeField] private Text _itemCountText;
     [SerializeField, Range(0,1f)] private float _defoultAlpha = 0.7f;
 
     private CanvasGroup _group;
