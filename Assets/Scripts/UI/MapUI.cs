@@ -65,6 +65,23 @@ public class MapUI : MonoBehaviour
         _hasRoot = _mapRoot != null;
         if (!_hasRoot) CollectGraphics();
 
+        // Fallback: if the user forgot to wire up _mapBackground in
+        // the Inspector, try to find a child named "MapBackground".
+        // Without a reference the pan line at the bottom would silently
+        // bail out and m_AnchoredPosition would never change.
+        if (_mapBackground == null)
+        {
+            var found = transform.Find("MapBackground");
+            if (found != null) _mapBackground = found as RectTransform;
+            if (_mapBackground == null)
+            {
+                foreach (Transform t in transform.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "MapBackground") { _mapBackground = t as RectTransform; break; }
+                }
+            }
+        }
+
         // Remember where the sprite is configured to sit in the
         // Inspector. At runtime we shift it by -(player - _mapCenter) * pxPerMeter.
         if (_mapBackground != null) _spriteBasePos = _mapBackground.anchoredPosition;
@@ -165,7 +182,6 @@ public class MapUI : MonoBehaviour
     {
         if (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame)
             Toggle();
-        if (!_isOpen) return;
 
         if (!_playerReady)
         {
@@ -182,15 +198,18 @@ public class MapUI : MonoBehaviour
         // -(player - mapCenter) * pixelsPerMeter so the marker at
         // _mapCenter stays under the cursor (centre of the mask).
         // basePos = whatever you set in the RectTransform Inspector.
+        // Runs every frame regardless of _isOpen so the sprite stays
+        // panned to the player position even when the map is hidden.
         float dx = d.x * _pixelsPerMeter;
         float dz = d.z * _pixelsPerMeter;
         _mapBackground.anchoredPosition = new Vector2(
             _spriteBasePos.x - dx,
             _spriteBasePos.y - dz);
 
-        // The arrow rotates only (anchoredPosition (0, 0) in the mask).
         if (_playerArrow != null)
             _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -playerYaw);
+
+        if (!_isOpen) return;
 
         // Markers and edge arrows are children of _mapMask, so their
         // anchoredPosition is delta * pixelsPerMeter directly (no need
