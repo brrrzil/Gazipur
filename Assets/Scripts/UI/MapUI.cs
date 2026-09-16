@@ -244,67 +244,56 @@ public class MapUI : MonoBehaviour
         }
         if (_playerTransform == null || _mapContent == null) return;
 
-        // Static map: the sprite does NOT move. The sprite sits
-        // centred on the radar mask (anchoredPosition = (0, 0)).
-        // The player arrow and the marker icons move through the
-        // sprite instead - their position in Canvas is computed as
-        // ((world - spriteOrigin) * pixelsPerMeter) - spriteHalfSize.
-        // spriteOrigin is the world point at the sprite's bottom-
-        // left corner (0, 0 in sprite local space). With this
-        // arrangement the player icon appears at the same position
-        // on the map as the player's world position on the location.
-        float worldPerPixel = 1f / Mathf.Max(0.01f, _pixelsPerMeter);
-        Vector3 spriteOrigin = new Vector3(
-            _mapCenter.x - _mapPixelSize.x * 0.5f * worldPerPixel,
-            0f,
-            _mapCenter.z - _mapPixelSize.y * 0.5f * worldPerPixel);
-        Vector2 spriteHalf = _mapPixelSize * 0.5f;
-        Vector3 playerWorldFromOrigin = _playerTransform.position - spriteOrigin;
-        Vector2 playerSpritePx = new Vector2(
-            playerWorldFromOrigin.x * _pxPerMeter.x,
-            playerWorldFromOrigin.z * _pxPerMeter.y);
-        Vector2 playerCanvasOffset = playerSpritePx - spriteHalf;
         float playerYaw = _playerTransform.eulerAngles.y;
 
-        // Static map: the sprite does NOT move. The sprite sits
-        // centred on the radar mask (anchoredPosition = (0, 0)).
-        // The player arrow and the marker icons move through the
-        // sprite instead - their position in Canvas is computed as
-        // ((world - spriteOrigin) * pixelsPerMeter) - spriteHalfSize.
-        // spriteOrigin is the world point at the sprite's bottom-
-        // left corner. With this arrangement the player icon appears
-        // at the same position on the map as the player's world
-        // position on the location.
-        _mapContent.localPosition = Vector3.zero;
+        // Per the user's specification: the sprite is anchored at
+        // its centre point O (spriteWidth/2, spriteHeight/2) in mask
+        // local space. When the player is at _mapCenter in world
+        // coords, the sprite is exactly centred in the mask and O is
+        // at (0, 0). As the player moves:
+        //   - m metres along world X axis: sprite shifts by -m * pxPerMeter
+        //     in mask local X.
+        //   - n metres along world Z axis: sprite shifts by -n * pxPerMeter
+        //     in mask local Y (same sign as X for a GTA-style
+        //     'cursor stays at the centre of the mask' projection).
+        // The two signs match - both negative - so that the player
+        // icon stays anchored to the centre of the mask while the
+        // sprite (and the marker icons inside it) pan underneath.
+        float spriteShiftX = -(_playerTransform.position.x - _mapCenter.x) * _pixelsPerMeter;
+        float spriteShiftY = -(_playerTransform.position.z - _mapCenter.z) * _pixelsPerMeter;
+
+        _mapContent.localPosition = new Vector3(spriteShiftX, spriteShiftY, 0f);
         _mapContent.localRotation = Quaternion.identity;
         if (_zoom > 0f) _mapContent.localScale = new Vector3(_zoom, _zoom, 1f);
 
         // Rotate the player arrow to show the facing direction. The
         // arrow is a child of _mapMask (NOT of _mapContent) so it is
-        // not affected by the zoom scale or the sprite's content.
+        // not affected by the sprite's pan.
         if (_playerArrow != null)
             _playerArrow.localRotation = Quaternion.Euler(0f, 0f, -playerYaw + _playerArrowBaseAngle);
 
-        if (_mapBackground != null) _mapBackground.anchoredPosition = Vector2.zero;
-
-        // The player arrow moves through the sprite, just like a
-        // marker icon. Its position is in mask local space.
-        if (_playerArrow != null)
-            _playerArrow.anchoredPosition = playerCanvasOffset;
+        // The sprite itself does not need its own anchoredPosition -
+        // the parent _mapContent is what pans. Markers inside
+        // _mapContent follow the parent and end up at their absolute
+        // world position on the map.
 
         // Markers are children of _mapContent so their anchoredPosition
-        // is in sprite local space (sprite pixel coords, origin at
-        // sprite bottom-left). The distance to the player is computed
-        // in sprite-pixel space.
+        // is in sprite local space. With the GTA-style sprite pan,
+        // markers need to be positioned relative to the player so
+        // they appear at the correct offset from the cursor at the
+        // centre of the mask. Marker sprite-pixel position is
+        // computed from the marker-to-player delta (NOT from the
+        // marker's absolute world position) - that is the standard
+        // GTA-style projection.
         for (int i = 0; i < _markers.Count; i++)
         {
             var t = _markers[i];
             if (t.Marker == null) continue;
-            Vector3 markerWorldFromOrigin = t.Marker.WorldTransform.position - spriteOrigin;
-            float rx = markerWorldFromOrigin.x * _pxPerMeter.x;
-            float rz = markerWorldFromOrigin.z * _pxPerMeter.y;
+            Vector3 d = t.Marker.WorldTransform.position - _playerTransform.position;
+            float rx = d.x * _pxPerMeter.x;
+            float rz = d.z * _pxPerMeter.y;
             Vector2 markerSpritePx = new Vector2(rx, rz);
-            float distanceFromPlayerSprite = Vector2.Distance(markerSpritePx, playerSpritePx);
+            float distanceFromPlayerSprite = markerSpritePx.magnitude;
 
             if (distanceFromPlayerSprite <= _mapPixelRadius)
             {
@@ -321,9 +310,8 @@ public class MapUI : MonoBehaviour
                 if (t.Arrow != null)
                 {
                     t.Arrow.gameObject.SetActive(true);
-                    Vector2 toMarker = markerSpritePx - playerSpritePx;
-                    float angle = Mathf.Atan2(toMarker.y, toMarker.x) * Mathf.Rad2Deg;
-                    t.Arrow.anchoredPosition = playerSpritePx + new Vector2(
+                    float angle = Mathf.Atan2(markerSpritePx.y, markerSpritePx.x) * Mathf.Rad2Deg;
+                    t.Arrow.anchoredPosition = new Vector2(
                         Mathf.Cos(angle * Mathf.Deg2Rad) * _mapPixelRadius,
                         Mathf.Sin(angle * Mathf.Deg2Rad) * _mapPixelRadius);
                     t.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
