@@ -1,10 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Zenject;
 
 /// <summary>
-/// Debug overlay showing the player's world position and the
-/// corresponding sprite-pixel position on the map. Toggle with F4
+/// Debug overlay showing minimal minimap state. Toggle with F4
 /// (F3 is taken by the FPS counter).
 /// Mirrors FpsCounter's pattern: auto-bootstraps on play, renders
 /// via IMGUI in the top-right corner so it doesn't depend on any
@@ -28,15 +26,10 @@ public class MapCoordDebug : MonoBehaviour
     private bool _visible;
     private float _accum;
     private Vector3 _playerPos;
-    private Vector3 _mapCenter;
-    private Vector2 _mapPixelSize;
+    private float _playerYaw;
     private float _pixelsPerMeter;
-    private float _playerSpritePxX;
-    private float _playerSpritePxY;
-    private float _spriteOriginX;
-    private float _spriteOriginZ;
-    private float _shiftX;
-    private float _shiftY;
+    private float _playerArrowBaseAngle;
+    private float _mapPixelRadius;
     private GUIStyle _style;
     private GUIStyle _headerStyle;
 
@@ -60,28 +53,13 @@ public class MapCoordDebug : MonoBehaviour
         if (pm == null || map == null) return;
 
         _playerPos = pm.transform.position;
-        // Read the same fields the MapUI Inspector shows so the
-        // overlay matches what the user configured on the component.
-        // The fields are private; we read them through SerializedObject
-        // reflection to avoid widening the API just for a debug
-        // overlay. Reflection cost is paid once per refresh interval
-        // (10 Hz), not per frame.
+        _playerYaw = pm.transform.eulerAngles.y;
+
         var t = typeof(MapUI);
         var bf = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
-        _mapCenter = (Vector3)t.GetField("_mapCenter", bf).GetValue(map);
-        _mapPixelSize = (Vector2)t.GetField("_mapPixelSize", bf).GetValue(map);
         _pixelsPerMeter = (float)t.GetField("_pixelsPerMeter", bf).GetValue(map);
-
-        float worldPerPixel = 1f / Mathf.Max(0.01f, _pixelsPerMeter);
-        _spriteOriginX = _mapCenter.x - _mapPixelSize.x * 0.5f * worldPerPixel;
-        _spriteOriginZ = _mapCenter.z - _mapPixelSize.y * 0.5f * worldPerPixel;
-
-        float deltaX = _playerPos.x - _mapCenter.x;
-        float deltaZ = _playerPos.z - _mapCenter.z;
-        _playerSpritePxX = (_playerPos.x - _spriteOriginX) * _pixelsPerMeter;
-        _playerSpritePxY = (_playerPos.z - _spriteOriginZ) * _pixelsPerMeter;
-        _shiftX = -deltaX * _pixelsPerMeter;
-        _shiftY = -deltaZ * _pixelsPerMeter;
+        _playerArrowBaseAngle = (float)t.GetField("_playerArrowBaseAngle", bf).GetValue(map);
+        _mapPixelRadius = (float)t.GetField("_mapPixelRadius", bf).GetValue(map);
     }
 
     void OnGUI()
@@ -103,8 +81,7 @@ public class MapCoordDebug : MonoBehaviour
         }
 
         const float w = 280f;
-        const float h = 132f;
-        // Top-right corner of the screen.
+        const float h = 110f;
         var bg = new Rect(Screen.width - w - 8, 8, w, h);
         GUI.color = new Color(0, 0, 0, 0.6f);
         GUI.DrawTexture(bg, Texture2D.whiteTexture);
@@ -118,14 +95,10 @@ public class MapCoordDebug : MonoBehaviour
         GUI.Label(new Rect(x, y, w - 16, line),
             $"Player world : X {_playerPos.x,7:0.00}   Z {_playerPos.z,7:0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Map center   : X {_mapCenter.x,7:0.00}   Z {_mapCenter.z,7:0.00}", _style); y += line;
+            $"Player yaw   : {_playerYaw,7:0.0}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Sprite origin : X {_spriteOriginX,7:0.00}   Z {_spriteOriginZ,7:0.00}", _style); y += line;
+            $"Arrow rot    : {-_playerYaw + _playerArrowBaseAngle,7:0.0}  ({-_playerYaw + _playerArrowBaseAngle + 360f,7:0.0})", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Player sprite : X {_playerSpritePxX,7:0.0} px  Y {_playerSpritePxY,7:0.0} px", _style); y += line;
-        GUI.Label(new Rect(x, y, w - 16, line),
-            $"Sprite shift  : X {_shiftX,7:0.0} px  Y {_shiftY,7:0.0} px", _style); y += line;
-        GUI.Label(new Rect(x, y, w - 16, line),
-            $"Pixel size    : {_mapPixelSize.x:0} x {_mapPixelSize.y:0}   px/m {_pixelsPerMeter:0.0}", _style);
+            $"Pixels/m     : {_pixelsPerMeter:0.0}    Radius: {_mapPixelRadius:0}", _style);
     }
 }
