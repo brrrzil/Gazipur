@@ -33,6 +33,8 @@ public class MapCoordDebug : MonoBehaviour
     private float _deltaX;
     private float _deltaZ;
     private Vector2 _mapBackgroundActualPos;
+    private Vector2 _mapBackgroundSize;
+    private Vector2 _mapBackgroundPivot;
     private float _playerArrowActualRotZ;
     private bool _backgroundFound;
     private bool _arrowFound;
@@ -81,6 +83,8 @@ public class MapCoordDebug : MonoBehaviour
             if (bg != null)
             {
                 _mapBackgroundActualPos = bg.anchoredPosition;
+                _mapBackgroundSize = bg.sizeDelta;
+                _mapBackgroundPivot = bg.pivot;
                 _backgroundFound = true;
             }
         }
@@ -116,8 +120,8 @@ public class MapCoordDebug : MonoBehaviour
             };
         }
 
-        const float w = 320f;
-        const float h = 168f;
+        const float w = 360f;
+        const float h = 200f;
         var bg = new Rect(Screen.width - w - 8, 8, w, h);
         GUI.color = new Color(0, 0, 0, 0.6f);
         GUI.DrawTexture(bg, Texture2D.whiteTexture);
@@ -137,8 +141,12 @@ public class MapCoordDebug : MonoBehaviour
         GUI.Label(new Rect(x, y, w - 16, line),
             $"Expected pan   : X {-_deltaX * _pixelsPerMeter,7:+0.0;-0.0} px  Y {-_deltaZ * _pixelsPerMeter,7:+0.0;-0.0} px", _style); y += line;
         if (_backgroundFound)
+        {
             GUI.Label(new Rect(x, y, w - 16, line),
-                $"BG actual      : X {_mapBackgroundActualPos.x,7:+0.0;-0.0} px  Y {_mapBackgroundActualPos.y,7:+0.0;-0.0} px  <-- LIVE", _style);
+                $"BG actual      : X {_mapBackgroundActualPos.x,7:+0.0;-0.0} px  Y {_mapBackgroundActualPos.y,7:+0.0;-0.0} px  <-- LIVE", _style); y += line;
+            GUI.Label(new Rect(x, y, w - 16, line),
+                $"BG size        : {_mapBackgroundSize.x:0} x {_mapBackgroundSize.y:0}    Pivot: ({_mapBackgroundPivot.x:0.00}, {_mapBackgroundPivot.y:0.00})", _style);
+        }
         else
             GUI.Label(new Rect(x, y, w - 16, line),
                 "BG actual      : <missing _mapBackground ref>", _style);
