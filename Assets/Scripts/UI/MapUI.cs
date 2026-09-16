@@ -29,11 +29,11 @@ public class MapUI : MonoBehaviour
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("World <-> Pixel mapping")]
-    [Tooltip("Size of the area represented by the map sprite in world metres (X, Z). This is NOT just the in-game playable area inside the fence - it is the full rectangle that the map sprite shows, including the surrounding area beyond the fence. For a sprite that shows 540x540 m of world with a 270x270 m playable area in the centre, set to (540, 540).")]
-    [SerializeField] private Vector2 _mapWorldSize = new Vector2(540f, 540f);
-    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. Use a square sprite (eg 1080x1080) with each side a multiple of the playable location's grid size (eg 270 m) for clean pxPerMeter values.")]
-    [SerializeField] private Vector2 _mapPixelSize = new Vector2(1080f, 1080f);
-    [Tooltip("World position of the CENTRE of the playable location (in-game area). For the user's 270x270 m location centred on (500, 500), set this to (500, 0, 500). The script uses this to figure out the sprite's bottom-left corner automatically - the user does NOT have to compute it by hand.")]
+    [Tooltip("How many sprite pixels correspond to one metre of world distance. For a 270x270 m location drawn as a 2700x2700 px sprite, set to 10 (2700 px / 270 m = 10 px/m). Walking one metre east shifts the map by 10 px west.")]
+    [SerializeField] private float _pixelsPerMeter = 10f;
+    [Tooltip("Size of the MapBackground sprite in pixels (X, Y). Must match the sprite's source asset. The sprite is centred on _mapCenter in world space - the script automatically figures out the sprite's bottom-left corner from the centre + pixel size + pixelsPerMeter.")]
+    [SerializeField] private Vector2 _mapPixelSize = new Vector2(2700f, 2700f);
+    [Tooltip("World position of the CENTRE of the in-game location. For the user's 270x270 m location centred on (500, 500), set this to (500, 0, 500). The red pixel (sprite centre) should correspond to this world point.")]
     [SerializeField] private Vector3 _mapCenter = new Vector3(500f, 0f, 500f);
 
     [Header("Map Center helpers (Editor only)")]
@@ -103,37 +103,16 @@ public class MapUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // Only auto-compute _mapPixelRadius on the very first OnEnable
-        // (the default value of 150 is the sentinel). After the user has
-        // set a value in the Inspector, respect it - even across runs,
-        // since Unity serialises the value. This lets the user tune the
-        // radius to control which markers get the GTA-style rim arrow.
+        // Auto-compute _mapPixelRadius from the mask size on the
+        // first OnEnable (sentinel value 150 or below = unset).
         if (_mapPixelRadius <= 0f && _mapMask != null && _mapMask.sizeDelta.x > 0f)
             _mapPixelRadius = _mapMask.sizeDelta.x * 0.5f;
-        // pxPerMeter is the direct world-to-pixel ratio for each
-        // axis. For a sprite drawn exactly 1:1 with the location,
-        // both axes give the same value (eg a 1024x1024 sprite for
-        // a 256x256 m location gives 4 px/m on both axes).
-        //
-        // The sprite does not have to map 1:1 to the IN-GAME
-        // location only - the map sprite usually shows the
-        // surrounding area too (the world beyond the fence). The
-        // user sets:
-        //   - _mapWorldSize = the size of the entire map sprite
-        //     area in world metres (including the surrounding
-        //     area shown on the map but unreachable in-game).
-        //   - _mapPixelSize = the size of the sprite in pixels.
-        // For the projection to be uniform on both axes, the
-        // sprite must be square (width == height) AND the
-        // _mapWorldSize X and Z must match the sprite's aspect
-        // ratio. The simplest choice is to make the sprite square
-        // (eg 1080x1080 px) with each side a multiple of the
-        // in-game location's grid (eg 270x270 m, 540x540 m,
-        // 1080x1080 m) - that gives a clean pxPerMeter = N px/m
-        // on both axes with no distortion.
-        float pxPerMeterX = _mapPixelSize.x / Mathf.Max(0.01f, _mapWorldSize.x);
-        float pxPerMeterY = _mapPixelSize.y / Mathf.Max(0.01f, _mapWorldSize.y);
-        _pxPerMeter = new Vector2(pxPerMeterX, pxPerMeterY);
+        // _pxPerMeter is now a uniform scalar - the same value on
+        // both X and Y. The user picks the value to match the
+        // sprite-to-world ratio (eg 10 for a 2700x2700 sprite
+        // over a 270x270 m location). Both sprite axes use the
+        // same scale, so 1 m east = 1 m north in pixels.
+        _pxPerMeter = new Vector2(_pixelsPerMeter, _pixelsPerMeter);
     }
 
     private void OnDestroy()
@@ -265,19 +244,17 @@ public class MapUI : MonoBehaviour
         }
         if (_playerTransform == null || _mapContent == null) return;
 
-        // _mapCenter is the world position of the centre of the in-game
-        // location (eg (500, 0, 500) for a 270x270 m location centred
-        // on (500, 500)). The sprite is centred on this point. The
-        // sprite's bottom-left corner in world space is therefore:
+        // _mapCenter is the world position of the CENTRE of the
+        // in-game location (eg (500, 0, 500)). The sprite is
+        // centred on this point. The sprite's bottom-left corner
+        // in world space is therefore:
         //   _mapCenter - (spritePixelSize / 2) * worldPerPixel
-        // We compute that and use it as the projection origin.
-        Vector2 worldPerPixel = new Vector2(
-            _mapWorldSize.x / Mathf.Max(1f, _mapPixelSize.x),
-            _mapWorldSize.y / Mathf.Max(1f, _mapPixelSize.y));
+        // where worldPerPixel = 1 / pixelsPerMeter.
+        float worldPerPixel = 1f / Mathf.Max(0.01f, _pixelsPerMeter);
         Vector3 spriteOrigin = new Vector3(
-            _mapCenter.x - _mapPixelSize.x * 0.5f * worldPerPixel.x,
+            _mapCenter.x - _mapPixelSize.x * 0.5f * worldPerPixel,
             0f,
-            _mapCenter.z - _mapPixelSize.y * 0.5f * worldPerPixel.y);
+            _mapCenter.z - _mapPixelSize.y * 0.5f * worldPerPixel);
         Vector3 playerDelta = _playerTransform.position - spriteOrigin;
         float playerYaw = _playerTransform.eulerAngles.y;
 
