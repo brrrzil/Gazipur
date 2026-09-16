@@ -10007,11 +10007,6 @@ Transform:
   - {fileID: 1249835014}
   m_Father: {fileID: 1264709487}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!224 &240693423 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 3526907135643051149, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-  m_PrefabInstance: {fileID: 5006747320137223824}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &240909682
 GameObject:
   m_ObjectHideFlags: 0
@@ -39397,11 +39392,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.6242957, y: 50, z: 0.24954376}
   m_Center: {x: 0, y: 24, z: 0}
---- !u!224 &841267281 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-  m_PrefabInstance: {fileID: 5006747320137223824}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &841471139
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -93308,21 +93298,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapUI
   _mapRoot: {fileID: 1524791603}
-  _mapContent: {fileID: 240693423}
   _mapMask: {fileID: 971419240}
   _playerArrow: {fileID: 1483512212}
-  _mapBackground: {fileID: 841267281}
+  _mapBackground: {fileID: 0}
   _markersParent: {fileID: 393479153}
   _markersEdgeParent: {fileID: 816569468}
   _markerIconPrefab: {fileID: 8154647190314918618, guid: 3898f462a44680e4f99188865a8b6848, type: 3}
   _markerArrowPrefab: {fileID: 1579537487295723615, guid: 7ec90bae77f10534280a5b991025c39d, type: 3}
-  _pixelsPerMeter: 10
-  _mapPixelSize: {x: 5226, y: 5366}
   _mapCenter: {x: 500, y: 0, z: 500}
-  _mapCenterEditorHelpers: 0
-  _mapPixelRadius: 160
-  _playerArrowBaseAngle: 0
-  _zoom: 1
+  _pixelsPerMeter: 5
   _collectedPrefix: map_marker_collected_
 --- !u!224 &1543783955576237892
 RectTransform:
@@ -105002,65 +104986,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1524791604}
     m_Modifications:
-    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 7065b66c607828a42ae590168cf8f7fe, type: 3}
-    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_Color.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_Color.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1494335997492301864, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_PreserveAspect
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1649905507698865818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2903127805141434633, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_Name
       value: MapMask
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 2048
+      value: 2613
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 2048
+      value: 2683
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 150
+      value: 424
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 535
+      value: 487.8
       objectReference: {fileID: 0}
     - target: {fileID: 7111226153861327818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_Pivot.x
@@ -105141,18 +105085,6 @@ PrefabInstance:
     - target: {fileID: 7111226153861327818, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8332421684926136741, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 453952a17cea08a40af9d20c588592a8, type: 3}
-    - target: {fileID: 8634568627047266801, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: ed6a2f66fb8d7fc428bb93e9958e50be, type: 3}
-    - target: {fileID: 8634568627047266801, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_PreserveAspect
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
