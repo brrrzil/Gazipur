@@ -4716,7 +4716,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &102783010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17977,7 +17977,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!135 &413876298
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -104989,10 +104989,6 @@ PrefabInstance:
     - target: {fileID: 2903127805141434633, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_Name
       value: MapMask
-      objectReference: {fileID: 0}
-    - target: {fileID: 2903127805141434633, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4758819002573214571, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_SizeDelta.x
