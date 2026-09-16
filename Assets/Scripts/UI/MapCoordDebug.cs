@@ -32,6 +32,10 @@ public class MapCoordDebug : MonoBehaviour
     private float _mapPixelRadius;
     private float _spriteShiftX;
     private float _spriteShiftY;
+    private Vector2 _mapBackgroundActualPos;
+    private Vector2 _playerArrowActualRot;
+    private bool _backgroundFound;
+    private bool _arrowFound;
     private GUIStyle _style;
     private GUIStyle _headerStyle;
 
@@ -68,6 +72,32 @@ public class MapCoordDebug : MonoBehaviour
         float dz = (_playerPos.z - _mapCenter.z) * _pixelsPerMeter;
         _spriteShiftX = -dx;
         _spriteShiftY = -dz;
+
+        // Read the live RectTransform.anchoredPosition of the map
+        // background to verify that the script really is moving it.
+        _backgroundFound = false;
+        var bgField = t.GetField("_mapBackground", bf);
+        if (bgField != null)
+        {
+            var bg = bgField.GetValue(map) as RectTransform;
+            if (bg != null)
+            {
+                _mapBackgroundActualPos = bg.anchoredPosition;
+                _backgroundFound = true;
+            }
+        }
+
+        _arrowFound = false;
+        var arrowField = t.GetField("_playerArrow", bf);
+        if (arrowField != null)
+        {
+            var arrow = arrowField.GetValue(map) as RectTransform;
+            if (arrow != null)
+            {
+                _playerArrowActualRot = arrow.localRotation.eulerAngles;
+                _arrowFound = true;
+            }
+        }
     }
 
     void OnGUI()
@@ -88,8 +118,8 @@ public class MapCoordDebug : MonoBehaviour
             };
         }
 
-        const float w = 280f;
-        const float h = 130f;
+        const float w = 320f;
+        const float h = 168f;
         var bg = new Rect(Screen.width - w - 8, 8, w, h);
         GUI.color = new Color(0, 0, 0, 0.6f);
         GUI.DrawTexture(bg, Texture2D.whiteTexture);
@@ -101,14 +131,28 @@ public class MapCoordDebug : MonoBehaviour
 
         GUI.Label(new Rect(x, y, w - 16, line), "Map debug (F4 to hide)", _headerStyle); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Player world : X {_playerPos.x,7:0.00}   Z {_playerPos.z,7:0.00}", _style); y += line;
+            $"Player world   : X {_playerPos.x,7:0.00}   Z {_playerPos.z,7:0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Map center   : X {_mapCenter.x,7:0.00}   Z {_mapCenter.z,7:0.00}", _style); y += line;
+            $"Map center     : X {_mapCenter.x,7:0.00}   Z {_mapCenter.z,7:0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Pan delta    : X {(_playerPos.x - _mapCenter.x),7:+0.00;-0.00}   Z {(_playerPos.z - _mapCenter.z),7:+0.00;-0.00}", _style); y += line;
+            $"Delta          : X {(_playerPos.x - _mapCenter.x),7:+0.00;-0.00}   Z {(_playerPos.z - _mapCenter.z),7:+0.00;-0.00}", _style); y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Sprite shift : X {_spriteShiftX,7:+0.0;-0.0} px  Y {_spriteShiftY,7:+0.0;-0.0} px", _style); y += line;
+            $"Pan shift      : X {_spriteShiftX,7:+0.0;-0.0} px  Y {_spriteShiftY,7:+0.0;-0.0} px", _style); y += line;
+        if (_backgroundFound)
+            GUI.Label(new Rect(x, y, w - 16, line),
+                $"BG actual      : X {_mapBackgroundActualPos.x,7:+0.0;-0.0} px  Y {_mapBackgroundActualPos.y,7:+0.0;-0.0} px  <-- LIVE", _style);
+        else
+            GUI.Label(new Rect(x, y, w - 16, line),
+                "BG actual      : <missing _mapBackground ref>", _style);
+        y += line;
+        if (_arrowFound)
+            GUI.Label(new Rect(x, y, w - 16, line),
+                $"Arrow rot      : Z {_playerArrowActualRot.z,7:0.0}  <-- LIVE", _style);
+        else
+            GUI.Label(new Rect(x, y, w - 16, line),
+                "Arrow rot      : <missing _playerArrow ref>", _style);
+        y += line;
         GUI.Label(new Rect(x, y, w - 16, line),
-            $"Pixels/m     : {_pixelsPerMeter:0.0}    Mask radius: {_mapPixelRadius:0}", _style);
+            $"Pixels/m       : {_pixelsPerMeter:0.0}    Mask radius: {_mapPixelRadius:0}", _style);
     }
 }
