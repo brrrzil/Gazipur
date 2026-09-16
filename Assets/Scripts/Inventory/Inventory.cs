@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Zenject;
 using static EnumData;
-
 public class Inventory : MonoBehaviour
 {
     public System.Action<ItemData> onTakeItem;
@@ -12,11 +11,11 @@ public class Inventory : MonoBehaviour
     [field: SerializeField] public ItemInfoPanel ItemInfoPanel { get; private set; }
     [SerializeField] private GameObject _inventoryPanel;
     [SerializeField] private FilterBlueprint _filterBlueprint;
-    [SerializeField] private TMP_Text _weightText;
-    [SerializeField] private Image _weightBar;
-    [SerializeField] private TMP_Text _inventoryWeightText;
-    [SerializeField] private TMP_Text _cargoPriceText;
-    [SerializeField] private TMP_Text _inventoryCargoPriceText;
+    [SerializeField] private Text _weightText;         
+    [SerializeField] private Image _weightBar;         
+    [SerializeField] private Text _inventoryWeightText;         
+    [SerializeField] private Text _cargoPriceText;         
+    [SerializeField] private Text _inventoryCargoPriceText;
     [SerializeField] private ItemData[] _startItems;
     [SerializeField] private InventoryCell[] _cells;
     [SerializeField] private FastCell[] _fastCells;
