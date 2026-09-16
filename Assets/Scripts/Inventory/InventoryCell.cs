@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -10,7 +9,7 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     public ItemData Item { get; private set; }
     public int Count { get; private set; }
     [SerializeField] private Image _itemIcon;
-    [SerializeField] private TMP_Text _countText;
+    [SerializeField] private Text _countText;
     [Inject] private ItemsManager _itemsManager;
     [Inject] private DataManager _data;
     [Inject] private MarketManager _market;
