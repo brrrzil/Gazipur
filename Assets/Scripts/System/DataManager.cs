@@ -1,12 +1,11 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using static EnumData;
-
-public class DataManager : MonoBehaviour
+public class DataManager: MonoBehaviour
 {
-    [SerializeField] private TMP_Text _moneyCount;
-    [SerializeField] private TMP_Text _moneyToInventoryText;
+    [SerializeField] private Text _moneyCount;
+    [SerializeField] private Text _moneyToInventoryText;
     [SerializeField] private int _startMoney;
 
     public System.Action onChangeMoney;
