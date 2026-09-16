@@ -120733,6 +120733,10 @@ PrefabInstance:
       value: -7.408651
       objectReference: {fileID: 0}
     - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
+      propertyPath: _jumpHeight
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8601648517417176321, guid: 672db997276968a48822ef49c311d4de, type: 3}
       propertyPath: _crouchCameraDrop
       value: 0.5
       objectReference: {fileID: 0}
