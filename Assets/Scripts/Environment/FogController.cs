@@ -13,18 +13,18 @@ using UnityEngine;
 /// base × aim multiplier). Both subsystems then only have to call
 /// intent methods; they never touch RenderSettings themselves.
 ///
-/// Persists the cleared value across runs via PlayerPrefs so the work
-/// you do collecting garbage in one session isn't lost on relaunch.
+/// Density always resets to the scene's authored value at every
+/// launch — pickup work does NOT carry between sessions.
 /// </summary>
 public class FogController : MonoBehaviour
 {
     public static FogController Instance { get; private set; }
 
-    private const string PrefsKey = "fogDensity";
-
     [SerializeField] private float _lerpSpeed = 0.005f;
 
     // The baseline the scene is thining toward (decreased by pickup).
+    // Re-read from RenderSettings every Awake so a fresh launch starts
+    // from the scene's authored value, not the previous run's leftovers.
     private float _clearedDensity;
     // Whatever density we're showing right now, lerping toward _targetDensity.
     private float _liveDensity;
@@ -40,21 +40,13 @@ public class FogController : MonoBehaviour
         }
         Instance = this;
 
-        _clearedDensity = PlayerPrefs.HasKey(PrefsKey)
-            ? PlayerPrefs.GetFloat(PrefsKey)
-            : RenderSettings.fogDensity;
-        _liveDensity = RenderSettings.fogDensity;
+        // Reset to the scene's authored density every launch. If you
+        // want pickups to persist, add a separate "save game" hook
+        // instead of touching this.
+        _clearedDensity = RenderSettings.fogDensity;
+        _liveDensity = _clearedDensity;
         _targetDensity = _clearedDensity;
         RenderSettings.fogDensity = _liveDensity;
-    }
-
-    private void OnApplicationQuit() => Save();
-    private void OnApplicationPause(bool paused) { if (paused) Save(); }
-
-    private void Save()
-    {
-        PlayerPrefs.SetFloat(PrefsKey, _clearedDensity);
-        PlayerPrefs.Save();
     }
 
     private void Update()
@@ -76,14 +68,15 @@ public class FogController : MonoBehaviour
     {
         _clearedDensity = Mathf.Max(0f, _clearedDensity - amount);
         _targetDensity = _clearedDensity;
-        Save();
     }
 
     /// <summary>Set the live density toward cleared × <paramref name="multiplier"/>.
     /// Pass 1 to come back to cleared; pass 0 to wipe fog while zoomed in.</summary>
     public void AimMultiply(float multiplier)
     {
-        _targetDensity = Mathf.Max(0f, _clearedDensity * multiplier);
+        // Clamp the multiplier to >= 0 so an unexpected -1 from a
+        // buggy caller can't push the target below zero.
+        _targetDensity = Mathf.Max(0f, _clearedDensity * Mathf.Max(0f, multiplier));
     }
 
     /// <summary>Snap the live density back to cleared without waiting on lerp.</summary>
