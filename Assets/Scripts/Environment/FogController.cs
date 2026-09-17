@@ -68,6 +68,7 @@ public class FogController : MonoBehaviour
     {
         _clearedDensity = Mathf.Max(0f, _clearedDensity - amount);
         _targetDensity = _clearedDensity;
+        Debug.Log($"[Fog] DecreaseFog({amount}) -> cleared={_clearedDensity:F3} target={_targetDensity:F3}");
     }
 
     /// <summary>Set the live density toward cleared × <paramref name="multiplier"/>.
@@ -76,7 +77,12 @@ public class FogController : MonoBehaviour
     {
         // Clamp the multiplier to >= 0 so an unexpected -1 from a
         // buggy caller can't push the target below zero.
-        _targetDensity = Mathf.Max(0f, _clearedDensity * Mathf.Max(0f, multiplier));
+        float newTarget = Mathf.Max(0f, _clearedDensity * Mathf.Max(0f, multiplier));
+        if (!Mathf.Approximately(newTarget, _targetDensity))
+        {
+            Debug.Log($"[Fog] AimMultiply({multiplier:F3}) target { _targetDensity:F3} -> {newTarget:F3} (cleared={_clearedDensity:F3})");
+        }
+        _targetDensity = newTarget;
     }
 
     /// <summary>Snap the live density back to cleared without waiting on lerp.</summary>
