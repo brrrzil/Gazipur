@@ -20,7 +20,7 @@ public class FogController : MonoBehaviour
 {
     public static FogController Instance { get; private set; }
 
-    [SerializeField] private float _lerpSpeed = 0.005f;
+    [SerializeField] private float _lerpSpeed = 0.05f;
 
     // The baseline the scene is thining toward (decreased by pickup).
     // Re-read from RenderSettings every Awake so a fresh launch starts
@@ -53,7 +53,11 @@ public class FogController : MonoBehaviour
     {
         if (Mathf.Approximately(_liveDensity, _targetDensity)) return;
         _liveDensity = Mathf.Lerp(_liveDensity, _targetDensity, _lerpSpeed);
-        if (Mathf.Abs(_liveDensity - _targetDensity) < 0.0001f) _liveDensity = _targetDensity;
+        // Snap to the target once we get close enough so the live value
+        // visibly settles. Without this, Mathf.Lerp never reaches the
+        // target exactly and the Inspector shows a value 1e-6 off the
+        // expected one until the user nudges it.
+        if (Mathf.Abs(_liveDensity - _targetDensity) < 0.0005f) _liveDensity = _targetDensity;
         RenderSettings.fogDensity = _liveDensity;
     }
 
@@ -68,7 +72,6 @@ public class FogController : MonoBehaviour
     {
         _clearedDensity = Mathf.Max(0f, _clearedDensity - amount);
         _targetDensity = _clearedDensity;
-        Debug.Log($"[Fog] DecreaseFog({amount}) -> cleared={_clearedDensity:F3} target={_targetDensity:F3}");
     }
 
     /// <summary>Set the live density toward cleared × <paramref name="multiplier"/>.
@@ -78,11 +81,15 @@ public class FogController : MonoBehaviour
         // Clamp the multiplier to >= 0 so an unexpected -1 from a
         // buggy caller can't push the target below zero.
         float newTarget = Mathf.Max(0f, _clearedDensity * Mathf.Max(0f, multiplier));
-        if (!Mathf.Approximately(newTarget, _targetDensity))
-        {
-            Debug.Log($"[Fog] AimMultiply({multiplier:F3}) target { _targetDensity:F3} -> {newTarget:F3} (cleared={_clearedDensity:F3})");
-        }
+        // Snap immediately when the multiplier is 1 — that's the
+        // "release aim" path, the player expects the fog back at full
+        // density the moment they let go of right mouse.
         _targetDensity = newTarget;
+        if (Mathf.Approximately(multiplier, 1f))
+        {
+            _liveDensity = newTarget;
+            RenderSettings.fogDensity = _liveDensity;
+        }
     }
 
     /// <summary>Snap the live density back to cleared without waiting on lerp.</summary>
