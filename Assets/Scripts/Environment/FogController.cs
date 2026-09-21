@@ -65,6 +65,19 @@ public class FogController : MonoBehaviour
     /// what the world would be if aim weren't pressed.</summary>
     public float ClearedDensity => _clearedDensity;
 
+    /// <summary>Force the cleared baseline to <paramref name="density"/>.
+    /// SaveSystem.Load uses this to restore the value the player
+    /// had at their last save. Caller must also reset _liveDensity
+    /// and _targetDensity so the next frame draws the restored
+    /// value instead of lerping away from it.</summary>
+    public void SetClearedDensity(float density)
+    {
+        _clearedDensity = Mathf.Max(0f, density);
+        _targetDensity = _clearedDensity;
+        _liveDensity = _clearedDensity;
+        RenderSettings.fogDensity = _liveDensity;
+    }
+
     /// <summary>Push the cleared density down by <paramref name="amount"/>,
     /// clamped at 0. Aim zoom follows along automatically because
     /// multiplies against the cleared value.</summary>
@@ -72,6 +85,7 @@ public class FogController : MonoBehaviour
     {
         _clearedDensity = Mathf.Max(0f, _clearedDensity - amount);
         _targetDensity = _clearedDensity;
+        GamePersistence.SaveNow();
     }
 
     /// <summary>Set the live density toward cleared × <paramref name="multiplier"/>.

@@ -5,6 +5,8 @@ using Zenject;
 using static EnumData;
 public class Inventory : MonoBehaviour
 {
+    public static Inventory Instance { get; private set; }
+
     public System.Action<ItemData> onTakeItem;
     public HashSet<ToolsType> HaveTools { get; private set; }
     [field: SerializeField] public float Capacity { get; private set; }
@@ -22,6 +24,11 @@ public class Inventory : MonoBehaviour
     [SerializeField] private PickedItemUI[] _picedItems;
     [SerializeField] private Image[] _toolsImages;
 
+    /// <summary>(SaveSystem) Read-only access to the cell array so
+    /// GamePersistence.LoadIntoGame can write items into cells without
+    /// duplicating Inventory's internal bookkeeping.</summary>
+    public IReadOnlyList<InventoryCell> Cells => _cells;
+
     private bool _isOpen;
     private int _picCounter;
     private int _cargoPrice;
@@ -30,6 +37,21 @@ public class Inventory : MonoBehaviour
     [Inject] GameManager _manager;
     [Inject] DialogManager _dialog;
     [Inject] Control _control;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     private void Start()
     {
@@ -124,6 +146,7 @@ public class Inventory : MonoBehaviour
         if (totalUnpicked < startCount)
         {
             _picedItems[_picCounter % _picedItems.Length].Show(item, startCount - totalUnpicked);
+            GamePersistence.SaveNow();
         }
         else
         {
@@ -190,7 +213,10 @@ public class Inventory : MonoBehaviour
         if (item != null)
         {
             if(item.Use(_manager))
+            {
                 cell.RemoveItem(1);
+                GamePersistence.SaveNow();
+            }
         }
     }
 

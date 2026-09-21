@@ -96,5 +96,6 @@ public class GarbageObject : InteractObject
     {
         if (FogController.Instance != null)
             FogController.Instance.DecreaseFog(0.005f);
+        GamePersistence.SaveNow();
     }
 }

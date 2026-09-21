@@ -2,8 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using static EnumData;
-public class DataManager: MonoBehaviour
+
+public class DataManager : MonoBehaviour
 {
+    public static DataManager Instance { get; private set; }
+
     [SerializeField] private Text _moneyCount;
     [SerializeField] private Text _moneyToInventoryText;
     [SerializeField] private int _startMoney;
@@ -14,7 +17,7 @@ public class DataManager: MonoBehaviour
     public HeroInfo Hero { get; private set; }
     public ItemInfo[] Inventory { get; private set; }
     public List<ItemInfo> HomeBox { get; private set; }
-    
+
     [System.Serializable]
     public class HeroInfo
     {
@@ -26,14 +29,30 @@ public class DataManager: MonoBehaviour
     [System.Serializable]
     public class ItemInfo
     {
-        public int index =-1;
+        public int index = -1;
         public int count = 0;
     }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     private void Start()
     {
         ChangeMoney(_startMoney);
     }
-    public void UpdateInventoryCell(int cellIndex, int itemIndex ,int count)
+    public void UpdateInventoryCell(int cellIndex, int itemIndex, int count)
     {
         Inventory[cellIndex].count = count;
         Inventory[cellIndex].index = itemIndex;
@@ -42,7 +61,7 @@ public class DataManager: MonoBehaviour
     {
         Inventory = new ItemInfo[cells.Length];
         for (int i = 0; i < Inventory.Length; i++)
-        {            
+        {
             if (cells[i].Item != null)
             {
                 Inventory[i] = new ItemInfo() { count = cells[i].Count, index = cells[i].Item.Index };
@@ -54,6 +73,15 @@ public class DataManager: MonoBehaviour
     public void ChangeMoney(int count)
     {
         Money += count;
+        onChangeMoney?.Invoke();
+        _moneyCount.text = Money.ToString();
+        _moneyToInventoryText.text = Money.ToString();
+        GamePersistence.SaveNow();
+    }
+    /// <summary>Set Money to an absolute value (used by SaveSystem.Load).</summary>
+    public void SetMoney(int amount)
+    {
+        Money = amount;
         onChangeMoney?.Invoke();
         _moneyCount.text = Money.ToString();
         _moneyToInventoryText.text = Money.ToString();
