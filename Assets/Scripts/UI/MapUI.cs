@@ -111,9 +111,16 @@ public class MapUI : MonoBehaviour
         // its graphics. Same for _markersEdgeParent.
     }
 
+    public bool IsUnlocked => _isOpen || _wasEverOpened;
+
+    /// <summary>Persistent unlock flag. Set once when the player buys the map
+    /// (or when LoadIntoGame replays an unlock from the save blob).</summary>
+    private bool _wasEverOpened;
+
     public void SetOpen(bool open)
     {
         _isOpen = open;
+        if (open) _wasEverOpened = true;
 
         if (_hasRoot)
         {

@@ -124,6 +124,7 @@ public class Inventory : MonoBehaviour
         if (totalUnpicked < startCount)
         {
             _picedItems[_picCounter % _picedItems.Length].Show(item, startCount - totalUnpicked);
+            GamePersistence.SaveNow();
         }
         else
         {
@@ -190,7 +191,10 @@ public class Inventory : MonoBehaviour
         if (item != null)
         {
             if(item.Use(_manager))
+            {
                 cell.RemoveItem(1);
+                GamePersistence.SaveNow();
+            }
         }
     }
 
