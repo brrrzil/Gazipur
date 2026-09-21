@@ -8,12 +8,19 @@ using DG.Tweening;
 using static EnumData;
 public class DialogManager : MonoBehaviour
 {
+    public static DialogManager Instance { get; private set; }
+
     public DialogType Dialog { get; private set; }
     [field: SerializeField] public CharacterRemarks Remarks { get; private set; }
     [SerializeField] private Text _questionText;
     [SerializeField] private Button[] _ansverButtons;
 
     [SerializeField] private DialogData[] _dialogs;
+
+    /// <summary>(SaveSystem) Read-only view onto the dialog list so
+    /// GamePersistence.Collect can iterate the flags without exposing
+    /// the serialized field directly.</summary>
+    public System.Collections.Generic.IReadOnlyList<DialogData> AllDialogs => _dialogs;
 
     [System.Serializable]
     public class DialogData
@@ -32,6 +39,42 @@ public class DialogManager : MonoBehaviour
     // Tracks the in-progress answer→question coroutine so we can cancel it if
     // the player (or a game-mode change) interrupts the chain.
     private Coroutine _voiceSequence;
+
+    /// <summary>(SaveSystem) Mark the currently-running dialog as completed
+    /// by setting its <see cref="DialogData.isUsed"/> flag. Called from
+    /// SetIteration's end-of-dialog branch when the player picks a terminal
+    /// answer. Persists via GamePersistence.SaveNow() which reads the
+    /// updated flags on the next collect.</summary>
+    public void MarkCurrentDialogUsed()
+    {
+        var matches = _dialogs.Where(d => d.dialogType == Dialog).ToArray();
+        if (matches.Length == 0) return;
+        matches[0].isUsed = matches[0].isOneTime;
+    }
+
+    /// <summary>(SaveSystem) Apply a list of completed dialog types loaded
+    /// from SaveData. Sets each matching DialogData.isUsed = isOneTime so
+    /// the player doesn't see the same dialog again after Continue.</summary>
+    public void MarkDialogsUsedFromSave(IEnumerable<DialogType> completed)
+    {
+        if (completed == null) return;
+        var byType = _dialogs.ToDictionary(d => d.dialogType);
+        foreach (var dt in completed)
+        {
+            if (byType.TryGetValue(dt, out var data))
+                data.isUsed = data.isOneTime;
+        }
+    }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -71,7 +114,12 @@ public class DialogManager : MonoBehaviour
         if (dialog.isUsed) return false;
 
         Dialog = dialog.dialogType;
-        dialog.isUsed = dialog.isOneTime;
+        // (SaveSystem) BUGFIX: previously `dialog.isUsed = dialog.isOneTime;`
+        // was set HERE, before the player walked through the dialog. That
+        // meant an unfinished dialog got persisted on save, and on reload
+        // the player could not re-trigger it. Move the flag flip into the
+        // end-of-dialog branch in SetIteration so we only record finished
+        // conversations.
         SetIteration(dialog.iteration);
         _modManager.ChangeMode(GameMode.dialog);
         return true;
@@ -152,6 +200,14 @@ public class DialogManager : MonoBehaviour
                     // End-of-dialog branch. The mode change triggers
                     // _speaker.Stop() via the onChangeMode handler above, so
                     // we just need to play the answer voice after that.
+                    //
+                    // (SaveSystem) Mark the dialog as completed only here,
+                    // after the player has chosen a terminal answer. If they
+                    // quit mid-conversation the next launch replays from the
+                    // start.
+                    MarkCurrentDialogUsed();
+                    GamePersistence.SaveNow();
+
                     _modManager.ChangeMode(GameMode.outdors);
                     if (_voiceSequence != null)
                         StopCoroutine(_voiceSequence);
@@ -206,5 +262,10 @@ public class DialogManager : MonoBehaviour
             if (_ansverButtons[i] != null)
                 _ansverButtons[i].interactable = false;
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 }
