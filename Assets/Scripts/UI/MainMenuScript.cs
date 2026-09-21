@@ -11,6 +11,14 @@ public class MainMenuScript : MonoBehaviour
     [SerializeField] private Button startButton, settingsButton, authorsButton, regardsButton, backSettingsButton, backAuthorsButton, backRegardsButton, exitButton;
     [SerializeField] private GameObject settingsPanel, authorsPanel, buttonPanel, regardsPanel;
 
+    // (SaveSystem) Round 95: Start button now opens a StartGamePanel
+    // with two buttons (New Game / Continue / Back). Inspector fields
+    // for the panel + sub-buttons are below.
+    [SerializeField] private GameObject startGamePanel;
+    [SerializeField] private Button newGameButton;
+    [SerializeField] private Button continueButton;
+    [SerializeField] private Button backFromStartButton;
+
     // (round 51) Preload GameScene in the background while the player is
     // on the main menu, so the actual transition on Start click is
     // instant. Uses the same allowSceneActivation=false pattern that
@@ -34,10 +42,19 @@ public class MainMenuScript : MonoBehaviour
         backRegardsButton.onClick.AddListener(OnBackRegards);
         exitButton.onClick.AddListener(OnExit);
 
+        // (SaveSystem) StartGamePanel hooks: New Game wipes the slot,
+        // Continue reuses it. Continue is disabled if no save exists.
+        if (newGameButton != null) newGameButton.onClick.AddListener(OnNewGame);
+        if (continueButton != null) continueButton.onClick.AddListener(OnContinue);
+        if (backFromStartButton != null) backFromStartButton.onClick.AddListener(OnBackFromStart);
+        if (continueButton != null) continueButton.interactable = SaveSystem.HasSave();
+        if (startGamePanel != null) startGamePanel.SetActive(false);
+
         buttonPanel.SetActive(true);
         settingsPanel.SetActive(false);
         authorsPanel.SetActive(false);
         regardsPanel.SetActive(false);
+        if (startGamePanel != null) startGamePanel.SetActive(false);
 
         // Start disabled: button is inert until the preload coroutine
         // reports the scene is ready (progress >= 0.9).
@@ -104,6 +121,48 @@ public class MainMenuScript : MonoBehaviour
     }
 
     private void OnStartGame()
+    {
+        // (SaveSystem) Round 95: Start no longer loads the scene
+        // directly. It opens the StartGamePanel so the player picks
+        // New Game or Continue. Scene preload still runs in the
+        // background so either option is instant when they confirm.
+        if (buttonPanel != null) buttonPanel.SetActive(false);
+        if (startGamePanel != null) startGamePanel.SetActive(true);
+        // Re-evaluate Continue in case the user saved via the dev
+        // tools or finished a playthrough since the menu was shown.
+        if (continueButton != null) continueButton.interactable = SaveSystem.HasSave();
+    }
+
+    private void OnNewGame()
+    {
+        // Wipe the save slot so SaveBootstrap finds nothing and the
+        // game boots into the authored scene defaults (FogController
+        // resets to scene density, MapUI starts locked, etc.).
+        SaveSystem.DeleteSave();
+        ActivateGameScene();
+    }
+
+    private void OnContinue()
+    {
+        if (!SaveSystem.HasSave())
+        {
+            // Defensive: the button should already be disabled, but
+            // if a save was deleted between Start and the click (very
+            // unlikely race) we just close the panel.
+            if (continueButton != null) continueButton.interactable = false;
+            OnBackFromStart();
+            return;
+        }
+        ActivateGameScene();
+    }
+
+    private void OnBackFromStart()
+    {
+        if (startGamePanel != null) startGamePanel.SetActive(false);
+        if (buttonPanel != null) buttonPanel.SetActive(true);
+    }
+
+    private void ActivateGameScene()
     {
         // Normal path: just flip the activation flag and Unity
         // finishes the load synchronously this frame.
