@@ -33,7 +33,17 @@ public class BuyItemObject : MonoBehaviour, IPointerClickHandler
         _priceText.text = _price.ToString();
         _buyButton.onClick.AddListener(Buy);
         _buyButton.interactable = _data.Money >= _price;
-        _data.onChangeMoney += () => _buyButton.interactable = _data.Money >= _price;
+        // Unity null-check: scene reload (New Game / Continue reload)
+        // destroys BuyItemObject while DataManager survives as a Zenject
+        // scene-context service. The captured 'this' is then a destroyed
+        // MonoBehaviour and _buyButton.gameObject throws NRE when this
+        // lambda fires from DataManager.onChangeMoney. Guard both ends.
+        _data.onChangeMoney += () =>
+        {
+            if (this == null) return;
+            if (_buyButton == null) return;
+            _buyButton.interactable = _data.Money >= _price;
+        };
     }
     private void Buy()
     {

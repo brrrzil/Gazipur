@@ -65,6 +65,16 @@ public static class GamePersistence
         {
             data.fogDensity = fog.ClearedDensity;
         }
+        else
+        {
+            // First save can fire before FogController.Awake runs
+            // (DataManager.Start -> ChangeMoney -> SaveNow fires before
+            // [RuntimeInitializeOnLoadMethod] for AfterSceneLoad has
+            // populated FogController.Instance). Fall back to the scene
+            // authored value so we don't persist fogDensity=0 just because
+            // the singleton hadn't bootstrapped yet.
+            data.fogDensity = RenderSettings.fogDensity;
+        }
 
         var map = MapUI.Instance;
         if (map != null)
@@ -147,8 +157,12 @@ public static class GamePersistence
         }
 
         var fog = FogController.Instance;
-        if (fog != null && data.fogDensity > 0f)
+        if (fog != null)
         {
+            // Apply even if data.fogDensity == 0 — that's the legitimate
+            // value after the player has fully cleared the fog. The
+            // old guard skipped it and left the runtime at the scene
+            // default, which is why fog sometimes 'reset to 0' on load.
             fog.SetClearedDensity(data.fogDensity);
         }
 
