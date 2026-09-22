@@ -291,14 +291,21 @@ public class Inventory : MonoBehaviour
 
         Debug.Log("Inventory.OnEnable() called");
 
+        // Unity-null guard: if no cells are wired in the Inspector
+        // (or the references were destroyed during a scene reload),
+        // bail before touching _cells[0]. Otherwise OnEnable throws
+        // NRE, Start never runs, _control.OnOpenInventory never gets
+        // subscribed, and the I key silently does nothing.
+        if (_cells == null || _cells.Length == 0) return;
+
         for (int i = 0; i < _cells.Length; i++)
         {
-            if (_cells[i].Item)
+            if (_cells[i] != null && _cells[i].Item)
             {
                 ShowInfoPanel(_cells[i]);
                 return;
             }
         }
-        ShowInfoPanel(_cells[0]);
+        if (_cells[0] != null) ShowInfoPanel(_cells[0]);
     }
 }
