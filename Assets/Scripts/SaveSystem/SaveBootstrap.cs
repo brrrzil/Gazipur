@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Auto-bootstrapped save/load entry point. Mirrors the pattern
@@ -22,6 +23,8 @@ using UnityEngine;
 /// </summary>
 public class SaveBootstrap : MonoBehaviour
 {
+    private static bool _subscribed;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoCreate()
     {
@@ -31,6 +34,30 @@ public class SaveBootstrap : MonoBehaviour
         if (FindFirstObjectByType<SaveBootstrap>() != null) return;
         var go = new GameObject("[SaveBootstrap]");
         DontDestroyOnLoad(go);
+        go.AddComponent<SaveBootstrap>();
+
+        // Hook sceneLoaded so a fresh SaveBootstrap is created when
+        // SceneManager.LoadScene moves us from MainMenu to GameScene
+        // (and back, and on Continue reload). The static AfterSceneLoad
+        // callback above only fires once per app session, which is not
+        // enough for a Continue-driven scene reload.
+        if (!_subscribed)
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            _subscribed = true;
+        }
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Only act on the GameScene. MainMenu doesn't need a
+        // SaveBootstrap (no PlayerState to restore), and skipping
+        // it avoids the GameScene's Inventory/items race when the
+        // user is just sitting on the menu.
+        if (!scene.name.Contains("Game")) return;
+        if (FindFirstObjectByType<SaveBootstrap>() != null) return;
+        var go = new GameObject("[SaveBootstrap]");
+        UnityEngine.Object.DontDestroyOnLoad(go);
         go.AddComponent<SaveBootstrap>();
     }
 
@@ -43,7 +70,9 @@ public class SaveBootstrap : MonoBehaviour
     {
         if (!_loadOnStart) return;
 
-        if (!SaveSystem.HasSave()) return;
+        bool hasSave = SaveSystem.HasSave();
+        Debug.Log($"[SaveBootstrap] Start scene='{gameObject.scene.name}' hasSave={hasSave}");
+        if (!hasSave) return;
 
         SaveData data = SaveSystem.Load();
         if (data == null) return;
@@ -56,6 +85,7 @@ public class SaveBootstrap : MonoBehaviour
         try
         {
             GamePersistence.LoadIntoGame(data);
+            Debug.Log($"[SaveBootstrap] LoadIntoGame OK money={data.money} inv={(data.inventory?.Count ?? 0)} fog={data.fogDensity}");
         }
         catch (System.Exception e)
         {
