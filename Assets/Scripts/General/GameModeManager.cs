@@ -78,6 +78,21 @@ public class GameModeManager : MonoBehaviour
                 _sounds.SwitchToMenuBackground();
                 return;
             }
+
+            // (Trader shortcut) Esc on the startTrader dialog skips the
+            // conversation and opens the trade panel immediately. The
+            // dialog is marked completed (same as a terminal answer)
+            // so a subsequent interaction with the trader goes straight
+            // to the trade panel via the TraderObject.Intearct branch.
+            if (_data.gameMode == GameMode.dialog
+                && _dialog.Dialog == DialogType.startTrader)
+            {
+                _dialog.MarkCurrentDialogUsed();
+                GamePersistence.SaveNow();
+                ChangeMode(GameMode.trade);
+                return;
+            }
+
             if (_data.gameMode != GameMode.die)
             {
                 // BUGFIX (round 12): when exiting any UI mode via Esc, make
