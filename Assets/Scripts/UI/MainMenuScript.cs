@@ -1,6 +1,7 @@
 using System.Collections;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
@@ -131,6 +132,12 @@ public class MainMenuScript : MonoBehaviour
         // Re-evaluate Continue in case the user saved via the dev
         // tools or finished a playthrough since the menu was shown.
         if (continueButton != null) continueButton.interactable = SaveSystem.HasSave();
+        // Force-select NewGame so a disabled Continue button doesn't
+        // get auto-selected and play its "Select" sound on panel open.
+        // EventSystem only routes selection to interactable=disabled
+        // when no other interactable button is selected.
+        if (newGameButton != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(newGameButton.gameObject);
     }
 
     private void OnNewGame()
