@@ -174,6 +174,11 @@ public class DialogManager : MonoBehaviour
             {
                 _ansverButtons[i].onClick.AddListener(() =>
                 {
+                    // Unity null-check: if the player finishes the dialog
+                    // and the scene unloads (New Game / Continue reload)
+                    // before this coroutine ends, `this` may be a
+                    // destroyed MonoBehaviour. Bail instead of throwing.
+                    if (this == null) return;
                     // M1 (re-applied in round 11): play the answer voice to
                     // completion before advancing to the next question.
                     // Without this, the answer voice starts and is immediately
@@ -198,6 +203,8 @@ public class DialogManager : MonoBehaviour
             {
                 _ansverButtons[i].onClick.AddListener(() =>
                 {
+                    // Same scene-unload guard as the newChain branch above.
+                    if (this == null) return;
                     // End-of-dialog branch. The mode change triggers
                     // _speaker.Stop() via the onChangeMode handler above, so
                     // we just need to play the answer voice after that.
@@ -268,5 +275,13 @@ public class DialogManager : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // Stop the in-flight answer-voice coroutine so a scene reload
+        // doesn't leave _voiceSequence holding a reference to a
+        // destroyed DialogManager.
+        if (_voiceSequence != null)
+        {
+            StopCoroutine(_voiceSequence);
+            _voiceSequence = null;
+        }
     }
 }
