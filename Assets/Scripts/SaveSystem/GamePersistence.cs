@@ -1,5 +1,6 @@
 using System.Linq;
 using UnityEngine;
+using static EnumData;
 
 /// <summary>
 /// Glue between game state (DataManager, Inventory, FogController,
@@ -126,10 +127,10 @@ public static class GamePersistence
                     {
                         // Reset every cell to empty first so a partially filled
                         // save can shrink to a smaller set without leftovers.
-                        for (int i = 0; i < cells.Length; i++)
+                        for (int i = 0; i < cells.Count; i++)
                             if (cells[i] != null) cells[i].RemoveItem();
 
-                        for (int i = 0; i < data.inventory.Count && i < cells.Length; i++)
+                        for (int i = 0; i < data.inventory.Count && i < cells.Count; i++)
                         {
                             var entry = data.inventory[i];
                             if (entry == null || entry.count <= 0) continue;
