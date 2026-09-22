@@ -113,6 +113,14 @@ public class FogController : MonoBehaviour
         _targetDensity = _clearedDensity;
         RenderSettings.fogDensity = _liveDensity;
     }
+
+    private void OnDestroy()
+    {
+        // Mirror Awake's Instance registration so a destroyed
+        // FogController doesn't leave Instance pointing at a fake-null
+        // object that would re-enter Awake's guard.
+        if (Instance == this) Instance = null;
+    }
 }
 
 /// <summary>
