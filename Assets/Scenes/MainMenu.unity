@@ -3850,7 +3850,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0475643b39380da49a06297a43e748ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuScript
-  startButton: {fileID: 1160131536}
+  startButton: {fileID: 1552188504}
   settingsButton: {fileID: 918640694}
   authorsButton: {fileID: 1573011611}
   regardsButton: {fileID: 2135086036}
@@ -3862,6 +3862,10 @@ MonoBehaviour:
   authorsPanel: {fileID: 1476418812}
   buttonPanel: {fileID: 370260074}
   regardsPanel: {fileID: 1109767285}
+  startGamePanel: {fileID: 1476360450}
+  newGameButton: {fileID: 1160131536}
+  continueButton: {fileID: 1659048693}
+  backFromStartButton: {fileID: 1498094169}
   gameSceneName: GameScene
   spinner: {fileID: 937812441}
 --- !u!114 &1484074675
