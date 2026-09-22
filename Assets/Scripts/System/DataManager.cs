@@ -74,8 +74,8 @@ public class DataManager : MonoBehaviour
     {
         Money += count;
         onChangeMoney?.Invoke();
-        _moneyCount.text = Money.ToString();
-        _moneyToInventoryText.text = Money.ToString();
+        if (_moneyCount != null) _moneyCount.text = Money.ToString();
+        if (_moneyToInventoryText != null) _moneyToInventoryText.text = Money.ToString();
         GamePersistence.SaveNow();
     }
     /// <summary>Set Money to an absolute value (used by SaveSystem.Load).</summary>
@@ -83,8 +83,8 @@ public class DataManager : MonoBehaviour
     {
         Money = amount;
         onChangeMoney?.Invoke();
-        _moneyCount.text = Money.ToString();
-        _moneyToInventoryText.text = Money.ToString();
+        if (_moneyCount != null) _moneyCount.text = Money.ToString();
+        if (_moneyToInventoryText != null) _moneyToInventoryText.text = Money.ToString();
     }
     public void SetDeffoultHeroState()
     {
