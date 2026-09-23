@@ -39,6 +39,12 @@ public class SaveData
     // flag for the minimap itself lives here so loading doesn't have
     // to scan every map_marker_* key.
     public bool mapUnlocked;
+
+    // (round 102) One-shot flag: have we played the opening comics
+    // sequence yet? Set true by ComicsController after the last slide
+    // closes, restored on Continue. Keeps New Game at fresh state and
+    // Continue from re-playing the intro.
+    public bool comicsCompleted;
 }
 
 [Serializable]

@@ -149,6 +149,25 @@ public class MainMenuScript : MonoBehaviour
         // (round 101) Also wipe the loot-collection registry so all
         // previously collected loot piles / skimmer parts come back.
         LootPersistence.ClearAll();
+        // (round 102) Belt-and-braces: double-check the slot was
+        // actually wiped before we trigger the scene load. If HasSave
+        // is still true PlayerPrefs.DeleteKey did not stick
+        // (extremely rare, but seen in Editor when the registry is
+        // mis-cached after a domain reload). Aborting the navigation
+        // here keeps the user on the start panel where the Continue
+        // button's interactable state will reflect reality, instead of
+        // silently booting them into a 'Continue' they didn't ask for.
+        if (SaveSystem.HasSave())
+        {
+            Debug.LogError("[MainMenu] New Game: HasSave still true after DeleteSave, retrying");
+            SaveSystem.DeleteSave();
+            if (SaveSystem.HasSave())
+            {
+                Debug.LogError("[MainMenu] New Game: retry also failed, aborting navigation");
+                return;
+            }
+        }
+        if (continueButton != null) continueButton.interactable = false;
         ActivateGameScene();
     }
 

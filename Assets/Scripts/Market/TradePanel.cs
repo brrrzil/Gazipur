@@ -19,11 +19,19 @@ public class TradePanel : MonoBehaviour
     [Inject] private Sounds _sounds;
     [Inject] private GameModeManager _gameModeManager;
 
+    // Cached delegate so OnDestroy can remove exactly this subscription.
+    // If we used `+= ()=>{...}` directly and tried to unsubscribe with the
+    // same lambda we'd match a different delegate instance and the
+    // GameModeManager would still call into a destroyed TradePanel the
+    // next time mode changes (causing MissingReferenceException at every
+    // Esc / Tab / Inventory keypress after Continue).
+    private System.Action<GameMode> _onModeChangedHandler;
+
     private void Start()
     {
-        _slider.onValueChanged.AddListener(ChangeCount);
+        if (_slider != null) _slider.onValueChanged.AddListener(ChangeCount);
 
-        // BUGFIX (round 101): the trade panel visibility was previously
+        // BUGFIX (round 102): the trade panel visibility was previously
         // driven entirely by GameModeManager.OnTrade UnityEvent's persistent
         // listeners. After scene reload (Continue -> GameScene) the
         // persistent listener can resolve to a destroyed GameObject, in
@@ -33,15 +41,32 @@ public class TradePanel : MonoBehaviour
         // both fire - the duplicate-show guard is harmless).
         if (_gameModeManager != null)
         {
-            _gameModeManager.onChangeMode += mode =>
+            _onModeChangedHandler = mode =>
             {
+                // Unity-null check on `this` - this lambda is captured by
+                // GameModeManager and outlives the TradePanel on scene
+                // reload. Without this, the first Esc / Tab after
+                // Continue throws MissingReferenceException because the
+                // lambda tries to access `this.gameObject` on a
+                // destroyed TradePanel.
+                if (this == null) return;
                 if (mode == GameMode.trade && gameObject != null && !gameObject.activeSelf)
                     gameObject.SetActive(true);
                 else if (mode != GameMode.trade && mode != GameMode.inventory
                          && gameObject != null && gameObject.activeSelf)
                     gameObject.SetActive(false);
             };
+            _gameModeManager.onChangeMode += _onModeChangedHandler;
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Mirror Awake/Start registrations with symmetric teardown so a
+        // destroyed TradePanel doesn't keep consuming Esc/Tab/Inventory
+        // events forever (round 102 user's 'управление слетает' report).
+        if (_gameModeManager != null && _onModeChangedHandler != null)
+            _gameModeManager.onChangeMode -= _onModeChangedHandler;
     }
 
     public void SetItem(InventoryCell cell)

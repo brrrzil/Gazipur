@@ -71,6 +71,25 @@ public class ComicsController : MonoBehaviour
             _canvasGroup.interactable = false;
             return;
         }
+
+        // (round 102) If a save exists and already recorded the comics as
+        // completed, skip the opener entirely. The legacy
+        // 'comics_opening_shown' PlayerPrefs key above is a fallback for
+        // installs that pre-date the Save System, but the canonical flag
+        // lives on SaveData.comicsCompleted which is part of the main
+        // save slot the user can also reset via New Game.
+        if (SaveSystem.HasSave())
+        {
+            var data = SaveSystem.Load();
+            if (data != null && data.comicsCompleted)
+            {
+                _finished = true;
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.blocksRaycasts = false;
+                _canvasGroup.interactable = false;
+                return;
+            }
+        }
     }
 
     private void Start()
@@ -232,6 +251,20 @@ public class ComicsController : MonoBehaviour
         // flicker where the player is briefly in dialog mode with no dialog
         // UI yet (the dialog UI initialises after ChangeMode is called).
         if (_modManager != null) _modManager.ChangeMode(EnumData.GameMode.outdors);
+
+        // (round 102) Mark the opening comics as completed in the save
+        // blob so a Continue does not replay them. Stamps every save
+        // from here on; New Game still wipes the whole slot via
+        // MainMenuScript.OnNewGame so a fresh run sees the intro again.
+        if (SaveSystem.HasSave())
+        {
+            var data = SaveSystem.Load();
+            if (data != null)
+            {
+                data.comicsCompleted = true;
+                SaveSystem.Save(data);
+            }
+        }
 
         _onComicsFinished?.Invoke();
     }

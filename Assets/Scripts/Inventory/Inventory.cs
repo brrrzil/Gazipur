@@ -38,6 +38,12 @@ public class Inventory : MonoBehaviour
     [Inject] DialogManager _dialog;
     [Inject] Control _control;
 
+    // Cached delegate so OnDestroy can remove exactly this subscription.
+    // Without this, the captured lambda keeps being called by
+    // GameModeManager after Inventory is destroyed on scene reload,
+    // throwing MissingReferenceException for every Esc / Tab / I keypress.
+    private System.Action<GameMode> _onModeChangedHandler;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -51,6 +57,11 @@ public class Inventory : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // Mirror Awake/Start registrations with symmetric teardown so a
+        // destroyed Inventory doesn't keep consuming mode-change events
+        // (round 102 user's 'управление слетает' report).
+        if (_gameMode != null && _onModeChangedHandler != null)
+            _gameMode.onChangeMode -= _onModeChangedHandler;
     }
 
     private void Start()
@@ -65,7 +76,7 @@ public class Inventory : MonoBehaviour
             else if(_data.gameMode == GameMode.inventory && _isOpen)
             {
                 _gameMode.ChangeMode(GameMode.outdors);
-            }                 
+            }
         };
         _control.OnFastSlotUse += UseFastSlot;
         foreach (var item in _startItems)
@@ -77,24 +88,21 @@ public class Inventory : MonoBehaviour
         // sees the startItems and not just an empty/null array.
         if (_data != null && _cells != null) _data.UpdateInventory(_cells);
 
-        // BUGFIX (round 101/102): The Inventory panel is wired to GameModeManager.OnInventory
-        // UnityEvent. After scene reload (Continue), persistent listeners of that
-        // UnityEvent can point at destroyed GameObjects, so the panel fails to
-        // open. Subscribe to onChangeMode programmatically as a robust fallback -
-        // this also doesn't conflict with inspector listeners, since both fire.
+        // Cached delegate so OnDestroy can remove exactly this subscription.
+        // Without this, the captured lambda keeps being called by
+        // GameModeManager after Inventory is destroyed on scene reload,
+        // throwing MissingReferenceException for every Esc / Tab / I keypress.
         if (_gameMode != null)
         {
-            _gameMode.onChangeMode += mode =>
+            _onModeChangedHandler = mode =>
             {
+                // Unity-null check on `this` - same reason as TradePanel.
+                // The lambda is captured by GameModeManager and outlives
+                // Inventory on scene reload.
+                if (this == null) return;
                 if (mode == GameMode.inventory)
                 {
-                    // ShowPanel itself has a null-check on _inventoryPanel.
                     ShowPanel(true);
-                    // Pick the first non-empty cell for the info panel. Without
-                    // this the panel opens as an empty box (ItemInfoPanel.SetItem
-                    // with a null Item fills fields with empty strings) and the
-                    // player thinks the inventory 'didn't open' even though it
-                    // did - just blank.
                     if (_cells != null)
                     {
                         InventoryCell firstNonEmpty = null;
@@ -115,6 +123,7 @@ public class Inventory : MonoBehaviour
                     ShowPanel(false);
                 }
             };
+            _gameMode.onChangeMode += _onModeChangedHandler;
         }
     }
 

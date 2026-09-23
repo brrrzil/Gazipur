@@ -76,16 +76,31 @@ public class MarketManager : MonoBehaviour
         // inspector listeners the user wires later.
         if (_modeManager != null)
         {
-            _modeManager.onChangeMode += mode =>
+            _onModeChangedHandler = mode =>
             {
+                // (round 102) Unity-null check on captured `this` - the
+                // lambda is held by GameModeManager across scene reloads.
+                if (this == null) return;
+                if (TradePanel == null) return; // also dead on scene reload
                 if (mode == GameMode.trade)
                     StartTrade(true);
-                else if (mode == GameMode.inventory && TradePanel != null
-                         && TradePanel.gameObject != null
+                else if (mode == GameMode.inventory && TradePanel.gameObject != null
                          && TradePanel.gameObject.activeSelf)
                     StartTrade(false);
             };
+            _modeManager.onChangeMode += _onModeChangedHandler;
         }
+    }
+
+    private System.Action<GameMode> _onModeChangedHandler;
+
+    private void OnDestroy()
+    {
+        // (round 102) Mirror Start's `_modeManager.onChangeMode += ...`
+        // with symmetric `-=` so a destroyed MarketManager doesn't keep
+        // calling StartTrade() every time the mode changes.
+        if (_modeManager != null && _onModeChangedHandler != null)
+            _modeManager.onChangeMode -= _onModeChangedHandler;
     }
 
     public void StartTrade(bool isStart)
