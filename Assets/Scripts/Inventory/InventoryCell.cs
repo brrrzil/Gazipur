@@ -22,22 +22,34 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     }
     public int AddItem(ItemData item, int count)
     {
+        // BUGFIX: every reference below can theoretically be a destroyed
+        // Unity object after a DontDestroyOnLoad parent outlived its
+        // children (e.g. a bootstrap object that the user wired Inventory
+        // cells into then reloaded). Guard each one. Returning 0 on null
+        // inputs means the pick is silently dropped instead of throwing.
+        if (item == null) return 0;
+        if (_itemIcon == null && _countText == null && _inventory == null) return 0;
+
         Item = item;
-        _itemIcon.enabled = true;
-        _itemIcon.sprite = Item.Icon;
+        if (_itemIcon != null)
+        {
+            _itemIcon.enabled = true;
+            _itemIcon.sprite = Item.Icon;
+        }
         int remains = Mathf.Max((Count + count) - item.MaxInInventoryCell, 0);
         Count = Mathf.Min(Item.MaxInInventoryCell, Count + count);
-        _countText.text = Count.ToString();
-        _inventory.ChangeCellState(this);
+        if (_countText != null) _countText.text = Count.ToString();
+        if (_inventory != null) _inventory.ChangeCellState(this);
         return remains;
     }
     public void RemoveItem()
     {
+        if (Item == null && _itemIcon == null && _countText == null && _inventory == null) return;
         Item = null;
-        _itemIcon.enabled = false;
+        if (_itemIcon != null) _itemIcon.enabled = false;
         Count = 0;
-        _countText.text = "";
-        _inventory.ChangeCellState(this);
+        if (_countText != null) _countText.text = "";
+        if (_inventory != null) _inventory.ChangeCellState(this);
     }
     public void RemoveItem(int count)
     {
