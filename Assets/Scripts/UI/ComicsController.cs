@@ -72,23 +72,38 @@ public class ComicsController : MonoBehaviour
             return;
         }
 
-        // (round 102) If a save exists and already recorded the comics as
-        // completed, skip the opener entirely. The legacy
-        // 'comics_opening_shown' PlayerPrefs key above is a fallback for
-        // installs that pre-date the Save System, but the canonical flag
-        // lives on SaveData.comicsCompleted which is part of the main
-        // save slot the user can also reset via New Game.
+        // (round 102) Skip the opener whenever the user is loading a
+        // Continue save. The cleaner design would be a comicsCompleted
+        // flag on SaveData, but for installs that pre-date the Save
+        // System (i.e. the tester's own save files) JsonUtility won't
+        // populate the new field and would land on the default false,
+        // which would replay the intro every Continue. Bracket the
+        // decision purely on 'HasSave' - SaveSystem.DeleteSave wipes
+        // the slot on New Game so this branch is only taken on
+        // Continue, where the user clearly already played.
         if (SaveSystem.HasSave())
         {
+            _finished = true;
+            _canvasGroup.alpha = 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable = false;
+            // Stamp the new field on the loaded blob so future loads
+            // (when this SaveData schema is the only one that exists)
+            // see it. We DON'T call SaveNow here - SaveBootstrap is
+            // the one responsible for the post-load snapshot, and we
+            // don't want comics to fire a Save mid-Awake.
             var data = SaveSystem.Load();
-            if (data != null && data.comicsCompleted)
+            if (data != null)
             {
-                _finished = true;
-                _canvasGroup.alpha = 0f;
-                _canvasGroup.blocksRaycasts = false;
-                _canvasGroup.interactable = false;
-                return;
+                data.comicsCompleted = true;
+                // Save once so this upgrade persists for the next
+                // Continue test cycle. If the load-then-save race
+                // collides with SaveBootstrap's own load, both end
+                // with the same flag value, so a duplicate Save is
+                // harmless.
+                SaveSystem.Save(data);
             }
+            return;
         }
     }
 
