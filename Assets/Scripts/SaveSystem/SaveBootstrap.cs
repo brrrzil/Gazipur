@@ -94,46 +94,66 @@ public class SaveBootstrap : MonoBehaviour
     // the default-init systems.
     private void Awake()
     {
-        if (!_loadOnStart) return;
+        // Always log Awake so debugging "save isn't loading" is straightforward -
+        // if Awake's first line doesn't show up in Console, AutoCreate
+        // and OnSceneLoaded never reached this instance, which means
+        // the sceneLoaded pipeline is broken.
+        Debug.Log($"[SaveBootstrap] Awake on '{SceneManager.GetActiveScene().name}' loadOnStart={_loadOnStart}");
 
-        // Only run if we are actually in a scene that has the target
-        // systems. The static instance may have been created earlier
-        // (on MainMenu) and fired uselessly; we only care about GameScene.
-        var currentScene = gameObject.scene.name;
-        if (!currentScene.Contains("Game"))
-        {
-            Debug.Log($"[SaveBootstrap] Awake on scene='{currentScene}' - skipping load.");
-            return;
-        }
-
-        bool hasSave = SaveSystem.HasSave();
-        Debug.Log($"[SaveBootstrap] Awake scene='{currentScene}' hasSave={hasSave}");
-        if (!hasSave) return;
-
-        SaveData data = SaveSystem.Load();
-        if (data == null) return;
-
-        // Apply money/hero/fog/map/dialogs/inventory. Wrap in
-        // try/catch so a single broken component (e.g. an
-        // ItemsManager.GetByIndex miss for a removed asset) doesn't
-        // leave the entire scene half-initialised with broken input.
         try
         {
-            GamePersistence.LoadIntoGame(data);
-            Debug.Log($"[SaveBootstrap] LoadIntoGame OK money={data.money} inv={(data.inventory?.Count ?? 0)} fog={data.fogDensity}");
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning($"[SaveBootstrap] LoadIntoGame failed, falling back to scene defaults: {e.Message}");
-            // Wipe the bad save so the next launch starts cleanly
-            // instead of looping on the same broken blob.
-            SaveSystem.DeleteSave();
-            return;
-        }
+            if (!_loadOnStart) return;
 
-        // Position needs the player to exist and Awake/Start to have run
-        // for the CharacterController / camera. Defer one frame.
-        _pendingApply = data;
+            // Use SceneManager.GetActiveScene() instead of gameObject.scene:
+            // this GameObject is parented to DontDestroyOnLoad (special
+            // internal scene with no friendly name), so gameObject.scene.name
+            // does not reflect the actual gameplay scene. The active scene
+            // is what determines whether DataManager / Inventory /
+            // FogController exist (they're Zenject scene-context
+            // singletons).
+            var activeScene = SceneManager.GetActiveScene().name;
+            if (!activeScene.Contains("Game"))
+            {
+                Debug.Log($"[SaveBootstrap] Scene '{activeScene}' has no GameScene systems - skipping load.");
+                return;
+            }
+
+            bool hasSave = SaveSystem.HasSave();
+            Debug.Log($"[SaveBootstrap] GameScene detected, hasSave={hasSave}");
+            if (!hasSave) return;
+
+            SaveData data = SaveSystem.Load();
+            if (data == null) return;
+
+            // Apply money/hero/fog/map/dialogs/inventory. Wrap in
+            // try/catch so a single broken component (e.g. an
+            // ItemsManager.GetByIndex miss for a removed asset) doesn't
+            // leave the entire scene half-initialised with broken input.
+            try
+            {
+                GamePersistence.LoadIntoGame(data);
+                Debug.Log($"[SaveBootstrap] LoadIntoGame OK money={data.money} inv={(data.inventory?.Count ?? 0)} fog={data.fogDensity}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[SaveBootstrap] LoadIntoGame failed, falling back to scene defaults: {e.Message}");
+                // Wipe the bad save so the next launch starts cleanly
+                // instead of looping on the same broken blob.
+                SaveSystem.DeleteSave();
+                return;
+            }
+
+            // Position needs the player to exist and Awake/Start to have run
+            // for the CharacterController / camera. Defer one frame.
+            _pendingApply = data;
+        }
+        catch (System.Exception outer)
+        {
+            // Outer guard catches anything that escapes before the inner
+            // try (scene name lookup, etc.) so a single bug here can't
+            // tear down the entire scene.
+            Debug.LogError($"[SaveBootstrap] Outer Awake crash: {outer}");
+        }
     }
 
     private void LateUpdate()

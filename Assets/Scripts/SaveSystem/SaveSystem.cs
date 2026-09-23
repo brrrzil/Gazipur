@@ -25,17 +25,21 @@ public static class SaveSystem
         string json = JsonUtility.ToJson(data);
         PlayerPrefs.SetString(SaveKey, json);
         PlayerPrefs.Save();
+        Debug.Log($"[SaveSystem] Wrote {json.Length}B to PlayerPrefs key='{SaveKey}'");
     }
 
     /// <summary>Read the saved blob, or null if no save / corrupted.</summary>
     public static SaveData Load()
     {
+        Debug.Log($"[SaveSystem] Load() HasKey={HasSave()}");
         if (!HasSave()) return null;
         string json = PlayerPrefs.GetString(SaveKey, "");
         if (string.IsNullOrEmpty(json)) return null;
         try
         {
-            return JsonUtility.FromJson<SaveData>(json);
+            var data = JsonUtility.FromJson<SaveData>(json);
+            Debug.Log($"[SaveSystem] Loaded save blob OK: money={data.money} inv={data.inventory?.Count} fog={data.fogDensity}");
+            return data;
         }
         catch (System.Exception e)
         {
