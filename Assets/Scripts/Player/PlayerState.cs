@@ -39,7 +39,13 @@ public class PlayerState : MonoBehaviour
 
     private void Start()
     {
-        _data.SetDeffoultHeroState();
+        // Only seed default Hero state when none exists. After a scene
+        // reload triggered by Continue, DataManager may carry a saved
+        // HeroInfo (with health/hunger/thirst), but if a fresh DataManager
+        // comes in without one, SetDeffoultHeroState fills it. The order
+        // of Start() calls relative to SaveBootstrap.Start() is undefined,
+        // so guarding against a missing Hero is the safe path.
+        if (_data.Hero == null) _data.SetDeffoultHeroState();
         _info = _data.Hero;
         _isDead = false;
         StartCoroutine(Tic());
