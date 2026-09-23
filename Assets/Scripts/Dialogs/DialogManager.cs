@@ -216,7 +216,14 @@ public class DialogManager : MonoBehaviour
                     MarkCurrentDialogUsed();
                     GamePersistence.SaveNow();
 
-                    _modManager.ChangeMode(GameMode.outdors);
+                    // (Trader shortcut) End-of-dialog for the trader's opener
+                    // drops the player straight into the trade panel, not
+                    // back to outdoors - the user expects "what do you have? /
+                    // [ok]" to land them in the shop. Other dialogs still
+                    // fall through to outdoors.
+                    _modManager.ChangeMode(Dialog == DialogType.startTrader
+                        ? GameMode.trade
+                        : GameMode.outdors);
                     if (_voiceSequence != null)
                         StopCoroutine(_voiceSequence);
                     if (iteraton.Answer[idx].answerVoice)
