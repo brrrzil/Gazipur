@@ -93,6 +93,19 @@ public class Sounds : MonoBehaviour
 
     // --- НОВЫЕ МЕТОДЫ ДЛЯ ПЕРЕКЛЮЧЕНИЯ ФОНА ---
 
+    // Rate-limit set so 'X not assigned' warnings don't spam the Console.
+    // A missing AudioSource reference is harmless (the music simply
+    // doesn't play that track) and re-logging it every frame drowns out
+    // real errors.
+    private int _lastWarnFrame = -1;
+
+    private void WarnOncePerSecond(string msg)
+    {
+        if (Time.frameCount - _lastWarnFrame < 60) return;
+        _lastWarnFrame = Time.frameCount;
+        Debug.LogWarning(msg);
+    }
+
     /// <summary>
     /// Переключить фоновую музыку на трек для меню
     /// </summary>
@@ -101,7 +114,7 @@ public class Sounds : MonoBehaviour
         if (_menuBackground != null)
             ChangeBackground(_menuBackground);
         else
-            Debug.LogWarning("Sounds: _menuBackground not assigned!");
+            WarnOncePerSecond("Sounds: _menuBackground not assigned!");
     }
 
     /// <summary>
@@ -112,7 +125,7 @@ public class Sounds : MonoBehaviour
         if (_gameBackground != null)
             ChangeBackground(_gameBackground);
         else
-            Debug.LogWarning("Sounds: _gameBackground not assigned!");
+            WarnOncePerSecond("Sounds: _gameBackground not assigned!");
     }
 
     /// <summary>
@@ -123,7 +136,7 @@ public class Sounds : MonoBehaviour
         if (_dieBackground != null)
             ChangeBackground(_dieBackground);
         else
-            Debug.LogWarning("Sounds: _dieBackground not assigned!");
+            WarnOncePerSecond("Sounds: _dieBackground not assigned!");
     }
 
     /// <summary>
@@ -134,7 +147,7 @@ public class Sounds : MonoBehaviour
         if (_winBackground != null)
             ChangeBackground(_winBackground);
         else
-            Debug.LogWarning("Sounds: _winBackground not assigned!");
+            WarnOncePerSecond("Sounds: _winBackground not assigned!");
     }
 
     /// <summary>

@@ -20,6 +20,7 @@ public static class GamePersistence
     {
         var data = Collect();
         SaveSystem.Save(data);
+        Debug.Log($"[Save] money={data.money} invCount={(data.inventory?.Count ?? 0)} heroH={(data.hero!=null?data.hero.health:-1)} heroHu={(data.hero!=null?data.hero.hunger:-1)} heroT={(data.hero!=null?data.hero.thirst:-1)} fog={data.fogDensity} map={data.mapUnlocked} dlg={(data.completedDialogs?.Count ?? 0)}");
     }
 
     /// <summary>Build a SaveData from live game state without writing

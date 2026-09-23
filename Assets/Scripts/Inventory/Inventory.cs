@@ -72,6 +72,10 @@ public class Inventory : MonoBehaviour
         {
             AddItem(item, 1);
         }
+        // Seed DataManager's cached inventory snapshot so the first
+        // GamePersistence.SaveNow() call (triggered by any producer hook)
+        // sees the startItems and not just an empty/null array.
+        if (_data != null && _cells != null) _data.UpdateInventory(_cells);
     }
 
     public int AddItem(ItemData item, int count)
@@ -146,6 +150,10 @@ public class Inventory : MonoBehaviour
         if (totalUnpicked < startCount)
         {
             _picedItems[_picCounter % _picedItems.Length].Show(item, startCount - totalUnpicked);
+            // Keep DataManager's cached snapshot in sync so GamePersistence.Collect
+            // sees current cell state instead of a stale (or never-initialised)
+            // array that would make SaveSystem drop the inventory.
+            if (_data != null) _data.UpdateInventory(_cells);
             GamePersistence.SaveNow();
         }
         else
@@ -215,6 +223,7 @@ public class Inventory : MonoBehaviour
             if(item.Use(_manager))
             {
                 cell.RemoveItem(1);
+                if (_data != null) _data.UpdateInventory(_cells);
                 GamePersistence.SaveNow();
             }
         }
