@@ -10,6 +10,10 @@ public class GarbageObject : InteractObject
     [SerializeField] private PlayerSound _pickSound;
     [SerializeField] private Vector2Int _ItemsCount = new Vector2Int(6, 10);
     [SerializeField] private Chances[] _dropChances;
+    [Tooltip("Unique id for save persistence. Empty = not persisted. " +
+             "Set this in the Inspector for any loot pile/part whose pickup " +
+             "should survive Continue.")]
+    [SerializeField] private string _saveId = "";
 
     private List<ItemData> _items = new List<ItemData>();
     private int _count;
@@ -23,9 +27,20 @@ public class GarbageObject : InteractObject
         public ItemData item;
         public int chance;
     }
-    
+
     private void Start()
     {
+        // BUGFIX (round 101): despawn this pile immediately on load if the
+        // previous session already collected it. We do this in Start (not
+        // Awake) so that any [Inject] hooks on the children of this prefab
+        // have a chance to populate before we tear down - the cleanup only
+        // needs to make the pile invisible to PlayerInteract.
+        if (!string.IsNullOrEmpty(_saveId) && LootPersistence.IsCollected(_saveId))
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         _count = Random.Range(_ItemsCount.x, _ItemsCount.y + 1);
         foreach (var ch in _dropChances)
         {
@@ -84,6 +99,11 @@ public class GarbageObject : InteractObject
             StopInteractAnimation();
             Intearct(false);
             DecreaseFog();
+            // (round 101) Mark this loot pile as collected so a Continue
+            // does not bring it back. Only meaningful if a saveId was
+            // assigned in the Inspector.
+            if (!string.IsNullOrEmpty(_saveId))
+                LootPersistence.MarkCollected(_saveId);
             Destroy(gameObject);
         }
         else

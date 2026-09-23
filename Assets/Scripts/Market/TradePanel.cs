@@ -22,6 +22,26 @@ public class TradePanel : MonoBehaviour
     private void Start()
     {
         _slider.onValueChanged.AddListener(ChangeCount);
+
+        // BUGFIX (round 101): the trade panel visibility was previously
+        // driven entirely by GameModeManager.OnTrade UnityEvent's persistent
+        // listeners. After scene reload (Continue -> GameScene) the
+        // persistent listener can resolve to a destroyed GameObject, in
+        // which case Unity silently swallows the NRE and the panel never
+        // opens. Subscribe to onChangeMode here as a robust fallback
+        // (this is in addition to whatever Inspector listeners exist;
+        // both fire - the duplicate-show guard is harmless).
+        if (_gameModeManager != null)
+        {
+            _gameModeManager.onChangeMode += mode =>
+            {
+                if (mode == GameMode.trade && gameObject != null && !gameObject.activeSelf)
+                    gameObject.SetActive(true);
+                else if (mode != GameMode.trade && mode != GameMode.inventory
+                         && gameObject != null && gameObject.activeSelf)
+                    gameObject.SetActive(false);
+            };
+        }
     }
 
     public void SetItem(InventoryCell cell)

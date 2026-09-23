@@ -76,6 +76,39 @@ public class Inventory : MonoBehaviour
         // GamePersistence.SaveNow() call (triggered by any producer hook)
         // sees the startItems and not just an empty/null array.
         if (_data != null && _cells != null) _data.UpdateInventory(_cells);
+
+        // BUGFIX (round 101): The Inventory panel is wired to GameModeManager.OnInventory
+        // UnityEvent. After scene reload (Continue), persistent listeners of that
+        // UnityEvent can point at destroyed GameObjects, so the panel fails to
+        // open. Subscribe to onChangeMode programmatically as a robust fallback -
+        // this also doesn't conflict with inspector listeners, since both fire.
+        if (_gameMode != null)
+        {
+            _gameMode.onChangeMode += mode =>
+            {
+                if (mode == GameMode.inventory)
+                {
+                    // ShowPanel itself has a null-check on _inventoryPanel.
+                    ShowPanel(true);
+                    // Pick the first non-empty cell for the info panel.
+                    if (_cells != null)
+                    {
+                        for (int i = 0; i < _cells.Length; i++)
+                            if (_cells[i] != null && _cells[i].Item)
+                            {
+                                ShowInfoPanel(_cells[i]);
+                                return;
+                            }
+                        if (_cells.Length > 0 && _cells[0] != null)
+                            ShowInfoPanel(_cells[0]);
+                    }
+                }
+                else if (mode == GameMode.outdors)
+                {
+                    ShowPanel(false);
+                }
+            };
+        }
     }
 
     public int AddItem(ItemData item, int count)

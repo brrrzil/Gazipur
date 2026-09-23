@@ -146,6 +146,9 @@ public class MainMenuScript : MonoBehaviour
         // game boots into the authored scene defaults (FogController
         // resets to scene density, MapUI starts locked, etc.).
         SaveSystem.DeleteSave();
+        // (round 101) Also wipe the loot-collection registry so all
+        // previously collected loot piles / skimmer parts come back.
+        LootPersistence.ClearAll();
         ActivateGameScene();
     }
 
