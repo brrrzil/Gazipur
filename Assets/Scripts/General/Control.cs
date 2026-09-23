@@ -111,14 +111,23 @@ public class Control : MonoBehaviour
 
     private void OnInventoryButtonPressed(InputAction.CallbackContext context)
     {
+        // (round 102) Diagnostic - if this doesn't print after Continue, the
+        // InputSystem action never reaches the new Control. If it does print
+        // but OnOpenInventory is null/silent, the subscription chain
+        // downstream is broken.
+        Debug.Log($"[Control] I pressed: subscribers={OnOpenInventory?.GetInvocationList().Length ?? 0}");
         OnOpenInventory?.Invoke();
     }
 
-    private void OnEscape(InputAction.CallbackContext context) => OnEsc?.Invoke();
+    private void OnEscape(InputAction.CallbackContext context)
+    {
+        Debug.Log($"[Control] Esc pressed: subscribers={OnEsc?.GetInvocationList().Length ?? 0}");
+        OnEsc?.Invoke();
+    }
 
-    private void OnSlot1Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(1);
-    private void OnSlot2Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(2);
-    private void OnSlot3Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(3);
-    private void OnSlot4Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(4);
-    private void OnSlot5Performed(InputAction.CallbackContext context) => OnFastSlotUse?.Invoke(5);
+    private void OnSlot1Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot1"); OnFastSlotUse?.Invoke(1); }
+    private void OnSlot2Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot2"); OnFastSlotUse?.Invoke(2); }
+    private void OnSlot3Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot3"); OnFastSlotUse?.Invoke(3); }
+    private void OnSlot4Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot4"); OnFastSlotUse?.Invoke(4); }
+    private void OnSlot5Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot5"); OnFastSlotUse?.Invoke(5); }
 }
