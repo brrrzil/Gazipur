@@ -203,11 +203,23 @@ public class Inventory : MonoBehaviour
 
     public void ChangeCellState(InventoryCell cell)
     {
-        int num = System.Array.FindIndex(_cells,i=>i == cell);
-        if (num < _fastCells.Length)
+        // Array.FindIndex returns -1 if `cell` isn't in _cells. The old
+        // `if (num < _fastCells.Length)` test passed for num=-1 (since -1
+        // is less than any non-negative length) and then indexed
+        // _fastCells[-1] - which on a C# array is IndexOutOfRangeException
+        // but surfaces as "Object reference not set" via Unity's wrapped
+        // exception filtering. Now we bail cleanly if `cell` isn't in
+        // _cells, AND we guard each _fastCells[num] access against null.
+        int num = System.Array.FindIndex(_cells, i => i == cell);
+        if (num < 0) return;
+        if (num >= _fastCells.Length)
         {
-            _fastCells[num].SetItem(cell.Item, cell.Count);
+            // Cell is outside the fast-cell range, only update cargo.
+            ChangeCargoValue(Capacity);
+            return;
         }
+        if (_fastCells[num] != null)
+            _fastCells[num].SetItem(cell.Item, cell.Count);
         ChangeCargoValue(Capacity);
     }
 

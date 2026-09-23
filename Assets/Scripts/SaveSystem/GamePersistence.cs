@@ -165,7 +165,7 @@ public static class GamePersistence
                             try { cells[i].AddItem(itemData, entry.count); }
                             catch (System.Exception cellEx)
                             {
-                                Debug.LogWarning($"[GamePersistence.LoadIntoGame] cell[{i}] AddItem skipped: {cellEx.Message}");
+                                Debug.LogWarning($"[GamePersistence.LoadIntoGame] cell[{i}] AddItem skipped: {cellEx.GetType().Name}: {cellEx.Message}\nSTACK:\n{cellEx.StackTrace}");
                             }
                         }
                         Debug.Log($"[GamePersistence.LoadIntoGame] Inventory applied");
