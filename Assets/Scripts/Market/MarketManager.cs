@@ -62,6 +62,29 @@ public class MarketManager : MonoBehaviour
 
         // Show only the cheapest un-bought bag, hide the rest.
         RefreshBagVisibility();
+
+        // BUGFIX (round 102): GameModeManager.OnTrade UnityEvent has no
+        // persistent listener wired to MarketManager.StartTrade in the
+        // prefab or scene (verified by grep on GameScene.unity and
+        // GameManager.prefab - zero `m_MethodName: StartTrade` entries).
+        // Without that listener `ChangeMode(GameMode.trade)` opens the
+        // mode internally but never actually shows the trade UI - the
+        // player presses Esc after a Trader dialog and nothing visible
+        // happens. Subscribe programmatically via onChangeMode here as
+        // an additive fallback that doesn't conflict with whatever
+        // inspector listeners the user wires later.
+        if (_modeManager != null)
+        {
+            _modeManager.onChangeMode += mode =>
+            {
+                if (mode == GameMode.trade)
+                    StartTrade(true);
+                else if (mode == GameMode.inventory && TradePanel != null
+                         && TradePanel.gameObject != null
+                         && TradePanel.gameObject.activeSelf)
+                    StartTrade(false);
+            };
+        }
     }
 
     public void StartTrade(bool isStart)

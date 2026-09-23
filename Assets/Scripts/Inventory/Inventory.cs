@@ -77,7 +77,7 @@ public class Inventory : MonoBehaviour
         // sees the startItems and not just an empty/null array.
         if (_data != null && _cells != null) _data.UpdateInventory(_cells);
 
-        // BUGFIX (round 101): The Inventory panel is wired to GameModeManager.OnInventory
+        // BUGFIX (round 101/102): The Inventory panel is wired to GameModeManager.OnInventory
         // UnityEvent. After scene reload (Continue), persistent listeners of that
         // UnityEvent can point at destroyed GameObjects, so the panel fails to
         // open. Subscribe to onChangeMode programmatically as a robust fallback -
@@ -90,16 +90,23 @@ public class Inventory : MonoBehaviour
                 {
                     // ShowPanel itself has a null-check on _inventoryPanel.
                     ShowPanel(true);
-                    // Pick the first non-empty cell for the info panel.
+                    // Pick the first non-empty cell for the info panel. Without
+                    // this the panel opens as an empty box (ItemInfoPanel.SetItem
+                    // with a null Item fills fields with empty strings) and the
+                    // player thinks the inventory 'didn't open' even though it
+                    // did - just blank.
                     if (_cells != null)
                     {
+                        InventoryCell firstNonEmpty = null;
                         for (int i = 0; i < _cells.Length; i++)
-                            if (_cells[i] != null && _cells[i].Item)
+                            if (_cells[i] != null && _cells[i].Item != null)
                             {
-                                ShowInfoPanel(_cells[i]);
-                                return;
+                                firstNonEmpty = _cells[i];
+                                break;
                             }
-                        if (_cells.Length > 0 && _cells[0] != null)
+                        if (firstNonEmpty != null)
+                            ShowInfoPanel(firstNonEmpty);
+                        else if (_cells.Length > 0 && _cells[0] != null)
                             ShowInfoPanel(_cells[0]);
                     }
                 }
