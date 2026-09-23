@@ -136,10 +136,14 @@ public class SaveBootstrap : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[SaveBootstrap] LoadIntoGame failed, falling back to scene defaults: {e.Message}");
-                // Wipe the bad save so the next launch starts cleanly
-                // instead of looping on the same broken blob.
-                SaveSystem.DeleteSave();
+                // Dump the full stack so we can see which '.X.Y' on the load
+                // path is throwing NullReferenceException. The previous
+                // message-only log was useless - we need line info.
+                Debug.LogWarning($"[SaveBootstrap] LoadIntoGame FAILED: {e.GetType().Name}: {e.Message}\nSTACK:\n{e.StackTrace}");
+                // DO NOT delete the save automatically - if the load crashes
+                // on every Continue, the player can't recover without a
+                // manual reset, and silent wipe is a worse UX. Just leave
+                // the save alone so the next Continue re-reads the same blob.
                 return;
             }
 

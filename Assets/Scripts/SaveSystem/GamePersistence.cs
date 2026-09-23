@@ -111,16 +111,27 @@ public static class GamePersistence
     {
         if (data == null) return;
 
+        // First pass: data round-trip only - no GameObject writes. This
+        // proves the data itself is well-formed before we touch any
+        // scene reference.
+        Debug.Log($"[GamePersistence.LoadIntoGame] data: money={data.money} hero={data.hero} inv={data.inventory?.Count} dlg={data.completedDialogs?.Count}");
+
         var dm = DataManager.Instance;
+        Debug.Log($"[GamePersistence.LoadIntoGame] DataManager.Instance={dm?.GetType().Name ?? "null"}");
         if (dm != null)
         {
             dm.SetMoney(data.money);
+            Debug.Log($"[GamePersistence.LoadIntoGame] Money set ok");
             if (data.hero != null)
             {
                 if (dm.Hero == null) dm.SetDeffoultHeroState();
-                dm.Hero.health = data.hero.health;
-                dm.Hero.hunger = data.hero.hunger;
-                dm.Hero.thirst = data.hero.thirst;
+                if (dm.Hero != null)
+                {
+                    dm.Hero.health = data.hero.health;
+                    dm.Hero.hunger = data.hero.hunger;
+                    dm.Hero.thirst = data.hero.thirst;
+                    Debug.Log($"[GamePersistence.LoadIntoGame] Hero set ok");
+                }
             }
             // Inventory: find InventoryCell[] via Inventory singleton and
             // call AddItem on each cell that has a saved entry. The saved
@@ -131,6 +142,7 @@ public static class GamePersistence
             {
                 var inv = Inventory.Instance;
                 var items = ItemsManager.Instance;
+                Debug.Log($"[GamePersistence.LoadIntoGame] Inventory.Instance={inv?.GetType().Name ?? "null"} ItemsManager={items?.GetType().Name ?? "null"}");
                 if (inv != null && items != null)
                 {
                     var cells = inv.Cells;
@@ -150,8 +162,13 @@ public static class GamePersistence
                             // AddItem splits overflow off - we cap at item.MaxInInventoryCell
                             // and discard the rest. Most stacks fit, otherwise the
                             // player lost a few to overflow (acceptable trade-off).
-                            cells[i].AddItem(itemData, entry.count);
+                            try { cells[i].AddItem(itemData, entry.count); }
+                            catch (System.Exception cellEx)
+                            {
+                                Debug.LogWarning($"[GamePersistence.LoadIntoGame] cell[{i}] AddItem skipped: {cellEx.Message}");
+                            }
                         }
+                        Debug.Log($"[GamePersistence.LoadIntoGame] Inventory applied");
                     }
                 }
             }
@@ -160,25 +177,28 @@ public static class GamePersistence
         var fog = FogController.Instance;
         if (fog != null)
         {
-            // Apply even if data.fogDensity == 0 — that's the legitimate
-            // value after the player has fully cleared the fog. The
-            // old guard skipped it and left the runtime at the scene
-            // default, which is why fog sometimes 'reset to 0' on load.
-            fog.SetClearedDensity(data.fogDensity);
+            try { fog.SetClearedDensity(data.fogDensity); Debug.Log($"[GamePersistence.LoadIntoGame] fog density set {data.fogDensity}"); }
+            catch (System.Exception e) { Debug.LogWarning($"[GamePersistence.LoadIntoGame] fog set skipped: {e.Message}"); }
         }
 
         var map = MapUI.Instance;
         if (map != null && data.mapUnlocked)
         {
-            map.Unlock();
+            try { map.Unlock(); Debug.Log($"[GamePersistence.LoadIntoGame] map unlocked"); }
+            catch (System.Exception e) { Debug.LogWarning($"[GamePersistence.LoadIntoGame] map unlock skipped: {e.Message}"); }
         }
 
         // Apply completed-dialogs flag back to DialogManager.
         var dialog = DialogManager.Instance;
         if (dialog != null && data.completedDialogs != null && data.completedDialogs.Count > 0)
         {
-            dialog.MarkDialogsUsedFromSave(
-                data.completedDialogs.Select(i => (DialogType)i));
+            try
+            {
+                dialog.MarkDialogsUsedFromSave(
+                    data.completedDialogs.Select(i => (DialogType)i));
+                Debug.Log($"[GamePersistence.LoadIntoGame] dialogs marked used");
+            }
+            catch (System.Exception e) { Debug.LogWarning($"[GamePersistence.LoadIntoGame] dialog mark skipped: {e.Message}"); }
         }
 
         // Position is applied by GameManager AFTER cells are filled so
