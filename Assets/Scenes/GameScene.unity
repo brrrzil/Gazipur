@@ -8256,6 +8256,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 2fe5f3743143899469752121b8e44920, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_06
 --- !u!114 &177911973
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9301,6 +9302,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: d949dda709e51e449be6919bab402431, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_03
 --- !u!114 &216880147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20071,6 +20073,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 389689db6b4ba7940a419c6fa1a6e64e, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_01
 --- !u!114 &468728252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24796,6 +24799,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 6290db9120eda894f9140efa7f11893c, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_04
 --- !u!114 &576344732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37586,6 +37590,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: b6743c7d88350504b8c360e832918bad, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_05
 --- !u!114 &808087819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49997,6 +50002,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 71ad6a9b938338546a7d2dac43a5568e, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_02
 --- !u!114 &1156657149
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -56154,6 +56160,7 @@ MonoBehaviour:
   _visibleDuringInteract: {fileID: 0}
   <Item>k__BackingField: {fileID: 11400000, guid: 2f400ec46b58d69458bc4f2e2ab4e272, type: 2}
   <Count>k__BackingField: 1
+  _saveId: skimmer_07
 --- !u!114 &1352159063
 MonoBehaviour:
   m_ObjectHideFlags: 0
