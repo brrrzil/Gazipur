@@ -223,10 +223,27 @@ public class Inventory : MonoBehaviour
         ChangeCargoValue(Capacity);
     }
 
-    private void UseFastSlot(int number) => UseItem(_cells[number - 1]);
+    private void UseFastSlot(int number)
+    {
+        // BUGFIX: Previously a one-liner that indexed _cells[number - 1]
+        // without bounds check. If the cell array is shorter than the
+        // slot number (e.g. after a corrupted save with inventory
+        // re-build), this IndexOutOfRangeException bubbles back into
+        // InputSystem as 'callback threw'. Now guard.
+        int idx = number - 1;
+        if (_cells == null || idx < 0 || idx >= _cells.Length) return;
+        if (_cells[idx] == null) return;
+        UseItem(_cells[idx]);
+    }
 
     public void UseItem(InventoryCell cell)
     {
+        // BUGFIX (round 100.2): The single line 'if (cell.Item == null)'
+        // throws NullReferenceException if `cell` itself is a destroyed
+        // Unity object (the case after scene reload when Control fires
+        // a fast-slot keystroke and the cells the cell array still
+        // holds are dead refs). Null-check `cell` explicitly.
+        if (cell == null) return;
         if (cell.Item == null) return;
 
         IUsebleItem item = cell.Item.ItemPrefab as IUsebleItem;

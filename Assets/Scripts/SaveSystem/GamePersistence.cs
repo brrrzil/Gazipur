@@ -165,7 +165,12 @@ public static class GamePersistence
                             try { cells[i].AddItem(itemData, entry.count); }
                             catch (System.Exception cellEx)
                             {
-                                Debug.LogWarning($"[GamePersistence.LoadIntoGame] cell[{i}] AddItem skipped: {cellEx.GetType().Name}: {cellEx.Message}\nSTACK:\n{cellEx.StackTrace}");
+                                // Use ToString() instead of separate GetType+Message+StackTrace
+                                // because Unity sometimes returns null StackTrace on its own
+                                // NullReferenceExceptions even in editor - ToString() captures
+                                // both without throwing, and includes any inner exception
+                                // and 'at <class>.<method>' frames that ARE present.
+                                Debug.LogWarning($"[GamePersistence.LoadIntoGame] cell[{i}] AddItem skipped:\n{cellEx}");
                             }
                         }
                         Debug.Log($"[GamePersistence.LoadIntoGame] Inventory applied");
