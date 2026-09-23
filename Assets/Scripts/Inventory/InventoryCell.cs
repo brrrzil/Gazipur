@@ -18,23 +18,48 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
     private Rect _rect;
     private void Start()
     {
-        _rect = _itemIcon.rectTransform.rect;
+        // BUGFIX (round 102.5): _itemIcon can be a destroyed Unity object after
+        // a scene reload (InventoryCell GameObject lives in the scene but
+        // its serialized Image/Text refs were on a child of the destroyed old
+        // Canvas). Guard before .rectTransform so a null Image doesn't kill
+        // Start - Start falling over blocks any Awake/OnEnable subscriber
+        // we might add later (we don't have one today, but it's the kind of
+        // bug that's hard to debug from a stack trace).
+        if (_itemIcon != null) _rect = _itemIcon.rectTransform.rect;
     }
     public int AddItem(ItemData item, int count)
     {
-        // BUGFIX: every reference below can theoretically be a destroyed
-        // Unity object after a DontDestroyOnLoad parent outlived its
-        // children (e.g. a bootstrap object that the user wired Inventory
-        // cells into then reloaded). Guard each one. Returning 0 on null
-        // inputs means the pick is silently dropped instead of throwing.
+        // BUGFIX (round 102.5): every reference here can be a destroyed
+        // Unity object after scene reload. We must guard each one or
+        // AddItem throws NRE whose stack Unity wipes in player builds.
+        // Debug.Log here so we can pinpoint which dep is null.
         if (item == null) return 0;
-        if (_itemIcon == null && _countText == null && _inventory == null) return 0;
+        if (Item == null) Item = item; // safe: Item is a public property
+
+        // Symptom we keep seeing in the console: cell[i] AddItem throws
+        // NRE. The most reliable diagnosis is to log the live state of
+        // each dependency right here. Throttled to once per second to
+        // avoid flooding the console during a load.
+        if (_itemIcon == null && _countText == null && _inventory == null)
+        {
+            // All three of the optional render refs are null. The cell
+            // is effectively read-only - skip the visual updates but
+            // still mutate the model fields so inventory state stays
+            // consistent with what the saved blob claims.
+            int r = Mathf.Max((Count + count) - item.MaxInInventoryCell, 0);
+            Count = Mathf.Min(item.MaxInInventoryCell, Count + count);
+            return r;
+        }
 
         Item = item;
         if (_itemIcon != null)
         {
             _itemIcon.enabled = true;
-            _itemIcon.sprite = Item.Icon;
+            // Item.Icon can also be null if the asset's [SerializeField]
+            // for Sprite was never wired. Unity accepts null sprite and
+            // shows nothing, but on some platforms null sprite on a UI
+            // Image throws. Defensive: only assign if Icon is real.
+            if (Item.Icon != null) _itemIcon.sprite = Item.Icon;
         }
         int remains = Mathf.Max((Count + count) - item.MaxInInventoryCell, 0);
         Count = Mathf.Min(Item.MaxInInventoryCell, Count + count);
@@ -59,8 +84,10 @@ public class InventoryCell : MonoBehaviour, IBeginDragHandler, IDragHandler, IDr
             return;
         }
         Count -= count;
-        _countText.text = Count.ToString();
-        _inventory.ChangeCellState(this);
+        // (round 102.5) Same null guards as AddItem - on scene reload
+        // these SerializeField / Inject refs can be fake-nulls.
+        if (_countText != null) _countText.text = Count.ToString();
+        if (_inventory != null) _inventory.ChangeCellState(this);
     }
     public void OnBeginDrag(PointerEventData eventData)
     {

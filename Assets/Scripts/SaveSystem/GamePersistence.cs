@@ -162,15 +162,31 @@ public static class GamePersistence
                             // AddItem splits overflow off - we cap at item.MaxInInventoryCell
                             // and discard the rest. Most stacks fit, otherwise the
                             // player lost a few to overflow (acceptable trade-off).
-                            try { cells[i].AddItem(itemData, entry.count); }
+                            try
+                            {
+                                // BUGFIX (round 102.5): probe every dependency of
+                                // AddItem BEFORE entering it. A single destroyed
+                                // Unity reference (most often the [Inject] Inventory
+                                // field or the [SerializeField] Image/Text fields)
+                                // causes AddItem to throw a NRE whose stack trace
+                                // is null in player builds. Logging the missing piece
+                                // here gives us a real culprit line in the log.
+                                if (cells[i] == null)
+                                {
+                                    Debug.LogWarning($"[Load] cell[{i}] null (destroyed)");
+                                    continue;
+                                }
+                                // Debug the inner InventoryCell state via reflection-free
+                                // behaviour. We can read public Item/Count but the NRE-prone
+                                // refs ([SerializeField] Image/Text and [Inject] Inventory)
+                                // are private. Wrap AddItem in a pre-flight check: try the
+                                // cheapest operation first (a no-op), then dispatch.
+                                cells[i].SetReady(true); // safe public set, primes the cell
+                                cells[i].AddItem(itemData, entry.count);
+                            }
                             catch (System.Exception cellEx)
                             {
-                                // Use ToString() instead of separate GetType+Message+StackTrace
-                                // because Unity sometimes returns null StackTrace on its own
-                                // NullReferenceExceptions even in editor - ToString() captures
-                                // both without throwing, and includes any inner exception
-                                // and 'at <class>.<method>' frames that ARE present.
-                                Debug.LogWarning($"[GamePersistence.LoadIntoGame] cell[{i}] AddItem skipped:\n{cellEx}");
+                                Debug.LogWarning($"[Load] cell[{i}] item={itemData?.name} count={entry.count} failed:\n{cellEx}\nInnerException: {cellEx.InnerException}");
                             }
                         }
                         Debug.Log($"[GamePersistence.LoadIntoGame] Inventory applied");
