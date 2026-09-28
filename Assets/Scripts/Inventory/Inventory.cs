@@ -154,6 +154,8 @@ public class Inventory : MonoBehaviour
     // whether Inventory, Control, or both were respawned.
     private void SubscribeToControl()
     {
+        // (diag/input-after-continue) Trace why subs=0 after Continue.
+        Debug.Log($"[Inventory#{GetInstanceID()}] SubscribeToControl called _control={(_control == null ? "null" : _control.GetInstanceID().ToString())} _subscribedControl={_subscribedControl}");
         if (_control == null) return; // [Inject] never fired, scene broken elsewhere
         // Has Inventory already wired its lambda into THIS _control?
         // We track our own bool to avoid duplicate subscriptions on
@@ -211,8 +213,12 @@ public class Inventory : MonoBehaviour
 
     private void Awake()
     {
+        // (diag/input-after-continue) Trace lifecycle so we can see why
+        // Inventory sometimes fails to subscribe after Continue.
+        Debug.Log($"[Inventory#{GetInstanceID()}] Awake Instance={(Instance == null ? "null" : Instance.GetInstanceID().ToString())} _control={(_control == null ? "null" : _control.GetInstanceID().ToString())} scene='{gameObject.scene.name}'");
         if (Instance != null && Instance != this)
         {
+            Debug.Log($"[Inventory#{GetInstanceID()}] duplicate detected, destroying self");
             Destroy(gameObject);
             return;
         }

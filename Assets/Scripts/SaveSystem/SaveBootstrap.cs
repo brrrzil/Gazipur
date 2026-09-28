@@ -111,7 +111,12 @@ public class SaveBootstrap : MonoBehaviour
     private static void DestroyStaleGameManagerFromDDOL()
     {
         var ddolScene = SceneManager.GetSceneByName("DontDestroyOnLoad");
-        if (!ddolScene.IsValid() || !ddolScene.isLoaded) return;
+        if (!ddolScene.IsValid() || !ddolScene.isLoaded)
+        {
+            Debug.Log("[SaveBootstrap] DestroyStaleGameManagerFromDDOL: no DDOL scene, nothing to do");
+            return;
+        }
+        int found = 0;
         foreach (var root in ddolScene.GetRootGameObjects())
         {
             if (root == null) continue;
@@ -119,12 +124,15 @@ public class SaveBootstrap : MonoBehaviour
             // somewhere down the tree. If we find one, this root is the
             // stale GameManager and we tear it down.
             var ctx = root.GetComponentInChildren<Zenject.SceneContext>(true);
+            Debug.Log($"[SaveBootstrap] DDOL root '{root.name}' SceneContext={(ctx != null ? "FOUND" : "none")}");
             if (ctx != null)
             {
                 Debug.Log($"[SaveBootstrap] Destroying stale DDOL GameManager root '{root.name}' to avoid duplicate singletons");
                 UnityEngine.Object.Destroy(root);
+                found++;
             }
         }
+        Debug.Log($"[SaveBootstrap] DestroyStaleGameManagerFromDDOL destroyed {found} stale root(s)");
     }
 
     [Tooltip("If true, runs LoadIntoGame in Start(). Disable for tests or for hot-reload sessions where you want a fresh run.")]
