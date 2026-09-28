@@ -29,29 +29,28 @@ public class Sounds : MonoBehaviour
     [Inject]
     private void Init()
     {
-        // (fix/input-after-continue) The previous version called
-        // DontDestroyOnLoad on transform.root.gameObject, which on this
-        // prefab is the whole GameManager hierarchy (Control, Inventory,
-        // DataManager, DialogManager, GameModeManager, ...). That kept
-        // Control in DontDestroyOnLoad across scene reloads, leaving the
-        // GameScene to instantiate a *second* Control via Zenject, which
-        // Unity accepts silently (Control has no singleton guard). After
-        // Continue, the freshly-loaded Control was receiving the keyboard
-        // input but had no subscribers on its OnOpenInventory/OnEsc events
-        // - the Inventory singleton was still pointing at the old DDOL
-        // Control and never re-wired, so every I/Tab/Esc press fired into
-        // a Control with zero listeners.
+        // (fix/input-after-continue) Sounds historically used
+        // DontDestroyOnLoad(transform.root.gameObject) so that the audio
+        // mixer state and background tracks survive a scene reload.
+        // transform.root on this prefab is the whole GameManager
+        // hierarchy though, which drags Control, Inventory, DataManager,
+        // GameModeManager, ... into DDOL along with it. Zenject then
+        // re-instantiates the GameManager prefab on the new GameScene,
+        // producing duplicate singletons - and Control has no singleton
+        // guard, so both copies receive keyboard input and the new one
+        // has no subscribers (we see [Control] I pressed: subscribers=0).
         //
-        // New behaviour: keep only the Sounds GameObject itself across
-        // scene reloads, by reparenting it under a freshly-created DDOL
-        // host. That preserves the original intent (audio mixer state
-        // and background tracks must survive scene reloads) without
-        // dragging every other system singleton into DDOL along with it.
-        var host = new GameObject("[Sounds (DDOL)]");
-        UnityEngine.Object.DontDestroyOnLoad(host);
-        // Reparent before destroying the original transform.root so we
-        // don't strand the AudioSource references.
-        transform.SetParent(host.transform, worldPositionStays: true);
+        // We tried reparenting just Sounds under a new DDOL host. That
+        // broke [SerializeField] AudioSource references that pointed at
+        // AudioSources living in the scene rather than under Sounds -
+        // every Esc press then logged "Sounds: _gameBackground not
+        // assigned!".
+        //
+        // The clean fix is to keep the whole root in DDOL like before
+        // (preserves every AudioSource ref exactly as the user wired it)
+        // AND destroy the duplicate on the new GameScene when it appears.
+        // The duplicate-pruning lives in SaveBootstrap.OnSceneLoaded.
+        DontDestroyOnLoad(transform.root.gameObject);
     }
 
     [System.Serializable]

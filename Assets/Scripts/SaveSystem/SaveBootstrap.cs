@@ -63,6 +63,23 @@ public class SaveBootstrap : MonoBehaviour
         // fighting inventory state when they're just sitting on the menu.
         if (!scene.name.Contains("Game")) return;
 
+        // (fix/input-after-continue) Sounds.DontDestroyOnLoad hoists the
+        // entire GameManager hierarchy into DDOL. When the new GameScene
+        // is loaded by single-mode LoadSceneAsync, Zenject re-instantiates
+        // GameManager.prefab, and the just-loaded scene gets a *second*
+        // Control, Inventory, GameModeManager, etc. next to the DDOL
+        // ones. Control has no singleton guard, so both copies live and
+        // both receive keyboard input - one with subscribers, one without,
+        // which is exactly the "[Control] I pressed: subscribers=1 then
+        // subscribers=0" double-fire the user saw.
+        //
+        // Drop any GameManager root that's stranded in DDOL from the
+        // previous session. We match by the root GameObject's child name
+        // pattern (the prefab's root is the GameManager GameObject that
+        // contains the SceneContext, GameInstaller, etc.) - simpler than
+        // tracking instance IDs across scene reloads.
+        DestroyStaleGameManagerFromDDOL();
+
         // The previous SaveBootstrap (created by AutoCreate on MainMenu
         // or by an earlier scene load) already ran its Start against
         // whatever systems existed at that time - usually nothing if
@@ -79,6 +96,32 @@ public class SaveBootstrap : MonoBehaviour
         var go = new GameObject("[SaveBootstrap]");
         UnityEngine.Object.DontDestroyOnLoad(go);
         go.AddComponent<SaveBootstrap>();
+    }
+
+    // (fix/input-after-continue) Helper: find the GameManager root that
+    // Sounds hoisted into DDOL on the previous scene load and destroy it
+    // before the new GameScene tries to instantiate a duplicate. We do
+    // this by walking the DontDestroyOnLoad scene's root GameObjects and
+    // matching the one that contains a SceneContext (the GameManager
+    // root has a Zenject SceneContext child; the auto-bootstrapped
+    // [SaveBootstrap] / [Sounds (DDOL)] hosts from other systems do not).
+    private static void DestroyStaleGameManagerFromDDOL()
+    {
+        var ddolScene = SceneManager.GetSceneByName("DontDestroyOnLoad");
+        if (!ddolScene.IsValid() || !ddolScene.isLoaded) return;
+        foreach (var root in ddolScene.GetRootGameObjects())
+        {
+            if (root == null) continue;
+            // The GameManager hierarchy contains a SceneContext component
+            // somewhere down the tree. If we find one, this root is the
+            // stale GameManager and we tear it down.
+            var ctx = root.GetComponentInChildren<Zenject.SceneContext>(true);
+            if (ctx != null)
+            {
+                Debug.Log($"[SaveBootstrap] Destroying stale DDOL GameManager root '{root.name}' to avoid duplicate singletons");
+                UnityEngine.Object.Destroy(root);
+            }
+        }
     }
 
     [Tooltip("If true, runs LoadIntoGame in Start(). Disable for tests or for hot-reload sessions where you want a fresh run.")]
