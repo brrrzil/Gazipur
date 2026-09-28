@@ -48,6 +48,15 @@ public class GameModeManager : MonoBehaviour
     public bool IsTransitioningToDialog { get; private set; }
     public GameMode PreviousMode { get; private set; }
 
+    // (fix/save-load-subscriptions) Cached so OnDestroy can remove exactly
+    // this delegate from _control.OnEsc. InitMods used to inline a lambda
+    // without unsubscribing - the lambda captured `this`, so it survived
+    // GameModeManager across scene reloads (Control is scene-bound, so its
+    // event gets reset on each rebuild, but if Zenject ever keeps Control
+    // alive we end up with stacked NRE-throwing delegates calling into a
+    // destroyed GameModeManager).
+    private System.Action _onEscHandler;
+
     [Inject]
     private void InitMods()
     {
@@ -66,8 +75,16 @@ public class GameModeManager : MonoBehaviour
             [GameMode.win] = OnWin,
             [GameMode.comics] = OnComics,
         };
-        _control.OnEsc += () =>
+        _onEscHandler = () =>
         {
+            // (fix/save-load-subscriptions) Guard against a destroyed
+            // GameModeManager still wired into Control.OnEsc after a scene
+            // reload. Without this, the first Esc press after Continue
+            // throws MissingReferenceException and Control stops dispatching
+            // - which is one of the visible 'subscriptions break on load'
+            // symptoms.
+            if (this == null) return;
+            if (_data == null) return;
             if (_data.gameMode == GameMode.outdors)
             {
                 // Open the pause menu.
@@ -75,7 +92,7 @@ public class GameModeManager : MonoBehaviour
                 Time.timeScale = 0;
 
                 // BUGFIX: переключаем музыку на трек меню
-                _sounds.SwitchToMenuBackground();
+                if (_sounds != null) _sounds.SwitchToMenuBackground();
                 return;
             }
 
@@ -85,7 +102,7 @@ public class GameModeManager : MonoBehaviour
             // so a subsequent interaction with the trader goes straight
             // to the trade panel via the TraderObject.Intearct branch.
             if (_data.gameMode == GameMode.dialog
-                && _dialog.Dialog == DialogType.startTrader)
+                && _dialog != null && _dialog.Dialog == DialogType.startTrader)
             {
                 _dialog.MarkCurrentDialogUsed();
                 GamePersistence.SaveNow();
@@ -106,11 +123,22 @@ public class GameModeManager : MonoBehaviour
                 Cursor.visible = false;
 
                 // BUGFIX: возвращаем игровую музыку при выходе из меню
-                _sounds.SwitchToGameBackground();
+                if (_sounds != null) _sounds.SwitchToGameBackground();
             }
             // If we're in `die`, do nothing — the player needs to use the
             // die panel to restart or quit.
         };
+        if (_control != null) _control.OnEsc += _onEscHandler;
+    }
+
+    private void OnDestroy()
+    {
+        // (fix/save-load-subscriptions) Symmetric teardown for the OnEsc
+        // lambda registered in InitMods. Without this the lambda survives
+        // on Control.OnEsc after a scene reload, calling into a destroyed
+        // GameModeManager on the next Esc press.
+        if (_control != null && _onEscHandler != null)
+            _control.OnEsc -= _onEscHandler;
     }
 
     public void ChangeMode(GameMode mode)
