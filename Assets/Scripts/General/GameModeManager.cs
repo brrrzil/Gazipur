@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using Zenject;
 using static EnumData;
 
@@ -61,6 +62,10 @@ public class GameModeManager : MonoBehaviour
     private void InitMods()
     {
         Time.timeScale = 1;
+        // (diag/input-after-continue) Trace that the lambda gets (re)wired on each scene reload.
+        Debug.Log($"[GameModeManager] InitMods Control={(_control != null ? _control.GetInstanceID().ToString() : "null")} " +
+                  $"subsOnEsc={_control?.OnEsc?.GetInvocationList().Length ?? 0} " +
+                  $"scene='{SceneManager.GetActiveScene().name}'");
         _mods = new Dictionary<GameMode, UnityEvent<bool>>
         {
             [GameMode.outdors] = OnOutdors,
