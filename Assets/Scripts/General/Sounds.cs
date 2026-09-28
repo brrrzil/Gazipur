@@ -29,7 +29,29 @@ public class Sounds : MonoBehaviour
     [Inject]
     private void Init()
     {
-        DontDestroyOnLoad(transform.root.gameObject);
+        // (fix/input-after-continue) The previous version called
+        // DontDestroyOnLoad on transform.root.gameObject, which on this
+        // prefab is the whole GameManager hierarchy (Control, Inventory,
+        // DataManager, DialogManager, GameModeManager, ...). That kept
+        // Control in DontDestroyOnLoad across scene reloads, leaving the
+        // GameScene to instantiate a *second* Control via Zenject, which
+        // Unity accepts silently (Control has no singleton guard). After
+        // Continue, the freshly-loaded Control was receiving the keyboard
+        // input but had no subscribers on its OnOpenInventory/OnEsc events
+        // - the Inventory singleton was still pointing at the old DDOL
+        // Control and never re-wired, so every I/Tab/Esc press fired into
+        // a Control with zero listeners.
+        //
+        // New behaviour: keep only the Sounds GameObject itself across
+        // scene reloads, by reparenting it under a freshly-created DDOL
+        // host. That preserves the original intent (audio mixer state
+        // and background tracks must survive scene reloads) without
+        // dragging every other system singleton into DDOL along with it.
+        var host = new GameObject("[Sounds (DDOL)]");
+        UnityEngine.Object.DontDestroyOnLoad(host);
+        // Reparent before destroying the original transform.root so we
+        // don't strand the AudioSource references.
+        transform.SetParent(host.transform, worldPositionStays: true);
     }
 
     [System.Serializable]
