@@ -45,14 +45,34 @@ public class SaveBootstrap : MonoBehaviour
         DontDestroyOnLoad(go);
         go.AddComponent<SaveBootstrap>();
 
-        // Subscribe to scene loads. The static AfterSceneLoad callback
-        // above only fires once per app session, which is not enough
-        // for Continue-driven scene reload.
+        // Subscribe to scene loads AND unloads. The static AfterSceneLoad
+        // callback above only fires once per app session, which is not
+        // enough for Continue-driven scene reload.
         if (!_subscribed)
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
             _subscribed = true;
         }
+    }
+
+    // (fix/input-after-continue) Cleanup runs on scene UNLOAD, not scene
+    // load. Sounds.DontDestroyOnLoad(transform.root.gameObject) hoists
+    // the entire GameManager hierarchy into DDOL during the Zenject
+    // injection of the new GameScene - which happens *before*
+    // sceneLoaded fires. By the time OnSceneLoaded runs and our previous
+    // attempt called DestroyStaleGameManagerFromDDOL, the only DDOL
+    // root with a SceneContext was the *freshly-instantiated* one, so
+    // we ended up destroying the brand-new GameManager and left the
+    // actual stale DDOL copy alone - the opposite of what we wanted.
+    //
+    // sceneUnloaded fires after the old scene's GameObjects are gone
+    // but before the new scene's Awake/Start runs, which is exactly the
+    // window where "only the stale DDOL GameManager exists, no new one
+    // yet" is true. Destroy it there.
+    private static void OnSceneUnloaded(Scene scene)
+    {
+        DestroyStaleGameManagerFromDDOL();
     }
 
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -62,23 +82,6 @@ public class SaveBootstrap : MonoBehaviour
         // do nothing useful. Skipping it also keeps the player from
         // fighting inventory state when they're just sitting on the menu.
         if (!scene.name.Contains("Game")) return;
-
-        // (fix/input-after-continue) Sounds.DontDestroyOnLoad hoists the
-        // entire GameManager hierarchy into DDOL. When the new GameScene
-        // is loaded by single-mode LoadSceneAsync, Zenject re-instantiates
-        // GameManager.prefab, and the just-loaded scene gets a *second*
-        // Control, Inventory, GameModeManager, etc. next to the DDOL
-        // ones. Control has no singleton guard, so both copies live and
-        // both receive keyboard input - one with subscribers, one without,
-        // which is exactly the "[Control] I pressed: subscribers=1 then
-        // subscribers=0" double-fire the user saw.
-        //
-        // Drop any GameManager root that's stranded in DDOL from the
-        // previous session. We match by the root GameObject's child name
-        // pattern (the prefab's root is the GameManager GameObject that
-        // contains the SceneContext, GameInstaller, etc.) - simpler than
-        // tracking instance IDs across scene reloads.
-        DestroyStaleGameManagerFromDDOL();
 
         // The previous SaveBootstrap (created by AutoCreate on MainMenu
         // or by an earlier scene load) already ran its Start against
