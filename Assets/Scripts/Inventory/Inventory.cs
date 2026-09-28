@@ -54,16 +54,6 @@ public class Inventory : MonoBehaviour
         Instance = this;
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
-        // Mirror Awake/Start registrations with symmetric teardown so a
-        // destroyed Inventory doesn't keep consuming mode-change events
-        // (round 102 user's 'управление слетает' report).
-        if (_gameMode != null && _onModeChangedHandler != null)
-            _gameMode.onChangeMode -= _onModeChangedHandler;
-    }
-
     private bool _subscribedControl;
     private void Start()
     {
@@ -200,53 +190,6 @@ public class Inventory : MonoBehaviour
             _control.OnOpenInventory -= OpenOrCloseInventoryHandler;
             _control.OnFastSlotUse -= UseFastSlot;
             _subscribedControl = false;
-        }
-    }
-        foreach (var item in _startItems)
-        {
-            AddItem(item, 1);
-        }
-        // Seed DataManager's cached inventory snapshot so the first
-        // GamePersistence.SaveNow() call (triggered by any producer hook)
-        // sees the startItems and not just an empty/null array.
-        if (_data != null && _cells != null) _data.UpdateInventory(_cells);
-
-        // Cached delegate so OnDestroy can remove exactly this subscription.
-        // Without this, the captured lambda keeps being called by
-        // GameModeManager after Inventory is destroyed on scene reload,
-        // throwing MissingReferenceException for every Esc / Tab / I keypress.
-        if (_gameMode != null)
-        {
-            _onModeChangedHandler = mode =>
-            {
-                // Unity-null check on `this` - same reason as TradePanel.
-                // The lambda is captured by GameModeManager and outlives
-                // Inventory on scene reload.
-                if (this == null) return;
-                if (mode == GameMode.inventory)
-                {
-                    ShowPanel(true);
-                    if (_cells != null)
-                    {
-                        InventoryCell firstNonEmpty = null;
-                        for (int i = 0; i < _cells.Length; i++)
-                            if (_cells[i] != null && _cells[i].Item != null)
-                            {
-                                firstNonEmpty = _cells[i];
-                                break;
-                            }
-                        if (firstNonEmpty != null)
-                            ShowInfoPanel(firstNonEmpty);
-                        else if (_cells.Length > 0 && _cells[0] != null)
-                            ShowInfoPanel(_cells[0]);
-                    }
-                }
-                else if (mode == GameMode.outdors)
-                {
-                    ShowPanel(false);
-                }
-            };
-            _gameMode.onChangeMode += _onModeChangedHandler;
         }
     }
 
