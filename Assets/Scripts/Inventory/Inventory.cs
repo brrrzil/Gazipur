@@ -249,7 +249,11 @@ public class Inventory : MonoBehaviour
         // lazy resubscribe will eventually catch the next press.
         if (_control == null)
         {
-            var fresh = FindAnyObjectByType<Control>(FindObjectsSortMode.None);
+            // Default overload searches active GameObjects, no sort mode.
+            // The Unity 2022+ signatures that take FindObjectsSortMode also
+            // require a FindObjectsInactive argument, so the no-arg variant
+            // is the simplest correct call here.
+            var fresh = FindAnyObjectByType<Control>();
             if (fresh != null) _control = fresh;
         }
 

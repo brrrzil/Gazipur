@@ -98,9 +98,7 @@ public class SaveBootstrap : MonoBehaviour
         // if Awake's first line doesn't show up in Console, AutoCreate
         // and OnSceneLoaded never reached this instance, which means
         // the sceneLoaded pipeline is broken.
-        Debug.Log($"[SaveBootstrap] Awake on '{SceneManager.GetActiveScene().name}' loadOnStart={_loadOnStart} " +
-                  $"Control={(_control == null ? "null" : _control.GetInstanceID().ToString())} " +
-                  $"Inventory={(_inventory == null ? "null" : _inventory.GetInstanceID().ToString())}");
+        Debug.Log($"[SaveBootstrap] Awake on '{SceneManager.GetActiveScene().name}' loadOnStart={_loadOnStart}");
 
         // (diag/input-after-continue) Reachability probe. After Continue we
         // suspect a Control/Inventory mismatch where the listener gets
