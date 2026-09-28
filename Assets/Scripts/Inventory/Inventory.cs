@@ -55,15 +55,51 @@ public class Inventory : MonoBehaviour
     }
 
     private bool _subscribedControl;
+
+    // (fix/save-load-subscriptions) Flags AddItem as "loading state" so
+    // onTakeItem consumers (TraderObject, QuestManager, MotherCollider)
+    // don't trigger side-effects during Inventory.Start -> SaveBootstrap
+    // order races. Start fires on every scene load (Continue / New Game),
+    // so on Continue we used to invoke TraderObject's startTrader check,
+    // which in turn read QuestManager.QuestsState[healMother] - and if
+    // QuestManager.Start hadn't run yet (Unity gives no Start ordering
+    // guarantees across MonoBehaviours), that dictionary was still null
+    // and we NRE'd. Today AddItem early-returns when _suppressOnTakeItem
+    // is set, and we only set the flag while we know onTakeItem would
+    // mutate transient state (start-items, save-apply). Real pickups
+    // (ItemObject, GarbageObject) keep their original behaviour.
+    private bool _suppressOnTakeItem;
+
     private void Start()
     {
         HaveTools = new HashSet<ToolsType>();
         SubscribeToControl();
-        if (_startItems != null)
+
+        // (fix/save-load-subscriptions) Only seed _startItems when there
+        // is no save slot. On Continue the SaveBootstrap is about to call
+        // LoadIntoGame, which clears every cell and refills from the saved
+        // blob - adding start-items first would briefly populate the
+        // inventory with the wrong contents (and let the onTakeItem side-
+        // effects above run once with the wrong item, twice if a start-
+        // item is also in the save).
+        bool hasSave = SaveSystem.HasSave();
+        if (!hasSave && _startItems != null)
         {
-            foreach (var item in _startItems)
+            // Suppress onTakeItem while we seed start-items: QuestManager
+            // and TraderObject may not have completed their own Start()
+            // yet, and reading their mutable state from inside AddItem is
+            // a known race.
+            _suppressOnTakeItem = true;
+            try
             {
-                AddItem(item, 1);
+                foreach (var item in _startItems)
+                {
+                    AddItem(item, 1);
+                }
+            }
+            finally
+            {
+                _suppressOnTakeItem = false;
             }
         }
         // Seed DataManager's cached inventory snapshot so the first
@@ -197,7 +233,14 @@ public class Inventory : MonoBehaviour
     {
         _picCounter++;
         int startCount = count;
-        onTakeItem?.Invoke(item);
+        // (fix/save-load-subscriptions) Skip the onTakeItem side-effects
+        // when we're seeding _startItems in Start() or while the saved
+        // blob is being applied by SaveBootstrap. QuestManager /
+        // TraderObject / MotherCollider may not have finished their own
+        // Start() yet, and invoking their handlers now produces NREs on
+        // `_quest.QuestsState[healMother]` (QuestsState is initialised in
+        // QuestManager.Start).
+        if (!_suppressOnTakeItem) onTakeItem?.Invoke(item);
         if (CheckTool(item))
         {
             _picedItems[_picCounter % _picedItems.Length].Show(item, count);
