@@ -29,6 +29,27 @@ public class Sounds : MonoBehaviour
     [Inject]
     private void Init()
     {
+        // (fix/input-after-continue) Sounds historically used
+        // DontDestroyOnLoad(transform.root.gameObject) so that the audio
+        // mixer state and background tracks survive a scene reload.
+        // transform.root on this prefab is the whole GameManager
+        // hierarchy though, which drags Control, Inventory, DataManager,
+        // GameModeManager, ... into DDOL along with it. Zenject then
+        // re-instantiates the GameManager prefab on the new GameScene,
+        // producing duplicate singletons - and Control has no singleton
+        // guard, so both copies receive keyboard input and the new one
+        // has no subscribers (we see [Control] I pressed: subscribers=0).
+        //
+        // We tried reparenting just Sounds under a new DDOL host. That
+        // broke [SerializeField] AudioSource references that pointed at
+        // AudioSources living in the scene rather than under Sounds -
+        // every Esc press then logged "Sounds: _gameBackground not
+        // assigned!".
+        //
+        // The clean fix is to keep the whole root in DDOL like before
+        // (preserves every AudioSource ref exactly as the user wired it)
+        // AND destroy the duplicate on the new GameScene when it appears.
+        // The duplicate-pruning lives in SaveBootstrap.OnSceneLoaded.
         DontDestroyOnLoad(transform.root.gameObject);
     }
 
