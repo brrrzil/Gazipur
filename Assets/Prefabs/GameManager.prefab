@@ -778,6 +778,9 @@ MonoBehaviour:
   OnWin:
     m_PersistentCalls:
       m_Calls: []
+  OnComics:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &8348278880182559969
 GameObject:
   m_ObjectHideFlags: 0
@@ -962,6 +965,8 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 63b7b07663c742c499132e19f0fa4eb1, type: 2}
     isSingle: 1
   - item: {fileID: 11400000, guid: 19da7f6450a7c0d43943b0cdba72eb01, type: 2}
+    isSingle: 1
+  - item: {fileID: 11400000, guid: 757f0d7d81834a744a0881f9f23670a6, type: 2}
     isSingle: 1
   - item: {fileID: 11400000, guid: a6bca6b13e9c32b44919b4987e3fba27, type: 2}
     isSingle: 1
