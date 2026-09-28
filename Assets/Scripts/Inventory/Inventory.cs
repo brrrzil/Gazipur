@@ -45,16 +45,6 @@ public class Inventory : MonoBehaviour
     // throwing MissingReferenceException for every Esc / Tab / I keypress.
     private System.Action<GameMode> _onModeChangedHandler;
 
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-    }
-
     private bool _subscribedControl;
 
     // (fix/save-load-subscriptions) Flags AddItem as "loading state" so
@@ -198,6 +188,90 @@ public class Inventory : MonoBehaviour
                   $"gameMode='{SceneManager.GetActiveScene().name}'");
     }
 
+    // (fix/input-after-continue) Real fix for the user's "I/Tab/Esc silently
+    // stop working after Continue" report. Console evidence:
+    //   [Load] cell[0] null (destroyed)            <- Inventory.cells[0] is a phantom
+    //                                                ref to a destroyed GameObject
+    //   [Control] I pressed: subscribers=0         <- OnOpenInventory is empty when
+    //                                                the key fires
+    // Root cause: Inventory lives across scene reloads (its [SerializeField]
+    // _cells array contains stale Unity refs that point at GameObjects that
+    // were destroyed with the previous GameScene), but its injected _control
+    // field was the old Control from the same GameScene - now Unity-null.
+    // SubscribeToControl bails on `_control == null`, so the new Control
+    // on the fresh GameScene never gets a subscriber and I/Tab/Esc fall
+    // silent.
+    //
+    // Fix: keep subscribing at every scene load. We re-resolve _control by
+    // scene name (GameScene only) and force-rewire regardless of the cached
+    // bool, so a stale wire-up on a destroyed Control is replaced by a fresh
+    // one on the live Control. Awake wires SceneManager.sceneLoaded; OnDestroy
+    // unwires it. Cheap - one FindObjectsByType call per scene load.
+    private bool _sceneLoadHooked;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        // (fix/input-after-continue) Hook scene loads once, on the very first
+        // Awake. We only need it on the surviving Inventory; if a duplicate
+        // Inventory is destroyed by the singleton guard above, it never
+        // gets here.
+        if (!_sceneLoadHooked)
+        {
+            SceneManager.sceneLoaded += OnSceneLoadedFixup;
+            _sceneLoadHooked = true;
+        }
+    }
+
+    private void OnSceneLoadedFixup(Scene scene, LoadSceneMode mode)
+    {
+        // Only the GameScene has a Control worth re-wiring to; the MainMenu
+        // scene has no Control MonoBehaviour so a FindObjectsByType call
+        // there would just walk the scene and find nothing.
+        if (!scene.name.Contains("Game")) return;
+
+        // Force-resubscribe: clear our cached bool, drop any stale wire-up
+        // against a dead Control, then look for the live Control on the
+        // freshly-loaded scene and wire again. Safe even if Inventory was
+        // respawned too (Start will have already wired _control, but
+        // _subscribedControl was reset below so we don't double-subscribe).
+        _subscribedControl = false;
+
+        // _control is most likely a Unity-null reference to a destroyed
+        // MonoBehaviour (if Inventory lived through the scene reload).
+        // Refresh it from the new scene's GameManager. Fall back to the
+        // existing field if we can't find a fresh one - the Update-time
+        // lazy resubscribe will eventually catch the next press.
+        if (_control == null)
+        {
+            var fresh = FindAnyObjectByType<Control>(FindObjectsSortMode.None);
+            if (fresh != null) _control = fresh;
+        }
+
+        if (_control != null)
+        {
+            // Drop the previous subscription on the dead Control, if any,
+            // before adding one on the live one. RemoveListener is a no-op
+            // if the delegate isn't in the invocation list, so this is
+            // safe even when the dead Control's event was already cleaned
+            // up by its OnDisable.
+            _control.OnOpenInventory -= OpenOrCloseInventoryHandler;
+            _control.OnFastSlotUse -= UseFastSlot;
+            SubscribeToControl();
+            Debug.Log($"[Inventory] OnSceneLoadedFixup re-wired to Control={_control.GetInstanceID()} " +
+                      $"subsOnOpenInventory={_control.OnOpenInventory?.GetInvocationList().Length ?? 0}");
+        }
+        else
+        {
+            Debug.LogWarning("[Inventory] OnSceneLoadedFixup: no Control found on the new GameScene");
+        }
+    }
+
     private void OpenOrCloseInventoryHandler()
     {
         if (this == null) return;
@@ -224,6 +298,15 @@ public class Inventory : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // (fix/input-after-continue) Drop the static scene-load hook so a
+        // destroyed Inventory doesn't keep re-wiring its replacements.
+        // Safe to call even if Awake never ran (e.g. duplicate destroyed
+        // by the singleton guard).
+        if (_sceneLoadHooked)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoadedFixup;
+            _sceneLoadHooked = false;
+        }
         // Mirror Awake/Start registrations with symmetric teardown so a
         // destroyed Inventory doesn't keep consuming mode-change events
         // (round 102 user's 'управление слетает' report).
