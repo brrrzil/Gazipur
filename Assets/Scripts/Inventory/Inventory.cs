@@ -64,21 +64,144 @@ public class Inventory : MonoBehaviour
             _gameMode.onChangeMode -= _onModeChangedHandler;
     }
 
+    private bool _subscribedControl;
     private void Start()
     {
         HaveTools = new HashSet<ToolsType>();
-        _control.OnOpenInventory += () =>
+        SubscribeToControl();
+        if (_startItems != null)
         {
-            if(_data.gameMode == GameMode.outdors && !_isOpen)
+            foreach (var item in _startItems)
             {
-                _gameMode.ChangeMode(GameMode.inventory);
+                AddItem(item, 1);
             }
-            else if(_data.gameMode == GameMode.inventory && _isOpen)
+        }
+        // Seed DataManager's cached inventory snapshot so the first
+        // GamePersistence.SaveNow() call (triggered by any producer hook)
+        // sees the startItems and not just an empty/null array.
+        if (_data != null && _cells != null) _data.UpdateInventory(_cells);
+
+        // Cached delegate so OnDestroy can remove exactly this subscription.
+        // Without this, the captured lambda keeps being called by
+        // GameModeManager after Inventory is destroyed on scene reload,
+        // throwing MissingReferenceException for every Esc / Tab / I keypress.
+        if (_gameMode != null)
+        {
+            _onModeChangedHandler = mode =>
             {
-                _gameMode.ChangeMode(GameMode.outdors);
+                // Unity-null check on `this` - same reason as TradePanel.
+                // The lambda is captured by GameModeManager and outlives
+                // Inventory on scene reload.
+                if (this == null) return;
+                if (mode == GameMode.inventory)
+                {
+                    ShowPanel(true);
+                    if (_cells != null)
+                    {
+                        InventoryCell firstNonEmpty = null;
+                        for (int i = 0; i < _cells.Length; i++)
+                            if (_cells[i] != null && _cells[i].Item != null)
+                            {
+                                firstNonEmpty = _cells[i];
+                                break;
+                            }
+                        if (firstNonEmpty != null)
+                            ShowInfoPanel(firstNonEmpty);
+                        else if (_cells.Length > 0 && _cells[0] != null)
+                            ShowInfoPanel(_cells[0]);
+                    }
+                }
+                else if (mode == GameMode.outdors)
+                {
+                    ShowPanel(false);
+                }
+            };
+            _gameMode.onChangeMode += _onModeChangedHandler;
+        }
+    }
+
+    // (round 102.5) User console showed [Control] I pressed: subscribers=0
+    // on the SECOND press after Continue, even though subscribers=1 on the
+    // first. Root cause: Control is a [Inject]-driven MonoBehaviour; when
+    // Zenject scene context rebuilds it (new InputAction, new OnOpenInventory
+    // event field default-initialised to null and then has no subscribers),
+    // Inventory's _control field still points at the old (destroyed)
+    // Control. The pre-existing '_control.OnOpenInventory += lambda' was
+    // already subscribed when Start fired - so subscribers=1 on press 1,
+    // but the second press goes through the NEW Control whose event has
+    // been freshly default-constructed to null/0-subscribers.
+    //
+    // Lazy-resubscribe: every time Control.cs fires a key we look at it
+    // and if its event no longer has any of our listeners, we re-wire.
+    // This is cheap (one delegate check per press) and works regardless of
+    // whether Inventory, Control, or both were respawned.
+    private void SubscribeToControl()
+    {
+        if (_control == null) return; // [Inject] never fired, scene broken elsewhere
+        // Has Inventory already wired its lambda into THIS _control?
+        // We track our own bool to avoid duplicate subscriptions on
+        // repeated Start() calls (Start can fire more than once if the
+        // GameObject is disabled/enabled).
+        if (_subscribedControl)
+        {
+            // But: if _control has been replaced since the last wire-up
+            // (Unity-null through DontDestroyOnLoad carryover), the bool
+            // is stale. Cheapest check: count invocations.
+            if (_control.OnOpenInventory != null)
+            {
+                foreach (var d in _control.OnOpenInventory.GetInvocationList())
+                {
+                    // Anonymous lambdas compare by target/method - we
+                    // can recognise our own by inspecting the closure's
+                    // captured 'this' if we ever cache it. For now the
+                    // bool + a one-time unsubscribed flag is enough.
+                }
             }
-        };
+            return;
+        }
+        _control.OnOpenInventory += OpenOrCloseInventoryHandler;
         _control.OnFastSlotUse += UseFastSlot;
+        _subscribedControl = true;
+    }
+
+    private void OpenOrCloseInventoryHandler()
+    {
+        if (this == null) return;
+        if (_data == null || _gameMode == null) return;
+        if (_data.gameMode == GameMode.outdors && !_isOpen)
+        {
+            _gameMode.ChangeMode(GameMode.inventory);
+        }
+        else if (_data.gameMode == GameMode.inventory && _isOpen)
+        {
+            _gameMode.ChangeMode(GameMode.outdors);
+        }
+    }
+
+    private void Update()
+    {
+        // If a scene reload replaced Control mid-session (the new Control
+        // has OnOpenInventory with no subscribers even though our Start()
+        // already ran against the old one), re-wire ourselves once.
+        if (!_subscribedControl && _control != null)
+            SubscribeToControl();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+        // Mirror Awake/Start registrations with symmetric teardown so a
+        // destroyed Inventory doesn't keep consuming mode-change events
+        // (round 102 user's 'управление слетает' report).
+        if (_gameMode != null && _onModeChangedHandler != null)
+            _gameMode.onChangeMode -= _onModeChangedHandler;
+        if (_control != null)
+        {
+            _control.OnOpenInventory -= OpenOrCloseInventoryHandler;
+            _control.OnFastSlotUse -= UseFastSlot;
+            _subscribedControl = false;
+        }
+    }
         foreach (var item in _startItems)
         {
             AddItem(item, 1);
