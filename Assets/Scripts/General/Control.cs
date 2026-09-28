@@ -15,14 +15,28 @@ public class Control : MonoBehaviour
 
     private PlayerInputActions inputActions;
     private bool isHoldInProgress = false;
+    // (diag/input-after-continue) Lets us tell instances apart in the log.
+    private static int _instanceCounter;
+    private readonly int _instanceId = System.Threading.Interlocked.Increment(ref _instanceCounter);
 
     private void Awake()
     {
         inputActions = new PlayerInputActions();
+        Debug.Log($"[Control#{_instanceId}] Awake inputActions={(inputActions != null ? "ok" : "NULL")} scene='{gameObject.scene.name}'");
     }
 
     private void OnEnable()
     {
+        // (diag/input-after-continue) Defensive: Awake should have run
+        // before OnEnable, but if a future refactor changes the lifecycle
+        // or this component is added at runtime via AddComponent, Awake
+        // is skipped. Fall back to creating the asset so we never crash
+        // on a NullReference inside Enable().
+        if (inputActions == null)
+        {
+            inputActions = new PlayerInputActions();
+            Debug.LogWarning($"[Control#{_instanceId}] OnEnable found inputActions null, re-created it");
+        }
         inputActions.Enable();
 
         inputActions.Player.Interact.performed += OnInteractPerformed;
@@ -39,6 +53,11 @@ public class Control : MonoBehaviour
         inputActions.Player.Slot3.performed += OnSlot3Performed;
         inputActions.Player.Slot4.performed += OnSlot4Performed;
         inputActions.Player.Slot5.performed += OnSlot5Performed;
+
+        Debug.Log($"[Control#{_instanceId}] OnEnable subscribers: " +
+                  $"OnOpenInventory={(OnOpenInventory?.GetInvocationList().Length ?? 0)}, " +
+                  $"OnEsc={(OnEsc?.GetInvocationList().Length ?? 0)}, " +
+                  $"OnInteractObject={(OnInteractObject?.GetInvocationList().Length ?? 0)} scene='{gameObject.scene.name}'");
     }
 
     // (m1) Previously commented out — without this, disabling the Control
@@ -46,6 +65,8 @@ public class Control : MonoBehaviour
     // of input callbacks on the next OnEnable.
     private void OnDisable()
     {
+        if (inputActions == null) return;
+
         inputActions.Player.Interact.performed -= OnInteractPerformed;
         inputActions.Player.HoldInteract.started -= OnHoldInteractStart;
         inputActions.Player.HoldInteract.canceled -= OnHoldInteractCancel;
@@ -60,6 +81,7 @@ public class Control : MonoBehaviour
         inputActions.Player.Slot5.performed -= OnSlot5Performed;
 
         inputActions.Disable();
+        Debug.Log($"[Control#{_instanceId}] OnDisable scene='{gameObject.scene.name}'");
     }
 
     private void Update()

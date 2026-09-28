@@ -98,7 +98,29 @@ public class SaveBootstrap : MonoBehaviour
         // if Awake's first line doesn't show up in Console, AutoCreate
         // and OnSceneLoaded never reached this instance, which means
         // the sceneLoaded pipeline is broken.
-        Debug.Log($"[SaveBootstrap] Awake on '{SceneManager.GetActiveScene().name}' loadOnStart={_loadOnStart}");
+        Debug.Log($"[SaveBootstrap] Awake on '{SceneManager.GetActiveScene().name}' loadOnStart={_loadOnStart} " +
+                  $"Control={(_control == null ? "null" : _control.GetInstanceID().ToString())} " +
+                  $"Inventory={(_inventory == null ? "null" : _inventory.GetInstanceID().ToString())}");
+
+        // (diag/input-after-continue) Reachability probe. After Continue we
+        // suspect a Control/Inventory mismatch where the listener gets
+        // wired to a stale Control that has nothing listening for input.
+        // This diagnostic prints both sides so the next run's logs show
+        // whether Awake, Start, and onTakeItem fire against the same
+        // instance ID as Control.OnEnable reported.
+        try
+        {
+            var control = FindAnyObjectByType<Control>();
+            var inventory = FindAnyObjectByType<Inventory>();
+            Debug.Log($"[SaveBootstrap] Probe -> Control={control?.GetInstanceID().ToString() ?? "null"} " +
+                      $"Inventory={inventory?.GetInstanceID().ToString() ?? "null"} " +
+                      $"subsOnOpenInventory={control?.OnOpenInventory?.GetInvocationList().Length ?? 0} " +
+                      $"subsOnEsc={control?.OnEsc?.GetInvocationList().Length ?? 0}");
+        }
+        catch (System.Exception probeEx)
+        {
+            Debug.LogWarning($"[SaveBootstrap] probe failed: {probeEx.Message}");
+        }
 
         try
         {

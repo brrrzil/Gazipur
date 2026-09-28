@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Zenject;
 using static EnumData;
@@ -188,6 +189,13 @@ public class Inventory : MonoBehaviour
         _control.OnOpenInventory += OpenOrCloseInventoryHandler;
         _control.OnFastSlotUse += UseFastSlot;
         _subscribedControl = true;
+        // (diag/input-after-continue) Help pinpoint why I/Tab stop
+        // reacting after Continue - is the wiring landing on the live
+        // Control, or on a stale one?
+        Debug.Log($"[Inventory] SubscribeToControl -> Control={_control.GetInstanceID()} " +
+                  $"subsOnOpenInventory={_control.OnOpenInventory?.GetInvocationList().Length ?? 0} " +
+                  $"subsOnFastSlotUse={_control.OnFastSlotUse?.GetInvocationList().Length ?? 0} " +
+                  $"gameMode='{SceneManager.GetActiveScene().name}'");
     }
 
     private void OpenOrCloseInventoryHandler()
