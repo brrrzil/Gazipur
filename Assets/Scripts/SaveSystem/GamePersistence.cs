@@ -159,10 +159,29 @@ public static class GamePersistence
                         for (int i = 0; i < cells.Count; i++)
                             if (cells[i] != null) cells[i].RemoveItem();
 
-                        for (int i = 0; i < data.inventory.Count && i < cells.Count; i++)
+                        // (input-action-r3) Honour InventoryEntry.slotIndex when
+                        // restoring, instead of writing into cells[i] in array
+                        // order. The save list is already filtered to non-empty
+                        // entries, so a naively sequential loop would cram the
+                        // first save entry into cells[0] even if it was actually
+                        // saved from cells[3]. With slotIndex we restore the
+                        // original layout regardless of how Collect compacted
+                        // the list.
+                        //
+                        // Legacy-blob fallback: blobs written before slotIndex
+                        // existed (or blobs where the user's first save only
+                        // populated cell[0]) have slotIndex=0 for every entry.
+                        // Detecting that and falling back to array order keeps
+                        // those saves working without a version bump.
+                        bool legacyBlob = data.inventory.Count > 1 &&
+                                          data.inventory.All(e => e == null || e.slotIndex == 0);
+                        int fallbackIdx = 0;
+                        foreach (var entry in data.inventory)
                         {
-                            var entry = data.inventory[i];
                             if (entry == null || entry.count <= 0) continue;
+                            int slot = legacyBlob ? fallbackIdx : entry.slotIndex;
+                            fallbackIdx++;
+                            if (slot < 0 || slot >= cells.Count) continue;
                             var itemData = items.GetByIndex(entry.itemIndex);
                             if (itemData == null) continue;
                             // AddItem splits overflow off - we cap at item.MaxInInventoryCell
@@ -177,9 +196,9 @@ public static class GamePersistence
                                 // causes AddItem to throw a NRE whose stack trace
                                 // is null in player builds. Logging the missing piece
                                 // here gives us a real culprit line in the log.
-                                if (cells[i] == null)
+                                if (cells[slot] == null)
                                 {
-                                    Debug.LogWarning($"[Load] cell[{i}] null (destroyed)");
+                                    Debug.LogWarning($"[Load] cell[{slot}] null (destroyed)");
                                     continue;
                                 }
                                 // Debug the inner InventoryCell state via reflection-free
@@ -187,12 +206,12 @@ public static class GamePersistence
                                 // refs ([SerializeField] Image/Text and [Inject] Inventory)
                                 // are private. Wrap AddItem in a pre-flight check: try the
                                 // cheapest operation first (a no-op), then dispatch.
-                                cells[i].SetReady(true); // safe public set, primes the cell
-                                cells[i].AddItem(itemData, entry.count);
+                                cells[slot].SetReady(true); // safe public set, primes the cell
+                                cells[slot].AddItem(itemData, entry.count);
                             }
                             catch (System.Exception cellEx)
                             {
-                                Debug.LogWarning($"[Load] cell[{i}] item={itemData?.name} count={entry.count} failed:\n{cellEx}\nInnerException: {cellEx.InnerException}");
+                                Debug.LogWarning($"[Load] cell[{slot}] item={itemData?.name} count={entry.count} failed:\n{cellEx}\nInnerException: {cellEx.InnerException}");
                             }
                         }
                         Debug.Log($"[GamePersistence.LoadIntoGame] Inventory applied");
