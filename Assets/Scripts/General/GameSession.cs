@@ -78,17 +78,25 @@ public class GameSession : MonoBehaviour
         if (die != null) die.gameObject.SetActive(false);
 
         // 2) Apply the saved blob (if one exists). LoadIntoGame
-        //    re-seeds inventory, money, fog, quests, dialog flags,
-        //    player position from the JSON we wrote on the last save.
+        //    re-seeds inventory, money, fog, quests, dialog flags.
+        //    Position is intentionally NOT applied by LoadIntoGame -
+        //    it relies on SaveBootstrap.LateUpdate reading a
+        //    _pendingApply field that only gets set when SaveBootstrap
+        //    wakes up. With GameScene in DDOL SaveBootstrap only wakes
+        //    once, so a Restart triggered after the first load would
+        //    silently skip the player teleport. Apply position here
+        //    instead, right after LoadIntoGame has populated
+        //    data.position.
         //    Wrap in try/catch so a single broken component (e.g. an
         //    ItemsManager.GetByIndex miss for a removed asset) doesn't
         //    leave the scene half-initialised.
+        SaveData dataForApply = null;
         if (SaveSystem.HasSave())
         {
             try
             {
-                var data = SaveSystem.Load();
-                if (data != null) GamePersistence.LoadIntoGame(data);
+                dataForApply = SaveSystem.Load();
+                if (dataForApply != null) GamePersistence.LoadIntoGame(dataForApply);
             }
             catch (System.Exception e)
             {
@@ -125,6 +133,23 @@ public class GameSession : MonoBehaviour
         //    listeners switched it to die/win on entry).
         var sounds = FindAnyObjectByType<Sounds>();
         if (sounds != null) sounds.SwitchToGameBackground();
+
+        // 6) Apply player position. LoadIntoGame used to do this via
+        //    SaveBootstrap.LateUpdate's _pendingApply field, but that
+        //    only works for the FIRST scene load - on Restart we have
+        //    no fresh Awake. Apply directly so the player spawns where
+        //    the save says (typically the respawn anchor after a die).
+        if (dataForApply != null && dataForApply.position != null)
+        {
+            var player = PlayerMovement.Instance;
+            if (player != null)
+            {
+                player.transform.position = new Vector3(
+                    dataForApply.position.x,
+                    dataForApply.position.y,
+                    dataForApply.position.z);
+            }
+        }
 
         Debug.Log("[GameSession] RestartFromCurrentSave done");
     }
