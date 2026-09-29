@@ -160,67 +160,40 @@ public class SceneLoader : MonoBehaviour
 
     public void LoadScene(int scene)
     {
-        // Delegate to ZenjectSceneLoader so
-        // the SceneContext from the
-        // currently-active GameScene is
-        // fully torn down (Dispose +
-        // registry Remove) before the new
-        // GameScene's Awake tries to Add
-        // itself to the same key. Without
-        // this delegation the same-scene
-        // reload in LoadSceneMode.Single
-        // produces the 'SceneContextRegistry
-        // .Add Assert hit' error that the
-        // user reported in round 86.
+        // (r5 / ddol-gamescene) Before we even consider loading a
+        // scene, check whether GameSession has already promoted a
+        // GameScene into DDOL. If yes, the 'Try Again' button on
+        // DiePanel / WinPanel should NOT trigger a real scene
+        // reload - that was the source of every 'subscribers break on
+        // load' bug. Instead it should call GameSession.Restart-
+        // FromCurrentSave, which applies the save blob in-place and
+        // drops the player back into GameMode.outdors without
+        // destroying a single MonoBehaviour.
         //
-        // LoadSceneMode.Single is the
-        // default in ZenjectSceneLoader
-        // .LoadScene (the enum's default
-        // value), and the user wants
-        // 'start the gameplay scene fresh
-        // from this button', which is the
-        // Single-mode semantics
-        // (unload everything currently
-        // loaded, then load the new one).
+        // This short-circuit only applies when the requested scene IS
+        // the GameScene (build index 1, name 'GameScene'). Other
+        // scenes (MainMenu = 0) still go through the real load path.
+        if (scene == 1 && GameSession.Instance != null && GameSession.Instance.IsGameSceneLoaded)
+        {
+            Debug.Log("[SceneLoader] LoadScene(1) short-circuited to GameSession.RestartFromCurrentSave (GameScene already in DDOL).");
+            GameSession.Instance.RestartFromCurrentSave();
+            return;
+        }
+
+        // First entry from MainMenu -> GameScene (or any non-GameScene
+        // call): real load. Delegate to ZenjectSceneLoader so the
+        // SceneContext from the previously-active scene (e.g.
+        // MainMenu's Installer SceneContext) is fully torn down before
+        // the new scene's Awake adds a fresh entry. The same-scene
+        // reload assert that round 87 fixed no longer applies because
+        // we now short-circuit above when reloading GameScene, so the
+        // only path that hits this _zenjectSceneLoader call is
+        // MainMenu -> GameScene or a future GameScene <-> GameScene2
+        // (which is fine - they're different scenes).
         //
-        // The containerMode argument is
-        // also defaulted to
-        // LoadSceneRelationship.None
-        // (also the enum's default),
-        // which is what
-        // PrepareForLoadScene requires
-        // for LoadSceneMode.Single (it
-        // asserts the two are equal). The
-        // extraBindings / extraBindingsLate
-        // delegates are left null - the
-        // button does not need to inject
-        // anything extra on the new
-        // scene.
-        //
-        // Null-guard on _zenjectSceneLoader
-        // for the case where the
-        // SceneLoader MonoBehaviour is
-        // somehow on a GameObject that is
-        // not under a SceneContext (e.g.
-        // placed in MainMenu's Canvas,
-        // which is also a Canvas.prefab
-        // instance but the MainMenu scene
-        // has its own SceneContext on the
-        // 'Installer' GameObject - so the
-        // injection does happen, but the
-        // guard costs nothing and
-        // prevents an NRE in the
-        // edge case where a future
-        // Canvas placement drops the
-        // injection chain). If the
-        // injection did not happen, fall
-        // back to the raw
-        // SceneManager.LoadScene path
-        // (same behaviour as before
-        // round 87 - the user at least
-        // gets the scene change, even
-        // if it can hit the Zenject
-        // assert).
+        // Null-guard on _zenjectSceneLoader as before: if injection
+        // didn't happen (SceneLoader placed outside a SceneContext),
+        // fall back to the raw SceneManager.LoadScene path.
         if (_zenjectSceneLoader != null)
         {
             _zenjectSceneLoader.LoadScene(scene, LoadSceneMode.Single);
