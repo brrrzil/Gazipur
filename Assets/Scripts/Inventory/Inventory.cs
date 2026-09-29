@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Zenject;
 using static EnumData;
@@ -39,26 +38,31 @@ public class Inventory : MonoBehaviour
     [Inject] DialogManager _dialog;
     [Inject] Control _control;
 
-    // Cached delegate so OnDestroy can remove exactly this subscription.
-    // Without this, the captured lambda keeps being called by
-    // GameModeManager after Inventory is destroyed on scene reload,
-    // throwing MissingReferenceException for every Esc / Tab / I keypress.
+    // (r5 / ddol-gamescene) Cached delegate for the GameMode change
+    // subscription. The handler is a lambda capturing `this`, so we
+    // cache the reference here for symmetry with SubscribeToControl -
+    // the OnDestroy guard below removes exactly this delegate. With
+    // GameScene in DDOL, OnDestroy no longer fires on scene reload
+    // (Inventory lives forever), so the cache is mostly diagnostic
+    // - we keep it so a future refactor that disables Inventory's
+    // GameObject has a clean unsubscribe path.
     private System.Action<GameMode> _onModeChangedHandler;
 
+    // (r5 / ddol-gamescene) Inventory now lives in DDOL with the rest
+    // of GameScene, so Start fires once for the session and
+    // SubscribeToControl runs once. _subscribedControl is kept as a
+    // belt-and-braces against accidental re-Start (e.g. a future
+    // SetActive(false)/true), but the scene-reload fixup dance that
+    // used to live in OnSceneLoadedFixup is gone.
     private bool _subscribedControl;
 
     // (fix/save-load-subscriptions) Flags AddItem as "loading state" so
     // onTakeItem consumers (TraderObject, QuestManager, MotherCollider)
     // don't trigger side-effects during Inventory.Start -> SaveBootstrap
-    // order races. Start fires on every scene load (Continue / New Game),
-    // so on Continue we used to invoke TraderObject's startTrader check,
-    // which in turn read QuestManager.QuestsState[healMother] - and if
-    // QuestManager.Start hadn't run yet (Unity gives no Start ordering
-    // guarantees across MonoBehaviours), that dictionary was still null
-    // and we NRE'd. Today AddItem early-returns when _suppressOnTakeItem
-    // is set, and we only set the flag while we know onTakeItem would
-    // mutate transient state (start-items, save-apply). Real pickups
-    // (ItemObject, GarbageObject) keep their original behaviour.
+    // order races. Start fires once per app session now (DDOL), but the
+    // flag is still useful while we apply the saved blob (LoadIntoGame
+    // calls AddItem from the save path) so onTakeItem side-effects don't
+    // trip on already-loaded items.
     private bool _suppressOnTakeItem;
 
     private void Start()
@@ -137,84 +141,31 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    // (round 102.5) User console showed [Control] I pressed: subscribers=0
-    // on the SECOND press after Continue, even though subscribers=1 on the
-    // first. Root cause: Control is a [Inject]-driven MonoBehaviour; when
-    // Zenject scene context rebuilds it (new InputAction, new OnOpenInventory
-    // event field default-initialised to null and then has no subscribers),
-    // Inventory's _control field still points at the old (destroyed)
-    // Control. The pre-existing '_control.OnOpenInventory += lambda' was
-    // already subscribed when Start fired - so subscribers=1 on press 1,
-    // but the second press goes through the NEW Control whose event has
-    // been freshly default-constructed to null/0-subscribers.
-    //
-    // Lazy-resubscribe: every time Control.cs fires a key we look at it
-    // and if its event no longer has any of our listeners, we re-wire.
-    // This is cheap (one delegate check per press) and works regardless of
-    // whether Inventory, Control, or both were respawned.
+    // (r5 / ddol-gamescene) Start now fires once per session, not per
+    // scene load. The old lazy-resubscribe-in-Update and
+    // sceneLoadFixup dance was needed because Inventory lived across
+    // scene reloads (DDOL via Sounds.Init hoisting its transform.root)
+    // and ended up with stale _control refs - the new Control on the
+    // fresh GameScene had subscribers=0. With GameScene in DDOL and
+    // Inventory living once, Start fires once, SubscribeToControl runs
+    // once, _control is the live one forever. The complexity below
+    // was load-bearing for the previous design; here it's a simple
+    // 'subscribe, mark subscribed, done'.
     private void SubscribeToControl()
     {
-        // (diag/input-after-continue) Trace why subs=0 after Continue.
-        Debug.Log($"[Inventory#{GetInstanceID()}] SubscribeToControl called _control={(_control == null ? "null" : _control.GetInstanceID().ToString())} _subscribedControl={_subscribedControl}");
         if (_control == null) return; // [Inject] never fired, scene broken elsewhere
-        // Has Inventory already wired its lambda into THIS _control?
-        // We track our own bool to avoid duplicate subscriptions on
-        // repeated Start() calls (Start can fire more than once if the
-        // GameObject is disabled/enabled).
-        if (_subscribedControl)
-        {
-            // But: if _control has been replaced since the last wire-up
-            // (Unity-null through DontDestroyOnLoad carryover), the bool
-            // is stale. Cheapest check: count invocations.
-            if (_control.OnOpenInventory != null)
-            {
-                foreach (var d in _control.OnOpenInventory.GetInvocationList())
-                {
-                    // Anonymous lambdas compare by target/method - we
-                    // can recognise our own by inspecting the closure's
-                    // captured 'this' if we ever cache it. For now the
-                    // bool + a one-time unsubscribed flag is enough.
-                }
-            }
-            return;
-        }
+        if (_subscribedControl) return; // already wired (Start ran twice, e.g. SetActive)
         _control.OnOpenInventory += OpenOrCloseInventoryHandler;
         _control.OnFastSlotUse += UseFastSlot;
         _subscribedControl = true;
-        // (diag/input-after-continue) Help pinpoint why I/Tab stop
-        // reacting after Continue - is the wiring landing on the live
-        // Control, or on a stale one?
         Debug.Log($"[Inventory] SubscribeToControl -> Control={_control.GetInstanceID()} " +
                   $"subsOnOpenInventory={_control.OnOpenInventory?.GetInvocationList().Length ?? 0} " +
                   $"subsOnFastSlotUse={_control.OnFastSlotUse?.GetInvocationList().Length ?? 0} " +
-                  $"gameMode='{SceneManager.GetActiveScene().name}'");
+                  $"gameMode='{gameObject.scene.name}'");
     }
-
-    // (fix/input-after-continue) Real fix for the user's "I/Tab/Esc silently
-    // stop working after Continue" report. Console evidence:
-    //   [Load] cell[0] null (destroyed)            <- Inventory.cells[0] is a phantom
-    //                                                ref to a destroyed GameObject
-    //   [Control] I pressed: subscribers=0         <- OnOpenInventory is empty when
-    //                                                the key fires
-    // Root cause: Inventory lives across scene reloads (its [SerializeField]
-    // _cells array contains stale Unity refs that point at GameObjects that
-    // were destroyed with the previous GameScene), but its injected _control
-    // field was the old Control from the same GameScene - now Unity-null.
-    // SubscribeToControl bails on `_control == null`, so the new Control
-    // on the fresh GameScene never gets a subscriber and I/Tab/Esc fall
-    // silent.
-    //
-    // Fix: keep subscribing at every scene load. We re-resolve _control by
-    // scene name (GameScene only) and force-rewire regardless of the cached
-    // bool, so a stale wire-up on a destroyed Control is replaced by a fresh
-    // one on the live Control. Awake wires SceneManager.sceneLoaded; OnDestroy
-    // unwires it. Cheap - one FindObjectsByType call per scene load.
-    private bool _sceneLoadHooked;
 
     private void Awake()
     {
-        // (diag/input-after-continue) Trace lifecycle so we can see why
-        // Inventory sometimes fails to subscribe after Continue.
         Debug.Log($"[Inventory#{GetInstanceID()}] Awake Instance={(Instance == null ? "null" : Instance.GetInstanceID().ToString())} _control={(_control == null ? "null" : _control.GetInstanceID().ToString())} scene='{gameObject.scene.name}'");
         if (Instance != null && Instance != this)
         {
@@ -223,68 +174,10 @@ public class Inventory : MonoBehaviour
             return;
         }
         Instance = this;
-        // (fix/input-after-continue) Hook scene loads once, on the very first
-        // Awake. We only need it on the surviving Inventory; if a duplicate
-        // Inventory is destroyed by the singleton guard above, it never
-        // gets here.
-        if (!_sceneLoadHooked)
-        {
-            SceneManager.sceneLoaded += OnSceneLoadedFixup;
-            _sceneLoadHooked = true;
-        }
-    }
-
-    private void OnSceneLoadedFixup(Scene scene, LoadSceneMode mode)
-    {
-        // Only the GameScene has a Control worth re-wiring to; the MainMenu
-        // scene has no Control MonoBehaviour so a FindObjectsByType call
-        // there would just walk the scene and find nothing.
-        if (!scene.name.Contains("Game")) return;
-
-        // Force-resubscribe: clear our cached bool, drop any stale wire-up
-        // against a dead Control, then look for the live Control on the
-        // freshly-loaded scene and wire again. Safe even if Inventory was
-        // respawned too (Start will have already wired _control, but
-        // _subscribedControl was reset below so we don't double-subscribe).
-        _subscribedControl = false;
-
-        // _control is most likely a Unity-null reference to a destroyed
-        // MonoBehaviour (if Inventory lived through the scene reload).
-        // Refresh it from the new scene's GameManager. Fall back to the
-        // existing field if we can't find a fresh one - the Update-time
-        // lazy resubscribe will eventually catch the next press.
-        if (_control == null)
-        {
-            // Default overload searches active GameObjects, no sort mode.
-            // The Unity 2022+ signatures that take FindObjectsSortMode also
-            // require a FindObjectsInactive argument, so the no-arg variant
-            // is the simplest correct call here.
-            var fresh = FindAnyObjectByType<Control>();
-            if (fresh != null) _control = fresh;
-        }
-
-        if (_control != null)
-        {
-            // Drop the previous subscription on the dead Control, if any,
-            // before adding one on the live one. RemoveListener is a no-op
-            // if the delegate isn't in the invocation list, so this is
-            // safe even when the dead Control's event was already cleaned
-            // up by its OnDisable.
-            _control.OnOpenInventory -= OpenOrCloseInventoryHandler;
-            _control.OnFastSlotUse -= UseFastSlot;
-            SubscribeToControl();
-            Debug.Log($"[Inventory] OnSceneLoadedFixup re-wired to Control={_control.GetInstanceID()} " +
-                      $"subsOnOpenInventory={_control.OnOpenInventory?.GetInvocationList().Length ?? 0}");
-        }
-        else
-        {
-            Debug.LogWarning("[Inventory] OnSceneLoadedFixup: no Control found on the new GameScene");
-        }
     }
 
     private void OpenOrCloseInventoryHandler()
     {
-        if (this == null) return;
         if (_data == null || _gameMode == null) return;
         if (_data.gameMode == GameMode.outdors && !_isOpen)
         {
@@ -296,30 +189,15 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        // If a scene reload replaced Control mid-session (the new Control
-        // has OnOpenInventory with no subscribers even though our Start()
-        // already ran against the old one), re-wire ourselves once.
-        if (!_subscribedControl && _control != null)
-            SubscribeToControl();
-    }
-
     private void OnDestroy()
     {
+        // (r5) With GameScene in DDOL Inventory only ever dies at app
+        // shutdown, so the unsubscribes below are belt-and-braces.
+        // They would matter if Inventory's GameObject were disabled
+        // and re-enabled (which re-runs Awake/Start and would double-
+        // subscribe), but for the current DDOL setup Inventory never
+        // re-Spawns.
         if (Instance == this) Instance = null;
-        // (fix/input-after-continue) Drop the static scene-load hook so a
-        // destroyed Inventory doesn't keep re-wiring its replacements.
-        // Safe to call even if Awake never ran (e.g. duplicate destroyed
-        // by the singleton guard).
-        if (_sceneLoadHooked)
-        {
-            SceneManager.sceneLoaded -= OnSceneLoadedFixup;
-            _sceneLoadHooked = false;
-        }
-        // Mirror Awake/Start registrations with symmetric teardown so a
-        // destroyed Inventory doesn't keep consuming mode-change events
-        // (round 102 user's 'управление слетает' report).
         if (_gameMode != null && _onModeChangedHandler != null)
             _gameMode.onChangeMode -= _onModeChangedHandler;
         if (_control != null)

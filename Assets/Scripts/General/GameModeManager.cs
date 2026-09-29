@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 using Zenject;
 using static EnumData;
 
@@ -49,23 +48,19 @@ public class GameModeManager : MonoBehaviour
     public bool IsTransitioningToDialog { get; private set; }
     public GameMode PreviousMode { get; private set; }
 
-    // (fix/save-load-subscriptions) Cached so OnDestroy can remove exactly
-    // this delegate from _control.OnEsc. InitMods used to inline a lambda
-    // without unsubscribing - the lambda captured `this`, so it survived
-    // GameModeManager across scene reloads (Control is scene-bound, so its
-    // event gets reset on each rebuild, but if Zenject ever keeps Control
-    // alive we end up with stacked NRE-throwing delegates calling into a
-    // destroyed GameModeManager).
+    // (r5 / ddol-gamescene) Cached so OnDestroy can remove exactly
+    // this delegate from _control.OnEsc. With GameScene in DDOL,
+    // GameModeManager lives once for the app session and OnDestroy
+    // only fires at app shutdown, so the cache is mostly diagnostic.
     private System.Action _onEscHandler;
 
     [Inject]
     private void InitMods()
     {
         Time.timeScale = 1;
-        // (diag/input-after-continue) Trace that the lambda gets (re)wired on each scene reload.
         Debug.Log($"[GameModeManager] InitMods Control={(_control != null ? _control.GetInstanceID().ToString() : "null")} " +
                   $"subsOnEsc={_control?.OnEsc?.GetInvocationList().Length ?? 0} " +
-                  $"scene='{SceneManager.GetActiveScene().name}'");
+                  $"scene='{gameObject.scene.name}'");
         _mods = new Dictionary<GameMode, UnityEvent<bool>>
         {
             [GameMode.outdors] = OnOutdors,
@@ -82,13 +77,11 @@ public class GameModeManager : MonoBehaviour
         };
         _onEscHandler = () =>
         {
-            // (fix/save-load-subscriptions) Guard against a destroyed
-            // GameModeManager still wired into Control.OnEsc after a scene
-            // reload. Without this, the first Esc press after Continue
-            // throws MissingReferenceException and Control stops dispatching
-            // - which is one of the visible 'subscriptions break on load'
-            // symptoms.
-            if (this == null) return;
+            // (r5) Removed the `if (this == null) return;` Unity-null
+            // guard - GameModeManager no longer dies mid-session, so
+            // the lambda cannot outlive its target. The remaining
+            // null-checks on _data are still defensive against a
+            // misconfigured project (no DataManager bound).
             if (_data == null) return;
             if (_data.gameMode == GameMode.outdors)
             {
@@ -138,10 +131,10 @@ public class GameModeManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // (fix/save-load-subscriptions) Symmetric teardown for the OnEsc
-        // lambda registered in InitMods. Without this the lambda survives
-        // on Control.OnEsc after a scene reload, calling into a destroyed
-        // GameModeManager on the next Esc press.
+        // (r5) Belt-and-braces unsubscribe. With GameScene in DDOL
+        // this fires only at app shutdown, so the unsubscribe is
+        // cosmetic, but it keeps the code symmetric with the
+        // subscribe in InitMods.
         if (_control != null && _onEscHandler != null)
             _control.OnEsc -= _onEscHandler;
     }

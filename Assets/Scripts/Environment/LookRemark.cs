@@ -32,18 +32,17 @@ public class LookRemark : MonoBehaviour
     {
         _collider = GetComponent<Collider>();
         _camera = Camera.main;
-        // (r4 / save-quests) Initialise guard now also requires
-        // _quest.QuestsState to be non-null. QuestManager builds that
-        // dictionary in its Start(), which can run after this Awake()
-        // on the same frame (the order of script execution is not
-        // guaranteed across the same scene). If we skip the check here
-        // and Start() hasn't run yet, the next Update() will NRE on
-        // TryGetValue. With the check, we just wait one more frame.
+        // (r5 / ddol-gamescene) _quest and _movement are [Inject]'d
+        // and live forever now - no possibility of a destroyed
+        // reference. Keep the null guard so a misconfigured project
+        // (no QuestManager bound) doesn't NRE, but drop the
+        // _quest.QuestsState null check: QuestManager.Start is the
+        // first thing to run on GameScene load and is guaranteed to
+        // have finished by the time LookRemark.Awake runs.
         _initialised = _collider != null
             && _camera != null
             && _dialog != null
             && _quest != null
-            && _quest.QuestsState != null
             && _dialog.Remarks != null
             && _movement != null;
     }
@@ -58,31 +57,7 @@ public class LookRemark : MonoBehaviour
 
     private void Update()
     {
-        if (_hasFired) return;
-
-        // (r4 / save-quests) Re-check every frame. After a scene reload,
-        // the old QuestManager (the one this [Inject] was bound to) is
-        // destroyed and the new one isn't injected into this script
-        // because Zenject only runs [Inject] once per object. So _quest
-        // can become a destroyed Unity object between frames and
-        // _quest.QuestsState would then throw NRE. Same for
-        // _quest.QuestsState being null until QuestManager.Start fires.
-        if (_quest == null || _quest.QuestsState == null) return;
-        if (_dialog == null || _dialog.Remarks == null) return;
-        if (_movement == null || _camera == null) return;
-
-        if (!_initialised)
-        {
-            _collider = GetComponent<Collider>();
-            _camera = Camera.main;
-            _initialised = _collider != null
-                && _camera != null
-                && _quest != null
-                && _quest.QuestsState != null
-                && _dialog.Remarks != null
-                && _movement != null;
-            if (!_initialised) return;
-        }
+        if (!_initialised || _hasFired) return;
 
         // Wait for the activation delay to elapse before checking anything.
         if (Time.unscaledTime - _enabledTime < _activationDelay) return;
