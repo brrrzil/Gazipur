@@ -94,7 +94,10 @@ public static class GamePersistence
         // (r4 / WaterFilter) Persist the workbench's activeSelf so the
         // Skimmer doesn't vanish on every Continue. FindAnyObjectByType
         // because WaterFilter is a scene MonoBehaviour, no singleton.
-        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(Object.FindObjectsInactive.Include);
+        // FindObjectsInactive.Include is needed because the workbench
+        // can be in either state when the player saves (assembled or
+        // not), and we want to find it in both.
+        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         if (waterFilter != null)
         {
             data.waterFilterActive = waterFilter.gameObject.activeSelf;
@@ -275,7 +278,7 @@ public static class GamePersistence
         // (default active) state and the player loses the build they did.
         // FindObjectsInactive.Include so a workbench that's currently
         // disabled is still discoverable.
-        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(Object.FindObjectsInactive.Include);
+        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         if (waterFilter != null)
         {
             waterFilter.gameObject.SetActive(data.waterFilterActive);
