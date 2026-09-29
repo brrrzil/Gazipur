@@ -97,7 +97,7 @@ public static class GamePersistence
         // FindObjectsInactive.Include is needed because the workbench
         // can be in either state when the player saves (assembled or
         // not), and we want to find it in both.
-        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(FindObjectsInactive.Include);
         if (waterFilter != null)
         {
             data.waterFilterActive = waterFilter.gameObject.activeSelf;
@@ -278,7 +278,7 @@ public static class GamePersistence
         // (default active) state and the player loses the build they did.
         // FindObjectsInactive.Include so a workbench that's currently
         // disabled is still discoverable.
-        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(FindObjectsInactive.Include);
         if (waterFilter != null)
         {
             waterFilter.gameObject.SetActive(data.waterFilterActive);
