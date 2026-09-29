@@ -6,6 +6,11 @@ using static EnumData;
 
 public class QuestManager : MonoBehaviour
 {
+    // (r4 / save-quests) Singleton accessor so GamePersistence can read
+    // QuestsState on save and apply saved states on load without having
+    // to FindAnyObjectByType at the right moment.
+    public static QuestManager Instance { get; private set; }
+
     public Dictionary<Quests, int> QuestsState { get; private set; }
 
     [SerializeField] private GameObject _filterPanel;
@@ -20,6 +25,19 @@ public class QuestManager : MonoBehaviour
     [Inject] GameModeManager _mode;
     [Inject] Sounds _sounds;
     private bool _isStartFind;
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
     private void Start()
     {
         QuestsState = new Dictionary<Quests, int>()
@@ -55,6 +73,40 @@ public class QuestManager : MonoBehaviour
         };
     }
 
+    // (r4 / save-quests) Replay quest progression from a saved blob.
+    // Called by GamePersistence.LoadIntoGame after the QuestManager has
+    // finished its Awake/Start, so the dictionary already exists and
+    // the SerializeField UI references are wired.
+    public void ApplyQuestStatesFromSave(System.Collections.Generic.IEnumerable<(EnumData.Quests quest, int value)> saved)
+    {
+        if (saved == null) return;
+        foreach (var (quest, value) in saved)
+        {
+            if (QuestsState.ContainsKey(quest))
+                QuestsState[quest] = value;
+            else
+                QuestsState.Add(quest, value);
+
+            // Mirror the side-effects the in-game quest progression does
+            // - we only push the visible UI bits, the rest is driven by
+            //   the player's actions when they continue playing.
+            if (quest == EnumData.Quests.healMother && value >= 1)
+                _medecineCheckBox.gameObject.SetActive(true);
+            if (quest == EnumData.Quests.healMother && value >= 2)
+                _medecineCheckBox.isOn = true;
+            if (quest == EnumData.Quests.filter && value >= 1)
+            {
+                _filterPanel.SetActive(true);
+                _blueprintPanel.SetActive(true);
+                _filterPlace.SetActive(true);
+            }
+            if (quest == EnumData.Quests.filter && value >= 2)
+            {
+                _filterObject.SetActive(true);
+            }
+        }
+    }
+
     public void CloseFilterPanel()
     {
         _dialog.Remarks.StartRemark(RemarksType.closeBlueprint);
@@ -86,7 +138,7 @@ public class QuestManager : MonoBehaviour
         _filterPlace.SetActive(true);
         QuestsState[Quests.filter] = 2;
 
-        // BUGFIX: переключаем фоновую музыку на трек победы
+        // BUGFIX: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         _sounds.SwitchToWinBackground();
     }
 }

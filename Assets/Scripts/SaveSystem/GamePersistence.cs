@@ -49,7 +49,9 @@ public static class GamePersistence
                 // the same array (Inventory wires them up via
                 // ChangeCellState in Inventory.cs), so saving them
                 // alongside the rest is enough - no separate list.
-                for (int i = 0; i < dm.Inventory.Count; i++)
+                // DataManager.Inventory is ItemInfo[] (an array), so use
+                // .Length, not .Count.
+                for (int i = 0; i < dm.Inventory.Length; i++)
                 {
                     var info = dm.Inventory[i];
                     if (info != null && info.index >= 0 && info.count > 0)
@@ -87,6 +89,27 @@ public static class GamePersistence
         if (map != null)
         {
             data.mapUnlocked = map.IsUnlocked;
+        }
+
+        // (r4 / WaterFilter) Persist the workbench's activeSelf so the
+        // Skimmer doesn't vanish on every Continue. FindAnyObjectByType
+        // because WaterFilter is a scene MonoBehaviour, no singleton.
+        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(Object.FindObjectsInactive.Include);
+        if (waterFilter != null)
+        {
+            data.waterFilterActive = waterFilter.gameObject.activeSelf;
+        }
+
+        // (r4 / quests) Persist QuestManager.QuestsState. The dictionary
+        // is rebuilt fresh in QuestManager.Start, so without this every
+        // Continue rolls the player back to 'filter=0, healMother=0'.
+        var quest = QuestManager.Instance;
+        if (quest != null && quest.QuestsState != null)
+        {
+            foreach (var kv in quest.QuestsState)
+            {
+                data.questStates.Add(new QuestEntry((int)kv.Key, kv.Value));
+            }
         }
 
         // Completed dialogs: any DialogData with isUsed == isOneTime is
@@ -245,6 +268,34 @@ public static class GamePersistence
                 Debug.Log($"[GamePersistence.LoadIntoGame] dialogs marked used");
             }
             catch (System.Exception e) { Debug.LogWarning($"[GamePersistence.LoadIntoGame] dialog mark skipped: {e.Message}"); }
+        }
+
+        // (r4 / WaterFilter) Restore the workbench's active state. Without
+        // this, every Continue reverts the Skimmer to the scene-authored
+        // (default active) state and the player loses the build they did.
+        // FindObjectsInactive.Include so a workbench that's currently
+        // disabled is still discoverable.
+        var waterFilter = Object.FindAnyObjectByType<WaterFilter>(Object.FindObjectsInactive.Include);
+        if (waterFilter != null)
+        {
+            waterFilter.gameObject.SetActive(data.waterFilterActive);
+            Debug.Log($"[GamePersistence.LoadIntoGame] waterFilter active={data.waterFilterActive}");
+        }
+
+        // (r4 / quests) Restore QuestManager.QuestsState. Apply AFTER
+        // quest-object references have had a chance to bind - QuestManager
+        // owns the dictionary but uses other scene references for UI
+        // panels; calling ApplyQuestStates re-evaluates whatever
+        // quest-bound UI needs to flip.
+        var quest = QuestManager.Instance;
+        if (quest != null && data.questStates != null && data.questStates.Count > 0)
+        {
+            try
+            {
+                quest.ApplyQuestStatesFromSave(data.questStates.Select(q => ((EnumData.Quests)q.questId, q.value)));
+                Debug.Log($"[GamePersistence.LoadIntoGame] quest states restored count={data.questStates.Count}");
+            }
+            catch (System.Exception e) { Debug.LogWarning($"[GamePersistence.LoadIntoGame] quest restore skipped: {e.Message}"); }
         }
 
         // Position is applied by GameManager AFTER cells are filled so

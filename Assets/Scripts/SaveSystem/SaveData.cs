@@ -45,6 +45,37 @@ public class SaveData
     // closes, restored on Continue. Keeps New Game at fresh state and
     // Continue from re-playing the intro.
     public bool comicsCompleted;
+
+    // (r4 / WaterFilter) Whether the player has assembled the Skimmer on
+    // the WaterFilter workbench. Without this, every Continue resets the
+    // Skimmer to its scene-authored state (which the user calls
+    // "SkimmerFrinel disappearing after reload"). The quest state itself
+    // is also kept in 'questStates' below so the UI panel and quest
+    // progression stay in sync.
+    public bool waterFilterActive;
+
+    // (r4 / quests) Quest progression per Quests enum. Each entry is a
+    // (questId, value) pair where value matches the integer scale used
+    // inside QuestManager.QuestsState. Saves the player from losing
+    // all their quest progress when the scene reloads.
+    public List<QuestEntry> questStates = new List<QuestEntry>();
+}
+
+[Serializable]
+public class QuestEntry
+{
+    // (r4 / quests) questId is the int value of the EnumData.Quests
+    // enum for the quest; value is the integer progression (0 = not
+    // started, 1 = in progress, 2 = complete in QuestManager's scale).
+    public int questId;
+    public int value;
+
+    public QuestEntry() { }
+    public QuestEntry(int questId, int value)
+    {
+        this.questId = questId;
+        this.value = value;
+    }
 }
 
 [Serializable]
