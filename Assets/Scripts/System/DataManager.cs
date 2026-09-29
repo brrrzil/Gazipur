@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 using static EnumData;
 
 public class DataManager : MonoBehaviour
@@ -10,6 +11,9 @@ public class DataManager : MonoBehaviour
     [SerializeField] private Text _moneyCount;
     [SerializeField] private Text _moneyToInventoryText;
     [SerializeField] private int _startMoney;
+    // (input-action-r3) Amount added per MoneyCheat (P) press. Round 81
+    // DebugCheat also had a 1000 default, kept for parity.
+    [SerializeField] private int _moneyCheatAmount = 1000;
 
     public System.Action onChangeMoney;
     public int Money { get; private set; }
@@ -41,6 +45,22 @@ public class DataManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+
+    // (input-action-r3) Control is injected by Zenject (scene-scope
+    // singleton, same as the rest of GameInstaller). Subscribe on Enable,
+    // unsubscribe on Disable - mirrors the rest of the codebase's input
+    // wiring and avoids stale subscriptions across scene reloads.
+    [Inject] private Control _control;
+
+    private void OnEnable()
+    {
+        if (_control != null) _control.OnMoneyCheatPressed += OnMoneyCheatPressed;
+    }
+
+    private void OnDisable()
+    {
+        if (_control != null) _control.OnMoneyCheatPressed -= OnMoneyCheatPressed;
     }
 
     private void OnDestroy()
@@ -77,6 +97,17 @@ public class DataManager : MonoBehaviour
         if (_moneyCount != null) _moneyCount.text = Money.ToString();
         if (_moneyToInventoryText != null) _moneyToInventoryText.text = Money.ToString();
         GamePersistence.SaveNow();
+    }
+
+    // (input-action-r3) P key was previously handled by DebugCheat.cs via
+    // Keyboard.current polling. Moved the actual "+money" effect here so
+    // all P/M/I/Esc/1-5 share the same Control.cs dispatch path and the
+    // same project policy (no legacy Input class). ChangeMoney already
+    // calls onChangeMoney and SaveNow, so the UI counter refreshes and
+    // the save blob is updated within the same frame.
+    private void OnMoneyCheatPressed()
+    {
+        ChangeMoney(_moneyCheatAmount);
     }
     /// <summary>Set Money to an absolute value (used by SaveSystem.Load).</summary>
     public void SetMoney(int amount)

@@ -44,11 +44,17 @@ public static class GamePersistence
             }
             if (dm.Inventory != null)
             {
-                foreach (var info in dm.Inventory)
+                // (input-action-r3) Persist each non-empty slot with its
+                // explicit slotIndex. Fast slots are the first 5 cells of
+                // the same array (Inventory wires them up via
+                // ChangeCellState in Inventory.cs), so saving them
+                // alongside the rest is enough - no separate list.
+                for (int i = 0; i < dm.Inventory.Count; i++)
                 {
+                    var info = dm.Inventory[i];
                     if (info != null && info.index >= 0 && info.count > 0)
                     {
-                        data.inventory.Add(new InventoryEntry(info.index, info.count));
+                        data.inventory.Add(new InventoryEntry(i, info.index, info.count));
                     }
                 }
             }

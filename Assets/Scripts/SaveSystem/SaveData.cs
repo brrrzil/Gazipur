@@ -69,9 +69,19 @@ public class WorldPosition
 [Serializable]
 public class InventoryEntry
 {
+    // (input-action-r3 / save-fast-slots) Explicit slot position so the
+    // save is robust against reordering of the source array. Previously
+    // the slot was implicit (array index), which silently broke when
+    // the source array was filtered or compacted.
+    public int slotIndex;
     public int itemIndex;
     public int count;
 
     public InventoryEntry() { }
-    public InventoryEntry(int itemIndex, int count) { this.itemIndex = itemIndex; this.count = count; }
+    public InventoryEntry(int slotIndex, int itemIndex, int count)
+    {
+        this.slotIndex = slotIndex;
+        this.itemIndex = itemIndex;
+        this.count = count;
+    }
 }

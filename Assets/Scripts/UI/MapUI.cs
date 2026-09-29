@@ -50,6 +50,10 @@ public class MapUI : MonoBehaviour
     private bool _graphicsCollected;
 
     [Inject] private PlayerMovement _movement;
+    // (input-action-r3) Wired from Control.OnMapPressed (the M key in the
+    // GazipurPlayerConrols action map). Control is a Zenject scene-scope
+    // singleton, so [Inject] is enough - no scene wiring needed.
+    [Inject] private Control _control;
 
     private class TrackedMarker
     {
@@ -68,6 +72,12 @@ public class MapUI : MonoBehaviour
         // the Inspector, try to find a child named "MapBackground".
         // Without a reference the pan line at the bottom would silently
         // bail out and m_AnchoredPosition would never change.
+
+        // (input-action-r3) Wire the M key to the existing Toggle(). Awake
+        // is the right place because Zenject has just injected _control
+        // and Instance has just been assigned, so the OnMapPressed delegate
+        // is live for the entire lifetime of this MapUI.
+        if (_control != null) _control.OnMapPressed += Toggle;
         if (_mapBackground == null)
         {
             var found = transform.Find("MapBackground");
@@ -87,6 +97,10 @@ public class MapUI : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // (input-action-r3) Symmetric unsubscribe from Control.OnMapPressed
+        // so a destroyed MapUI doesn't keep toggling a phantom map when M
+        // is pressed after a scene reload.
+        if (_control != null) _control.OnMapPressed -= Toggle;
     }
 
     private void CollectGraphics()

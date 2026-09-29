@@ -12,6 +12,13 @@ public class Control : MonoBehaviour
     public Action OnOpenInventory;
     public Action OnEsc;
     public Action<int> OnFastSlotUse;
+    // (input-action-r3) User added MoneyCheat (P) and Map (M) bindings to
+    // GazipurPlayerConrols.inputactions and asked to wire them through
+    // Control the same way as the other actions. Keep Control as the
+    // single owner of PlayerInputActions and dispatch through delegates
+    // so subscribers don't need to know about the InputSystem.
+    public Action OnMoneyCheatPressed;
+    public Action OnMapPressed;
 
     private PlayerInputActions inputActions;
     private bool isHoldInProgress = false;
@@ -54,6 +61,11 @@ public class Control : MonoBehaviour
         inputActions.Player.Slot4.performed += OnSlot4Performed;
         inputActions.Player.Slot5.performed += OnSlot5Performed;
 
+        // (input-action-r3) MoneyCheat (P) and Map (M) are dispatched
+        // through delegates the same way as the rest of the action map.
+        inputActions.Player.MoneyCheat.performed += OnMoneyCheatPerformed;
+        inputActions.Player.Map.performed += OnMapPerformed;
+
         Debug.Log($"[Control#{_instanceId}] OnEnable subscribers: " +
                   $"OnOpenInventory={(OnOpenInventory?.GetInvocationList().Length ?? 0)}, " +
                   $"OnEsc={(OnEsc?.GetInvocationList().Length ?? 0)}, " +
@@ -79,6 +91,10 @@ public class Control : MonoBehaviour
         inputActions.Player.Slot3.performed -= OnSlot3Performed;
         inputActions.Player.Slot4.performed -= OnSlot4Performed;
         inputActions.Player.Slot5.performed -= OnSlot5Performed;
+
+        // (input-action-r3) Symmetric unsubscribe for MoneyCheat and Map.
+        inputActions.Player.MoneyCheat.performed -= OnMoneyCheatPerformed;
+        inputActions.Player.Map.performed -= OnMapPerformed;
 
         inputActions.Disable();
         Debug.Log($"[Control#{_instanceId}] OnDisable scene='{gameObject.scene.name}'");
@@ -152,4 +168,23 @@ public class Control : MonoBehaviour
     private void OnSlot3Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot3"); OnFastSlotUse?.Invoke(3); }
     private void OnSlot4Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot4"); OnFastSlotUse?.Invoke(4); }
     private void OnSlot5Performed(InputAction.CallbackContext context) { Debug.Log("[Control] Slot5"); OnFastSlotUse?.Invoke(5); }
+
+    // (input-action-r3) MoneyCheat (P) just dispatches the delegate; the
+    // subscriber decides what "cheat" means (typically +X money). Kept as
+    // a delegate so DataManager / DebugCheat can wire to it without
+    // Control taking a hard dependency on DataManager.
+    private void OnMoneyCheatPerformed(InputAction.CallbackContext context)
+    {
+        Debug.Log("[Control] MoneyCheat pressed");
+        OnMoneyCheatPressed?.Invoke();
+    }
+
+    // (input-action-r3) Map (M) toggles the minimap via the existing
+    // MapUI singleton. Kept as a delegate for symmetry with the rest of
+    // the action surface, even though there's only one obvious consumer.
+    private void OnMapPerformed(InputAction.CallbackContext context)
+    {
+        Debug.Log("[Control] Map pressed");
+        OnMapPressed?.Invoke();
+    }
 }
