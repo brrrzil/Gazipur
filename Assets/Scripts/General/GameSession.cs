@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using static EnumData;
 
 /// <summary>
 /// (r5 / ddol-gamescene) Single entry point for "transition into GameScene"
