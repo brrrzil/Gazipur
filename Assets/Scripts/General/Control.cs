@@ -102,17 +102,31 @@ public class Control : MonoBehaviour
 
     private void Update()
     {
-        InteractObject iObject = GetInteractObjectUnderCursor();
+        // (r5) TryGetInteractObject guards Mouse.current / Camera.main
+        // / EventSystem.current being null so a missing mouse (e.g.
+        // running on a build server, or the player detached their
+        // mouse between session boots) doesn't NRE every frame and
+        // bury the rest of the game's input behind red error spam.
+        InteractObject iObject = TryGetInteractObjectUnderCursor();
         OnSelectObject?.Invoke(iObject);
     }
 
-    // ���������� ��� �� ������ ��� ������ ����, ��������� UI
-    private InteractObject GetInteractObjectUnderCursor()
+    // (r5 / nre-fix) Renamed from GetInteractObjectUnderCursor so the
+    // call site reads as the fallible variant. Returns null on any
+    // missing dependency rather than throwing - Update is too hot a
+    // path to spend on stack traces when the actual fix is 'the
+    // player doesn't have a mouse plugged in this frame'.
+    private InteractObject TryGetInteractObjectUnderCursor()
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return null;
 
-        Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+        var cam = Camera.main;
+        if (cam == null) return null;
+        var mouse = Mouse.current;
+        if (mouse == null) return null;
+
+        Ray ray = cam.ScreenPointToRay(mouse.position.ReadValue());
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit))
@@ -184,7 +198,12 @@ public class Control : MonoBehaviour
     // the action surface, even though there's only one obvious consumer.
     private void OnMapPerformed(InputAction.CallbackContext context)
     {
-        Debug.Log("[Control] Map pressed");
+        // (r5) Diagnostic: count subscribers and which classes are wired
+        // so the next round of 'M does nothing' reports can pinpoint
+        // whether the chain broke at the dispatch (subs==0) or further
+        // downstream (subs>0 but Toggle() didn't flip _isOpen).
+        int subs = OnMapPressed?.GetInvocationList().Length ?? 0;
+        Debug.Log($"[Control] Map pressed: subscribers={subs}");
         OnMapPressed?.Invoke();
     }
 }

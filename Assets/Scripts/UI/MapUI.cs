@@ -151,7 +151,15 @@ public class MapUI : MonoBehaviour
             if (_behavioursToToggle[i] != null) _behavioursToToggle[i].enabled = open;
     }
 
-    public void Toggle() => SetOpen(!_isOpen);
+    public void Toggle()
+    {
+        // (r5) Trace the open/close cycle so a 'M does nothing' report
+        // can show whether Toggle() is being called at all and what
+        // _isOpen was before vs. after.
+        bool before = _isOpen;
+        SetOpen(!_isOpen);
+        Debug.Log($"[MapUI] Toggle: was={before} now={_isOpen} hasRoot={_hasRoot} mapRootActive={(_mapRoot != null ? _mapRoot.activeSelf.ToString() : "null")}");
+    }
     public void Unlock() => SetOpen(true);
 
     private void RebuildMarkers()
