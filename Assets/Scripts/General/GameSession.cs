@@ -258,4 +258,71 @@ public class GameSession : MonoBehaviour
 
         Debug.Log("[GameSession] RestartFromCurrentSave done");
     }
+
+    /// <summary>(r5 / new-game) Reset every persisted singleton back to
+    /// its scene-authored default. Called from MainMenuScript.OnNewGame
+    /// BEFORE the GameScene (re)loads. Without this, GameScene roots
+    /// live in DDOL and SceneManager.LoadScene("GameScene") is a no-op
+    /// for them - the previous run's Money / Inventory / Quest state
+    /// would carry over because Awake/Start only fire once per session.
+    ///
+    /// Each system owns its own ResetToSceneDefaults() so adding a new
+    /// persisted system is one line here plus one Reset() in the new
+    /// system. The orchestrator's job is to call them all in the right
+    /// order and surface failures.
+    ///
+    /// Order matters where systems depend on each other: DataManager
+    /// first (clears money / hero / inventory cache), Inventory next
+    /// (re-seeds start items, syncs DataManager), then per-scene
+    /// systems (Fog, Quest, Dialog, Map, WaterFilter).
+    public void ResetForNewGame()
+    {
+        Debug.Log("[GameSession] ResetForNewGame");
+
+        // 0) Wipe the slot first so any SaveNow that fires during the
+        //    reset (DataManager.ChangeMoney) writes a 'fresh' state
+        //    rather than overwriting the previous run's slot.
+        SaveSystem.DeleteSave();
+
+        // 1) Reset state-bearing singletons. Each one is optional
+        //    (FindAnyObjectByType can return null on a misconfigured
+        //    project) so we null-check before calling.
+        var data = DataManager.Instance;
+        if (data != null) data.ResetToDefaults();
+
+        var inv = Inventory.Instance;
+        if (inv != null) inv.ResetToDefaults();
+
+        var fog = FogController.Instance;
+        if (fog != null) fog.ResetToSceneDefaults();
+
+        var qm = QuestManager.Instance;
+        if (qm != null) qm.ResetToSceneDefaults();
+
+        var dialog = DialogManager.Instance;
+        if (dialog != null) dialog.ResetToSceneDefaults();
+
+        var map = MapUI.Instance;
+        if (map != null) map.ResetToSceneDefaults();
+
+        // Loot registry: every per-pickup flag (filter parts, collected
+        // items, etc.) so they all respawn on the new run.
+        LootPersistence.ClearAll();
+
+        // 2) Drop back to outdors mode and reset cursor state.
+        var gmm = FindAnyObjectByType<GameModeManager>();
+        if (gmm != null) gmm.OutDors();
+
+        // 3) Trigger one SaveNow so the freshly-cleared state is on
+        //    disk before the user does anything. If we skip this,
+        //    the next GamePersistence.SaveNow from any producer (money
+        //    change, item pickup) would overwrite the cleared state
+        //    with whatever the producer saw at that moment - usually
+        //    the previous run's values lingering from the in-memory
+        //    caches.
+        try { GamePersistence.SaveNow(); }
+        catch (System.Exception e) { Debug.LogWarning($"[GameSession] ResetForNewGame final save failed: {e.Message}"); }
+
+        Debug.Log("[GameSession] ResetForNewGame done");
+    }
 }

@@ -400,6 +400,45 @@ public class Inventory : MonoBehaviour
         ItemInfoPanel.SetItem(cell, _data.gameMode == GameMode.trade);
     }
 
+    // (r5 / new-game) Empties every cell and re-seeds the configured
+    // _startItems. Called by GameSession.ResetForNewGame when the player
+    // hits 'New Game' from the main menu. With GameScene in DDOL the
+    // Inventory MonoBehaviour lives once for the session, so without
+    // this reset a Continue followed by New Game would keep the
+    // player's items.
+    public void ResetToDefaults()
+    {
+        if (_cells != null)
+        {
+            foreach (var c in _cells)
+            {
+                if (c != null && c.Item != null) c.RemoveItem(c.Count);
+            }
+        }
+        // Re-seed _startItems using the same guarded path that
+        // Inventory.Start uses for the very first load: suppress
+        // onTakeItem side-effects while we mutate transient state,
+        // then sync DataManager's cached snapshot.
+        _suppressOnTakeItem = true;
+        try
+        {
+            if (_startItems != null)
+            {
+                foreach (var item in _startItems) AddItem(item, 1);
+            }
+        }
+        finally
+        {
+            _suppressOnTakeItem = false;
+        }
+        if (_data != null && _cells != null) _data.UpdateInventory(_cells);
+        // Re-publish UI weight/cargo counters that the cell mutation
+        // doesn't trigger on its own.
+        ChangeCargoValue(Capacity);
+        HaveTools = new HashSet<ToolsType>();
+        Debug.Log("[Inventory] ResetToDefaults done");
+    }
+
     public bool CheckTool(ItemData item)
     {
         ToolItem ti = item.ItemPrefab as ToolItem;

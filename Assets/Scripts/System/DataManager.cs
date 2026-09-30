@@ -122,4 +122,36 @@ public class DataManager : MonoBehaviour
     {
         Hero = new HeroInfo() { health = 100, hunger = 50, thirst = 50 };
     }
+
+    // (r5 / new-game) Resets all live state to scene-authored defaults.
+    // Called by GameSession.ResetForNewGame when the player hits 'New Game'
+    // from the main menu. With GameScene in DDOL, SceneManager.LoadScene
+    // is a no-op for the gameplay root, so a Continue followed by New
+    // Game would otherwise keep the previous Money/Hero/Inventory
+    // because Awake/Start only fire once per app session.
+    public void ResetToDefaults()
+    {
+        // Money: subtract the current value so OnChangeMoney fires with
+        // a delta, then add _startMoney. This goes through the normal
+        // ChangeMoney path (SaveNow included) so the next SaveNow writes
+        // the new value rather than the stale one.
+        if (Money != 0) ChangeMoney(-Money);
+        ChangeMoney(_startMoney);
+        // Hero: full health, mid hunger/thirst.
+        SetDeffoultHeroState();
+        // Inventory: clear the cached snapshot so the next Collect
+        // sees empty cells.
+        if (Inventory != null)
+        {
+            for (int i = 0; i < Inventory.Length; i++)
+                Inventory[i] = new ItemInfo();
+        }
+        HomeBox = null;
+        gameMode = GameMode.outdors;
+        // Force the UI text to repaint (in case onChangeMoney already
+        // updated it to 0 before _startMoney was added).
+        if (_moneyCount != null) _moneyCount.text = Money.ToString();
+        if (_moneyToInventoryText != null) _moneyToInventoryText.text = Money.ToString();
+        Debug.Log("[DataManager] ResetToDefaults done");
+    }
 }

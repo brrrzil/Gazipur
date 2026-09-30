@@ -61,6 +61,20 @@ public class CharacterRemarks : MonoBehaviour
 
         if (rem == null) return false;
 
+        // (r5 / remark-persistence) One-time remarks have their play
+        // history persisted to PlayerPrefs so a scene reload (or
+        // Continue) doesn't replay them. The previous code only
+        // zeroed the chance for the lifetime of the CharacterRemarks
+        // MonoBehaviour - on Awake after Continue the chance field
+        // was back to its authored value and the remark fired again.
+        // Use a stable key per remark type so the PlayerPrefs entry
+        // survives across sessions; clearing it on New Game is the
+        // caller's responsibility (DeleteSave wipes everything).
+        if (rem.isOneTime && PlayerPrefs.GetInt("remark_played_" + (int)remark, 0) == 1)
+        {
+            return false;
+        }
+
         int rnd = Random.Range(0, 100);
 
         if (rem.chance < rnd)
@@ -75,6 +89,20 @@ public class CharacterRemarks : MonoBehaviour
         if (rem.isOneTime)
             rem.chance = 0;
 
+        // (r5 / nre-fix) Unity-null guard on _remarkText and _cGroup.
+        // They are SerializeField references into the Canvas hierarchy;
+        // if the host [GameScene (DDOL)] was deactivated between when
+        // the PlayerState coroutine queued this remark and when it
+        // actually ran, the underlying UI Text has been destroyed
+        // and assigning .text throws MissingReferenceException. The
+        // remark is non-essential cosmetic UI - skip cleanly rather
+        // than crash the coroutine.
+        if (_remarkText == null || _cGroup == null)
+        {
+            Debug.LogWarning($"[CharacterRemarks] UI refs null, skipping remark {(int)remark}");
+            return false;
+        }
+
         if (!rem.isMultiRemark)
         {
             _remarkText.text = rem.remark;
@@ -87,6 +115,12 @@ public class CharacterRemarks : MonoBehaviour
         }
 
         rem.hasBeen = true;
+        // Persist play state so the next Continue doesn't replay.
+        if (rem.isOneTime)
+        {
+            PlayerPrefs.SetInt("remark_played_" + (int)remark, 1);
+            PlayerPrefs.Save();
+        }
         _tween?.Kill();
         _tween = _cGroup.DOFade(1, 0.5f).OnComplete(() =>
         {

@@ -58,6 +58,16 @@ public static class SaveSystem
     public static void DeleteSave()
     {
         PlayerPrefs.DeleteKey(SaveKey);
+        // (r5 / remark-persistence) Clear every one-time remark
+        // 'has been played' flag too - the new save is a fresh start
+        // and the player should hear the intros again. We can't just
+        // enumerate PlayerPrefs (the API doesn't expose keys), so
+        // walk the RemarksType enum statically and delete each known
+        // key. Adding a new RemarksType requires adding it here.
+        foreach (EnumData.RemarksType rt in System.Enum.GetValues(typeof(EnumData.RemarksType)))
+        {
+            PlayerPrefs.DeleteKey("remark_played_" + (int)rt);
+        }
         PlayerPrefs.Save();
     }
 }

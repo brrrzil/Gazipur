@@ -131,6 +131,30 @@ public class MapUI : MonoBehaviour
     /// (or when LoadIntoGame replays an unlock from the save blob).</summary>
     private bool _wasEverOpened;
 
+    // (r5 / new-game) Locks the map back to scene defaults. Called by
+    // GameSession.ResetForNewGame. _wasEverOpened is the persistent
+    // flag for whether the player has bought the map at least once -
+    // we reset it so the map needs to be bought again on the new run.
+    public void ResetToSceneDefaults()
+    {
+        _wasEverOpened = false;
+        SetOpen(false);
+        // Also clear collected marker PlayerPrefs entries so the new
+        // run shows every marker on the world map.
+        // PlayerPrefs API doesn't expose keys, so we walk the scene's
+        // MapMarker components and clear each one we know about.
+        var markers = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
+        foreach (var m in markers)
+        {
+            if (m != null && !string.IsNullOrEmpty(m.Id))
+            {
+                PlayerPrefs.DeleteKey(_collectedPrefix + m.Id);
+            }
+        }
+        PlayerPrefs.Save();
+        Debug.Log("[MapUI] ResetToSceneDefaults done");
+    }
+
     public void SetOpen(bool open)
     {
         _isOpen = open;
@@ -204,8 +228,13 @@ public class MapUI : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame)
-            Toggle();
+        // (r5 / m-double-fire) Removed the legacy Keyboard.current.mKey
+        // polling. The M key is now dispatched through Control.OnMapPressed
+        // (wired in Awake), which uses InputSystem's InputAction pipeline.
+        // Keeping both paths meant each press hit Toggle() twice - once
+        // from Control.OnMapPerformed, once from Update's polling - so
+        // the map flicked open and shut in the same frame and the player
+        // saw nothing change.
 
         if (!_playerReady)
         {

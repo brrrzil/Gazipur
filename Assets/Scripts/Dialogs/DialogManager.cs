@@ -104,6 +104,22 @@ public class DialogManager : MonoBehaviour
         StartDialog(DialogType.motherStart);
     }
 
+    // (r5 / new-game) Clears every dialog's 'completed' flag so a new
+    // playthrough replays the conversations. Called by GameSession.
+    // ResetForNewGame. Without this, a Continue followed by New Game
+    // would skip past every dialog whose isUsed flag the player had
+    // set on the previous run.
+    public void ResetToSceneDefaults()
+    {
+        if (_dialogs == null) return;
+        foreach (var d in _dialogs)
+        {
+            if (d != null) d.isUsed = false;
+        }
+        Dialog = default;
+        Debug.Log("[DialogManager] ResetToSceneDefaults done");
+    }
+
     public bool StartDialog(DialogType dType)
     {
         // BUGFIX (M2): _dialogs.Where(...).ToArray()[0] would throw

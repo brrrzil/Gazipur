@@ -142,13 +142,25 @@ public class MainMenuScript : MonoBehaviour
 
     private void OnNewGame()
     {
-        // Wipe the save slot so SaveBootstrap finds nothing and the
-        // game boots into the authored scene defaults (FogController
-        // resets to scene density, MapUI starts locked, etc.).
-        SaveSystem.DeleteSave();
-        // (round 101) Also wipe the loot-collection registry so all
-        // previously collected loot piles / skimmer parts come back.
-        LootPersistence.ClearAll();
+        // (r5 / new-game) With GameScene in DDOL, SceneManager.LoadScene
+        // is effectively a no-op for the gameplay root - the previous
+        // run's state in DataManager.Money, Inventory.Cells, etc. would
+        // survive because their Awake/Start already ran. Wipe the slot
+        // AND reset every live singleton to its scene-authored default
+        // BEFORE we activate the scene.
+        if (GameSession.Instance != null)
+        {
+            GameSession.Instance.ResetForNewGame();
+        }
+        else
+        {
+            // Fallback for the case where GameSession hasn't booted
+            // yet (extremely early click before BeforeSceneLoad ran).
+            // Just wipe the slot and trust Awake/Start to apply scene
+            // defaults on the new GameScene load.
+            SaveSystem.DeleteSave();
+            LootPersistence.ClearAll();
+        }
         // (round 102) Belt-and-braces: double-check the slot was
         // actually wiped before we trigger the scene load. If HasSave
         // is still true PlayerPrefs.DeleteKey did not stick

@@ -65,6 +65,21 @@ public class FogController : MonoBehaviour
     /// what the world would be if aim weren't pressed.</summary>
     public float ClearedDensity => _clearedDensity;
 
+    // (r5 / new-game) Restore the scene-authored fog density. Called
+    // by GameSession.ResetForNewGame when the player starts a new
+    // game from the main menu. The density comes from the Lighting
+    // settings (RenderSettings.fogDensity at Awake), which is the
+    // value the scene's lighting window was set to before any
+    // pickup-modulated thinning. Without this reset, a Continue
+    // followed by New Game would keep the thinned-out density from
+    // the previous run.
+    public void ResetToSceneDefaults()
+    {
+        float sceneDefault = RenderSettings.fogDensity;
+        SetClearedDensity(sceneDefault);
+        Debug.Log($"[FogController] ResetToSceneDefaults density={sceneDefault}");
+    }
+
     /// <summary>Force the cleared baseline to <paramref name="density"/>.
     /// SaveSystem.Load uses this to restore the value the player
     /// had at their last save. Caller must also reset _liveDensity

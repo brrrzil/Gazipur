@@ -141,4 +141,26 @@ public class QuestManager : MonoBehaviour
         // BUGFIX: ����������� ������� ������ �� ���� ������
         _sounds.SwitchToWinBackground();
     }
+
+    // (r5 / new-game) Resets quest progression to scene defaults and
+    // hides every quest UI panel. Called by GameSession.ResetForNewGame
+    // when the player hits 'New Game' from the main menu.
+    public void ResetToSceneDefaults()
+    {
+        if (QuestsState != null)
+        {
+            QuestsState[Quests.filter] = 0;
+            QuestsState[Quests.healMother] = 0;
+        }
+        if (_filterObject != null) _filterObject.SetActive(false);
+        if (_blueprintPanel != null) _blueprintPanel.SetActive(false);
+        if (_filterPlace != null) _filterPlace.SetActive(false);
+        if (_medecineCheckBox != null)
+        {
+            _medecineCheckBox.isOn = false;
+            _medecineCheckBox.gameObject.SetActive(false);
+        }
+        _isStartFind = false;
+        Debug.Log("[QuestManager] ResetToSceneDefaults done");
+    }
 }
