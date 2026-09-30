@@ -37,6 +37,12 @@ public class DataManager : MonoBehaviour
         public int count = 0;
     }
 
+    // (input-action-r3) Control is injected by Zenject (scene-scope
+    // singleton, same as the rest of GameInstaller). Declared above
+    // Awake so the subscription in Awake reads as straightforward
+    // field-access rather than depending on declaration order.
+    [Inject] private Control _control;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -45,27 +51,22 @@ public class DataManager : MonoBehaviour
             return;
         }
         Instance = this;
-    }
-
-    // (input-action-r3) Control is injected by Zenject (scene-scope
-    // singleton, same as the rest of GameInstaller). Subscribe on Enable,
-    // unsubscribe on Disable - mirrors the rest of the codebase's input
-    // wiring and avoids stale subscriptions across scene reloads.
-    [Inject] private Control _control;
-
-    private void OnEnable()
-    {
+        // (r5 / ddol-gamescene) Subscribe here instead of OnEnable so
+        // we wire once for the session. The old OnEnable/OnDisable
+        // dance was needed because Control was scene-bound and could
+        // be destroyed+re-injected by Zenject; now both live in DDOL
+        // and Awake fires once. Subscribe in Awake so we know the
+        // [Inject] has resolved (Awake is after the injection point).
         if (_control != null) _control.OnMoneyCheatPressed += OnMoneyCheatPressed;
-    }
-
-    private void OnDisable()
-    {
-        if (_control != null) _control.OnMoneyCheatPressed -= OnMoneyCheatPressed;
     }
 
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        // (r5) Symmetric unsubscribe. With DDOL this only fires at app
+        // shutdown, but the unsubscribe is one line and keeps the
+        // subscription balance symmetric.
+        if (_control != null) _control.OnMoneyCheatPressed -= OnMoneyCheatPressed;
     }
 
     private void Start()
