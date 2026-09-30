@@ -55,7 +55,7 @@ public class WaterFilter : InteractObject
     }
 
     // Play the build sound in a loop while the player holds the 'use' button.
-    // Mirrors the pattern used by HoleInFance (fence cut) and GarbageObject
+    // Mirrors the pattern used by HoleInFence (fence cut) and GarbageObject
     // (loot pick) so the clip is routed through the same game audio mixer
     // and shares the existing _playerSource on the Sounds service.
     // isLoop = true: the clip must keep playing until the hold completes or

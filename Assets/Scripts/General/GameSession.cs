@@ -305,6 +305,19 @@ public class GameSession : MonoBehaviour
         var map = MapUI.Instance;
         if (map != null) map.ResetToSceneDefaults();
 
+        // (r5 / fence-persistence) Walk every HoleInFence and call its
+        // reset so the freshly-cleared LootPersistence id set above
+        // takes effect visually - re-enable the original fence and
+        // destroy the previously-spawned hole. FindObjectsByType (no
+        // inactive) misses the disabled originals, so use the
+        // IncludeInactive overload to catch fences the player had
+        // cut on the previous run.
+        var fences = FindObjectsByType<HoleInFence>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var f in fences)
+        {
+            if (f != null) f.ResetToSceneDefaults();
+        }
+
         // Loot registry: every per-pickup flag (filter parts, collected
         // items, etc.) so they all respawn on the new run.
         LootPersistence.ClearAll();

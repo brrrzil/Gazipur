@@ -20,7 +20,7 @@ public class HoldProgressBar : MonoBehaviour
     // If true, the bar restarts automatically as soon as a hold completes.
     // The loot system (GarbageObject) uses this so the player can keep E held
     // and loot multiple items from the same prefab; one-shot interactions
-    // (WaterFilter, HoleInFance) leave it at the default false.
+    // (WaterFilter, HoleInFence) leave it at the default false.
     private bool _loop;
 
     private void Awake()
