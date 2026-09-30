@@ -71,6 +71,44 @@ public static class GameSceneKeeper
             return;
         }
 
+        // (r5 / dotween-crash) Sounds.Init() runs an [Inject] method
+        // that calls DontDestroyOnLoad(transform.root.gameObject) on
+        // the GameManager hierarchy - the same hierarchy we're about
+        // to reparent. By the time OnSceneLoaded fires, that root
+        // is ALREADY in the DDOL scene. If we then take every root
+        // and SetParent it under our [GameScene (DDOL)] host, the
+        // GameManager root is being moved from DDOL into DDOL - which
+        // Unity handles, but every DOTween animation that started on
+        // a RectTransform under that root fires a "Tween startup
+        // failed - RectTransform has been destroyed" because the
+        // parent change tears down the cached RectTransform binding
+        // that DOTween captured at Start.
+        //
+        // Skip the reparent step entirely when the scene's roots are
+        // already in DDOL. Set _host anyway so IsGameSceneLoaded
+        // flips and subsequent restart paths route through
+        // GameSession instead of SceneManager.LoadScene.
+        bool anyRootInDDOL = false;
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            if (root != null && root.scene.buildIndex == -1) // DontDestroyOnLoad uses buildIndex=-1
+            {
+                anyRootInDDOL = true;
+                break;
+            }
+        }
+        if (anyRootInDDOL)
+        {
+            // Bootstrap a fresh host as a placeholder so IsGameScene-
+            // Loaded has something to point at. The DDOL roots
+            // themselves stay where Sounds.Init put them - that's
+            // exactly what we want, no churn.
+            _host = new GameObject(HostName);
+            Object.DontDestroyOnLoad(_host);
+            Debug.Log($"[GameSceneKeeper] GameScene roots already in DDOL (via Sounds.Init). Using existing DDOL set; no reparent.");
+            return;
+        }
+
         // Spin up a host on a fresh coroutine so we can yield one
         // frame before DontDestroyOnLoad (works around Unity's
         // 'cannot DDOL on the same frame as creation' warning).
