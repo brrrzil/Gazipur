@@ -161,6 +161,13 @@ public class MainMenuScript : MonoBehaviour
             SaveSystem.DeleteSave();
             LootPersistence.ClearAll();
         }
+        // (r5 / new-game-order) ResetForNewGame ends with a SaveNow so
+        // the cleared state hits disk before the user does anything.
+        // That save is now redundant - we want the slot EMPTY for a
+        // brand-new game, not 'cleared state'. Wipe again here so
+        // HasSave() == false and the menu's Continue button stays
+        // disabled until the player earns a save of their own.
+        SaveSystem.DeleteSave();
         // (round 102) Belt-and-braces: double-check the slot was
         // actually wiped before we trigger the scene load. If HasSave
         // is still true PlayerPrefs.DeleteKey did not stick
@@ -205,6 +212,19 @@ public class MainMenuScript : MonoBehaviour
 
     private void ActivateGameScene()
     {
+        // (r5 / no-double-load) If GameScene is already in DDOL (the
+        // player came back from GameScene -> MainMenu via the pause
+        // panel), SceneManager.LoadScene would re-instantiate the
+        // GameScene and produce duplicate GameManager / DataManager /
+        // Inventory instances stacked on top of the ones in DDOL.
+        // Instead, just flip the DDOL host's activeSelf back on.
+        if (GameSession.Instance != null && GameSession.Instance.IsHostActive == false && GameSession.Instance.IsGameSceneLoaded)
+        {
+            Debug.Log("[MainMenu] GameScene already in DDOL, skipping LoadScene and activating host");
+            GameSession.Instance.ActivateHost();
+            return;
+        }
+
         // Normal path: just flip the activation flag and Unity
         // finishes the load synchronously this frame.
         if (_gameSceneOp != null && !_sceneReady)

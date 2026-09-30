@@ -62,6 +62,9 @@ public static class GameSceneKeeper
             // LoadScene that bypassed SceneLoader's short-circuit).
             // Destroy the new roots so we don't end up with two
             // stacked GameScenes. The DDOL set is the canonical one.
+            // This is the dedup guard for repeated New Game / Continue
+            // cycles that would otherwise pile up GameManager /
+            // DataManager / Inventory instances.
             Debug.LogWarning($"[GameSceneKeeper] GameScene re-loaded with host already present; destroying fresh roots.");
             foreach (var root in scene.GetRootGameObjects())
             {

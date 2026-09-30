@@ -128,14 +128,14 @@ public class GameSession : MonoBehaviour
         if (_hostActive) return; // idempotent: re-activation is a no-op
         _hostActive = true;
         _host.SetActive(true);
-        // Drop back to GameMode.outdors so the player can actually
-        // move. The first GameScene load runs SaveBootstrap.LoadIntoGame
-        // BEFORE we get here (SaveBootstrap subscribes to sceneLoaded
-        // after us, but LoadIntoGame itself doesn't reset gameMode
-        // because gameMode isn't persisted - it would still hold the
-        // last value the player left it at, e.g. 'menu' if they paused
-        // before quitting). Forcing outdors here gives a clean entry
-        // state on every activation.
+        // Force DataManager.gameMode = outdors before any system tries
+        // to read it. OutDors() reads the current value first to decide
+        // which OnOutdors/OnMenu/etc. event to fire - if the previous
+        // session left gameMode at 'die' or 'win', the menu transitions
+        // don't fire right and the player sees a stuck panel. Setting
+        // outdors explicitly gives a clean entry state every time.
+        var data = DataManager.Instance;
+        if (data != null) data.gameMode = GameMode.outdors;
         var gmm = FindAnyObjectByType<GameModeManager>();
         if (gmm != null) gmm.OutDors();
         Cursor.lockState = CursorLockMode.Locked;
