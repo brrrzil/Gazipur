@@ -106,6 +106,9 @@ public static class GameSceneKeeper
             _host = new GameObject(HostName);
             Object.DontDestroyOnLoad(_host);
             Debug.Log($"[GameSceneKeeper] GameScene roots already in DDOL (via Sounds.Init). Using existing DDOL set; no reparent.");
+            // (r5) Notify GameSession so its ActivateHost replay path
+            // can run if a sceneLoaded already requested activation.
+            GameSession.Instance?.RegisterHost(_host);
             return;
         }
 
@@ -147,6 +150,10 @@ public static class GameSceneKeeper
             }
 
             Debug.Log($"[GameSceneKeeper] Promoted GameScene '{scene.name}' to DDOL under '{HostName}'.");
+
+            // (r5) Hand the host reference to GameSession so it can
+            // activate / deactivate / replay its pending activation.
+            GameSession.Instance?.RegisterHost(_host);
         }
     }
 }

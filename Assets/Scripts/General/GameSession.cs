@@ -14,6 +14,14 @@ using UnityEngine.SceneManagement;
 /// save). Centralising it here means the recipe lives in one place -
 /// adding a new "restart"-style button is one GameSession call.
 ///
+/// Activation: GameSceneKeeper creates a [GameScene (DDOL)] host on
+/// the first GameScene load. GameSession exposes ActivateHost() and
+/// DeactivateHost() so the rest of the project can flip that host's
+/// activeSelf without poking into GameSceneKeeper's internals. Every
+/// transition into / out of gameplay goes through these two methods,
+/// and they handle the cross-cutting concerns (cursor, game mode, save)
+/// in one place.
+///
 /// Lifecycle: GameSession itself is auto-bootstrapped before any scene
 /// loads ([RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]), so by the
 /// time MainMenuScript.OnNewGame or SceneLoader.LoadScene(1) runs, the
@@ -32,6 +40,25 @@ public class GameSession : MonoBehaviour
     /// LoadScene(1, Single) into a logical restart.</summary>
     public bool IsGameSceneLoaded { get; private set; }
 
+    /// <summary>True when the GameScene host is currently active.
+    /// Flipped to false on MainMenu entry, true on GameScene entry.
+    /// The flag is what the rest of the project reads when it wants
+    /// to know whether gameplay is currently live.</summary>
+    public bool IsHostActive => _hostActive;
+
+    /// <summary>The DDOL host created by GameSceneKeeper. May be null
+    /// before the first GameScene load.</summary>
+    public GameObject Host => _host;
+
+    private GameObject _host;
+    private bool _hostActive;
+    // (r5) If OnSceneLoaded fires for a GameScene before
+    // GameSceneKeeper has built the host, we remember the activation
+    // request and replay it once the host appears. Without this the
+    // first activation is lost (sceneLoaded fires before the keeper's
+    // coroutine completes).
+    private bool _pendingActivate;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
     {
@@ -45,13 +72,26 @@ public class GameSession : MonoBehaviour
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (Instance == null) return;
-        // Flip the flag for any scene whose name contains "Game" - both
-        // the live GameScene and any future variants (GameScene_Forest,
-        // etc.) should still be eligible for in-place restart. The
-        // MainMenu's own sceneLoaded will simply not match this check.
-        if (!scene.name.Contains("Game")) return;
-        Instance.IsGameSceneLoaded = true;
-        Debug.Log($"[GameSession] GameScene flagged as loaded ('{scene.name}').");
+        bool isGameScene = scene.name.Contains("Game");
+        if (isGameScene)
+        {
+            // Flip the flag so subsequent SceneLoader.LoadScene(1)
+            // calls route into RestartFromCurrentSave instead of a
+            // real LoadScene.
+            Instance.IsGameSceneLoaded = true;
+            Instance.ActivateHost();
+            Debug.Log($"[GameSession] GameScene entered ('{scene.name}').");
+        }
+        else
+        {
+            // MainMenu (or any future non-game scene). Drop the
+            // GameScene flag - if the player clicks something that
+            // goes to GameScene later, SceneLoader.LoadScene(1) will
+            // see the flag is false and do a real LoadScene.
+            Instance.IsGameSceneLoaded = false;
+            Instance.DeactivateHost();
+            Debug.Log($"[GameSession] Non-game scene entered ('{scene.name}'); GameScene host deactivated.");
+        }
     }
 
     private void OnDestroy()
@@ -60,12 +100,77 @@ public class GameSession : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    /// <summary>(r5) GameSceneKeeper calls this once it has built the
+    /// DDOL host. Stores the reference; if a previous sceneLoaded had
+    /// already requested activation, replays it now.</summary>
+    public void RegisterHost(GameObject host)
+    {
+        if (host == null) return;
+        _host = host;
+        if (_pendingActivate)
+        {
+            _pendingActivate = false;
+            ActivateHost();
+        }
+    }
+
+    /// <summary>Turn the GameScene host on, drop back to GameMode.outdors,
+    /// lock the cursor. Safe to call when no host exists yet - sets the
+    /// pending flag so the next RegisterHost call replays the request.
+    /// Safe to call repeatedly.</summary>
+    public void ActivateHost()
+    {
+        if (_host == null)
+        {
+            _pendingActivate = true;
+            return;
+        }
+        if (_hostActive) return; // idempotent: re-activation is a no-op
+        _hostActive = true;
+        _host.SetActive(true);
+        // Drop back to GameMode.outdors so the player can actually
+        // move. The first GameScene load runs SaveBootstrap.LoadIntoGame
+        // BEFORE we get here (SaveBootstrap subscribes to sceneLoaded
+        // after us, but LoadIntoGame itself doesn't reset gameMode
+        // because gameMode isn't persisted - it would still hold the
+        // last value the player left it at, e.g. 'menu' if they paused
+        // before quitting). Forcing outdors here gives a clean entry
+        // state on every activation.
+        var gmm = FindAnyObjectByType<GameModeManager>();
+        if (gmm != null) gmm.OutDors();
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        var sounds = FindAnyObjectByType<Sounds>();
+        if (sounds != null) sounds.SwitchToGameBackground();
+        Debug.Log("[GameSession] ActivateHost: host active, mode=outdors");
+    }
+
+    /// <summary>Turn the GameScene host off, save current state, show
+    /// cursor. Safe to call repeatedly; safe to call when no host
+    /// exists (just sets _hostActive=false and saves).</summary>
+    public void DeactivateHost()
+    {
+        _hostActive = false;
+        if (_host != null) _host.SetActive(false);
+        // Snapshot whatever the player did before they hit MainMenu so
+        // Continue picks up where they left off. SaveNow is cheap (a
+        // single JsonUtility.ToJson + PlayerPrefs.SetString).
+        try { GamePersistence.SaveNow(); }
+        catch (System.Exception e) { Debug.LogWarning($"[GameSession] SaveNow on deactivate failed: {e.Message}"); }
+        // Show cursor - if MainMenu buttons need to be clicked, the
+        // cursor has to be visible.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Time.timeScale = 1f;
+        Debug.Log("[GameSession] DeactivateHost: host hidden, saved");
+    }
+
     /// <summary>Called by SceneLoader.LoadScene(1) when GameScene is
     /// already loaded (the common Try-Again-on-DiePanel path). Skips a
     /// real SceneManager.LoadScene - Unity would tear down the entire
     /// GameScene hierarchy only to recreate it from the prefab, which
     /// is the source of every 'subscribers break on load' bug we have
-    /// been chasing. Instead: apply the saved blob, close any open UI,
+    /// been chasing. Instead: apply the save blob, close any open UI,
     /// drop to outdors mode, re-position the player.</summary>
     public void RestartFromCurrentSave()
     {
