@@ -118,12 +118,14 @@ public class ComicsController : MonoBehaviour
             AudioListener.pause = true;
         }
 
-        // (r5 / comics-cursor) Show the cursor while the opening
-        // comics play. GameSession.ActivateHost hides + locks the cursor
-        // so the player can move, but the player needs to see the
-        // cursor to click through the slides (or click Start on the
-        // last one). OnStartButtonClicked hides it again before the
-        // gameplay state resumes.
+        // (r5 / comics-cursor) Force PlayerMovement into UI mode BEFORE
+        // the cursor becomes visible - otherwise the player can spin
+        // the camera in the frame between ActivateHost's cursor hide
+        // and ComicsController's mode change. PlayerMovement.SetUIMode
+        // also unlocks + shows the cursor so the player can click
+        // through the slides.
+        var player = PlayerMovement.Instance;
+        if (player != null) player.SetUIMode(true);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
@@ -269,8 +271,15 @@ public class ComicsController : MonoBehaviour
         // the comics are dismissed and gameplay is about to resume.
         // Start() showed it so the player could click through; the
         // gameplay path expects the cursor hidden and locked.
+        // Pair with PlayerMovement.SetUIMode(false) so the camera /
+        // movement input gate flips back open the same frame the
+        // cursor disappears - otherwise the player would have one
+        // frame where they could spin it with the (still-visible)
+        // cursor.
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        var player = PlayerMovement.Instance;
+        if (player != null) player.SetUIMode(false);
 
         _canvasGroup.alpha = 0f;
         _canvasGroup.blocksRaycasts = false;
