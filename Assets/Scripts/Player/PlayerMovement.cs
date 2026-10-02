@@ -15,11 +15,49 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
         Instance = this;
+        // (r5 / new-game) Capture the scene-authored transform on first
+        // wake so ResetToSpawnPosition has a reference point. With
+        // GameScene in DDOL Awake fires once per session, not per
+        // Continue - this is the only place we can snapshot the
+        // designer-placed spawn before any subsequent teleport (die
+        // respawn, Continue) overwrites it.
+        _spawnPosition = transform.position;
+        _spawnRotation = transform.rotation;
     }
 
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+    }
+
+    // (r5 / new-game) Defaults captured by Awake. Used by
+    // ResetToSpawnPosition so 'New Game' returns the player to the
+    // scene-authored spawn instead of wherever the previous run's
+    // death respawn landed.
+    private Vector3 _spawnPosition;
+    private Quaternion _spawnRotation;
+
+    // (r5 / new-game) Reset the player transform to the spawn point
+    // captured in Awake. Called by GameSession.ResetForNewGame.
+    // CharacterController.enabled is flipped off and on around the
+    // teleport so the controller's internal 'last ground' state is
+    // cleared - otherwise the next FixedUpdate tries to keep the
+    // player glued to whatever surface they were on, snapping them
+    // back to the previous run's last position.
+    public void ResetToSpawnPosition()
+    {
+        if (_controller == null) _controller = GetComponent<CharacterController>();
+        if (_controller != null) _controller.enabled = false;
+        transform.SetPositionAndRotation(_spawnPosition, _spawnRotation);
+        if (_controller != null) _controller.enabled = true;
+        // Clear any in-flight velocity the CharacterController was
+        // carrying. _velocity is private; reset what's reachable.
+        _xRotation = 0f;
+        _isRunning = false;
+        _wantsToCrouch = false;
+        _isCrouching = false;
+        _jumpPressed = false;
+        Debug.Log($"[PlayerMovement] ResetToSpawnPosition pos={_spawnPosition}");
     }
 
     [Header("Movement")]

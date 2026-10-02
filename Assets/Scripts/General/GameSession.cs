@@ -79,9 +79,19 @@ public class GameSession : MonoBehaviour
         // second or third time if a previous Continue/NewGame cycle
         // didn't fully clean up. FindObjectsByType finds every live
         // GameManager; keep the one that's already parented under the
-        // DDOL host (or, if none is, the first one we see) and destroy
-        // the rest. Doing this BEFORE ActivateHost means the
-        // deduplicated GameManager survives across scene loads.
+        // DDOL host (or, if none is, the first one we see) and disable
+        // the rest.
+        //
+        // SAFETY: we use SetActive(false) instead of Destroy so we
+        // don't accidentally take down a Control / DataManager / Canvas
+        // that lives as a sibling under the same GameManager root.
+        // The previous version of this loop called Destroy and broke
+        // input wiring on the very next reload because Zenject had
+        // already [Inject]'d into the now-destroyed instance. The cost
+        // is a few dead GameObjects accumulating in DDOL - harmless
+        // because they're inert, and Unity will reap them on app
+        // shutdown. We log a warning so the user can see the dedup
+        // actually fired (no warning = the scene came up clean).
         if (scene.name.Contains("Game"))
         {
             var managers = FindObjectsByType<GameManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -105,7 +115,7 @@ public class GameSession : MonoBehaviour
                 for (int i = 0; i < managers.Length; i++)
                 {
                     var m = managers[i];
-                    if (m != null && m != keep) Object.Destroy(m.gameObject);
+                    if (m != null && m != keep) m.gameObject.SetActive(false);
                 }
             }
             // Flip the flag so subsequent SceneLoader.LoadScene(1)
@@ -354,6 +364,17 @@ public class GameSession : MonoBehaviour
         // Loot registry: every per-pickup flag (filter parts, collected
         // items, etc.) so they all respawn on the new run.
         LootPersistence.ClearAll();
+
+        // (r5 / new-game) Teleport the player back to the spawn point
+        // captured by PlayerMovement.Awake. Without this the player
+        // would still be at whatever position the previous run's last
+        // Continue / die-respawn left them at - which for a New Game
+        // after a die is inside the death trigger or somewhere on the
+        // respawn anchor. ResetToSpawnPosition also clears the
+        // CharacterController's internal velocity state so the next
+        // FixedUpdate doesn't snap them back to the previous position.
+        var player = PlayerMovement.Instance;
+        if (player != null) player.ResetToSpawnPosition();
 
         // 2) Drop back to outdors mode and reset cursor state.
         var gmm = FindAnyObjectByType<GameModeManager>();
