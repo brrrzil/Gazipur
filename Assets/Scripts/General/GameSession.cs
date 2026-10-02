@@ -73,9 +73,41 @@ public class GameSession : MonoBehaviour
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (Instance == null) return;
-        bool isGameScene = scene.name.Contains("Game");
-        if (isGameScene)
+
+        // (r5 / no-double-GameManager) When a GameScene scene loads,
+        // Unity may have just instantiated the GameManager.prefab a
+        // second or third time if a previous Continue/NewGame cycle
+        // didn't fully clean up. FindObjectsByType finds every live
+        // GameManager; keep the one that's already parented under the
+        // DDOL host (or, if none is, the first one we see) and destroy
+        // the rest. Doing this BEFORE ActivateHost means the
+        // deduplicated GameManager survives across scene loads.
+        if (scene.name.Contains("Game"))
         {
+            var managers = FindObjectsByType<GameManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (managers.Length > 1)
+            {
+                Debug.LogWarning($"[GameSession] Found {managers.Length} GameManagers, deduplicating to 1");
+                // Prefer to keep the one that's parented under our
+                // DDOL host, falling back to the first.
+                GameManager keep = null;
+                for (int i = 0; i < managers.Length; i++)
+                {
+                    var m = managers[i];
+                    if (m == null) continue;
+                    if (Instance.Host != null && m.transform.root == Instance.Host.transform)
+                    {
+                        keep = m;
+                        break;
+                    }
+                }
+                if (keep == null) keep = managers[0];
+                for (int i = 0; i < managers.Length; i++)
+                {
+                    var m = managers[i];
+                    if (m != null && m != keep) Object.Destroy(m.gameObject);
+                }
+            }
             // Flip the flag so subsequent SceneLoader.LoadScene(1)
             // calls route into RestartFromCurrentSave instead of a
             // real LoadScene.

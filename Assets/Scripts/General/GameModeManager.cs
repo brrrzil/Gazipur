@@ -146,6 +146,10 @@ public class GameModeManager : MonoBehaviour
 
         _mods[_data.gameMode]?.Invoke(false);
         _data.gameMode = mode;
+        // (r5) Trace every mode change so 'started a new game but
+        // landed in some other mode' reports can show exactly when
+        // the wrong transition fired and what triggered it.
+        Debug.Log($"[GameModeManager] ChangeMode: {PreviousMode} -> {mode} (scene='{gameObject.scene.name}')");
         onChangeMode?.Invoke(mode);
         _mods[mode]?.Invoke(true);
 
