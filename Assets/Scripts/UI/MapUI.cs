@@ -160,6 +160,11 @@ public class MapUI : MonoBehaviour
         _isOpen = open;
         if (open) _wasEverOpened = true;
 
+        // (r5) Trace every open/close so 'I bought the map and it
+        // doesn't show' reports show whether the call reached SetOpen
+        // and whether _mapRoot / graphics actually flipped.
+        Debug.Log($"[MapUI] SetOpen({open}) hasRoot={_hasRoot} mapRoot={(_mapRoot != null ? (_mapRoot.activeSelf.ToString() + "/" + _mapRoot.activeInHierarchy.ToString()) : "null")} graphics={_graphics.Count}");
+
         if (_hasRoot)
         {
             _mapRoot.SetActive(open);
@@ -184,7 +189,14 @@ public class MapUI : MonoBehaviour
         SetOpen(!_isOpen);
         Debug.Log($"[MapUI] Toggle: was={before} now={_isOpen} hasRoot={_hasRoot} mapRootActive={(_mapRoot != null ? _mapRoot.activeSelf.ToString() : "null")}");
     }
-    public void Unlock() => SetOpen(true);
+    public void Unlock()
+    {
+        // (r5) Trace the unlock call - this is what BuyItemObject
+        // and MapItem.Use both call. If 'I bought the map but nothing
+        // shows', the trace shows whether Unlock was hit at all.
+        Debug.Log($"[MapUI] Unlock called Instance={Instance != null} IsUnlocked={IsUnlocked}");
+        SetOpen(true);
+    }
 
     private void RebuildMarkers()
     {
