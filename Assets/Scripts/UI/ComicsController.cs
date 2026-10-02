@@ -118,6 +118,15 @@ public class ComicsController : MonoBehaviour
             AudioListener.pause = true;
         }
 
+        // (r5 / comics-cursor) Show the cursor while the opening
+        // comics play. GameSession.ActivateHost hides + locks the cursor
+        // so the player can move, but the player needs to see the
+        // cursor to click through the slides (or click Start on the
+        // last one). OnStartButtonClicked hides it again before the
+        // gameplay state resumes.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         if (_modManager != null) _modManager.ChangeMode(EnumData.GameMode.comics);
 
         ShowSlideImmediate(0);
@@ -255,6 +264,13 @@ public class ComicsController : MonoBehaviour
             Time.timeScale = _savedTimeScale;
             AudioListener.pause = false;
         }
+
+        // (r5 / comics-cursor) Re-lock and hide the cursor now that
+        // the comics are dismissed and gameplay is about to resume.
+        // Start() showed it so the player could click through; the
+        // gameplay path expects the cursor hidden and locked.
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
         _canvasGroup.alpha = 0f;
         _canvasGroup.blocksRaycasts = false;
