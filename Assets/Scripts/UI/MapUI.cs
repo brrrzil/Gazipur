@@ -58,6 +58,29 @@ public class MapUI : MonoBehaviour
         public RectTransform Arrow;
     }
 
+    // (round 102) Read-only accessors for companion scripts that need
+    // the same world-to-pixel transform (MapEdgeClamp, custom HUD
+    // overlays, etc). Keep these in sync with the Inspector field
+    // values.
+    public Vector3 MapCenter => _mapCenter;
+    public float PixelsPerMeter => _pixelsPerMeter;
+
+    // The mask's pixel radius used for edge-clamp comparisons.
+    // Computed lazily on first access; the formula matches
+    // SetOpen(true) so MapUI's own dynamic markers and any
+    // external MapEdgeClamp scripts see the same threshold.
+    // -1 means "not yet initialised"; in that case we ask the
+    // mask's rect for the value and cache it.
+    public float MaskPixelRadius
+    {
+        get
+        {
+            if (_mapPixelRadius < 0f && _mapMask != null)
+                _mapPixelRadius = _mapMask.rect.width * 0.5f - 4f;
+            return _mapPixelRadius;
+        }
+    }
+
     private void Awake()
     {
         Instance = this;
