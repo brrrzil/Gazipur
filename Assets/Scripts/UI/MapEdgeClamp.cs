@@ -52,13 +52,8 @@ public class MapEdgeClamp : MonoBehaviour
 
         if (_playerTransform == null)
         {
-            // The project has no "Player" tag in TagManager.asset, so
-            // FindGameObjectWithTag("Player") always returns null and
-            // the icon never moves. Find by PlayerMovement component
-            // instead - same approach AimController uses (Assets/Scripts/
-            // Player/AimController.cs).
-            var movement = FindObjectOfType<PlayerMovement>();
-            if (movement != null) _playerTransform = movement.transform;
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null) _playerTransform = player.transform;
             if (_playerTransform == null) return;
         }
 
