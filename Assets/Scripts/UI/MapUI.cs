@@ -27,7 +27,9 @@ public class MapUI : MonoBehaviour
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("Clamp icons (static, hand-placed)")]
-    [Tooltip("Optional. Hand-placed icons inside MapBackground / MarkersParent that should snap to the rim when their world position is far from the player. Each entry pairs an icon (RectTransform) with the world position it represents. The script updates anchoredPosition every frame; if you also need a rotated arrow, assign one as a child of the icon.")]
+    [Tooltip("Pixel radius in _mapMask local space. When a clamp icon's anchored position is farther from the mask centre than this value, the icon is hidden and its Arrow (if assigned) is shown on the rim instead, rotated to point at the icon's real position. When the icon comes back inside the radius, the Arrow hides and the icon shows again.")]
+    [SerializeField] private float _clampRadius = 100f;
+    [Tooltip("Hand-placed icons inside MapMask / MarkersParent that should switch to an off-radar Arrow when they're farther than _clampRadius from the mask centre. The icon and its Arrow are in canvas local space — no world position required. The user-picked anchoredPosition is preserved.")]
     [SerializeField] private ClampIcon[] _clampIcons;
 
     [Header("World anchor")]
@@ -71,28 +73,29 @@ public class MapUI : MonoBehaviour
     // per-icon nudge in case the artist drew the sprite off-centre
     // and wants the snap point to match the visual centre, not (0,0).
     // Hand-placed map icon: a RectTransform the user wired in the
-    // Inspector. Default behaviour: leave anchoredPosition alone
-    // (whatever the user placed by hand in the Editor is what shows
-    // up — the script only stops driving it). If WorldPosition is set
-    // to a non-zero value, the script also drives anchoredPosition
-    // every frame using GTA-style edge-clamp logic (anchored inside
-    // the mask, snapped to the rim and arrow rotated when outside).
-    // The Vector2 AnchoredOffset is an extra per-icon nudge in case
-    // the artist drew the sprite off-centre and wants the snap point
-    // to match the visual centre, not (0,0).
+    // Inspector plus an optional Arrow. Both live in canvas local
+    // space — the script compares the icon's distance from the
+    // mask centre to _clampRadius every frame. Inside the radius
+    // the icon is shown and the Arrow is hidden. Outside the
+    // radius the icon is hidden and the Arrow is parked on the rim
+    // of the mask, rotated to point at the icon's real position.
     [System.Serializable]
     private class ClampIcon
     {
         public RectTransform Icon;
-        public Vector3 WorldPosition;
         public RectTransform Arrow;
-        public Vector2 AnchoredOffset;
 
-        // Captured at Start: whatever the user placed the icon at in
-        // the Editor. Used when WorldPosition is (0, 0, 0) so the
-        // script doesn't yank the icon off-screen.
-        [System.NonSerialized] public Vector2 DefaultAnchoredPos;
-        [System.NonSerialized] public bool HasDefault;
+        // Cached at Start: icon's position in _mapMask local space.
+        // Captured once because the icon's anchoredPosition is set
+        // by hand in the Editor and shouldn't move at runtime.
+        [System.NonSerialized] public Vector2 IconMaskLocal;
+
+        // Cached at Start: Arrow's parent anchored position in
+        // _mapMask local space. Subtracted from the rim target to
+        // get the Arrow's anchoredPosition in its own parent's
+        // local space.
+        [System.NonSerialized] public Vector2 ArrowParentMaskLocal;
+        [System.NonSerialized] public bool HasArrow;
     }
 
     private void Awake()
@@ -123,21 +126,36 @@ public class MapUI : MonoBehaviour
 
     private void Start()
     {
-        // Capture hand-placed anchoredPosition so default-mode icons
-        // (those without a WorldPosition) sit where the user dropped
-        // them in the Editor. Without this the script would either
-        // yank them to (0, 0) every frame or never touch them — both
-        // are surprising.
-        if (_clampIcons != null)
+        // Capture each clamp icon's position in _mapMask local space
+        // once. The icon's anchoredPosition is set by hand in the
+        // Editor; we don't move it at runtime, so the cached value
+        // is stable. For the Arrow we cache where its parent sits
+        // in mask-local space so we can translate the rim target
+        // back to the Arrow's parent's local space each frame.
+        if (_clampIcons == null) return;
+        for (int i = 0; i < _clampIcons.Length; i++)
         {
-            for (int i = 0; i < _clampIcons.Length; i++)
+            var ci = _clampIcons[i];
+            if (ci == null || ci.Icon == null) continue;
+
+            ci.IconMaskLocal = ToMaskLocal(ci.Icon);
+            ci.HasArrow = ci.Arrow != null;
+            if (ci.HasArrow)
             {
-                var ci = _clampIcons[i];
-                if (ci == null || ci.Icon == null) continue;
-                ci.DefaultAnchoredPos = ci.Icon.anchoredPosition;
-                ci.HasDefault = true;
+                var ap = ci.Arrow.parent as RectTransform;
+                ci.ArrowParentMaskLocal = ap != null ? ToMaskLocal(ap) : Vector2.zero;
             }
         }
+    }
+
+    // World position of a RectTransform, expressed in _mapMask
+    // local space. The mask's pivot is the centre of the radar, so
+    // the resulting Vector2 is the (x, y) offset from the player
+    // arrow to the input rect, in canvas pixels.
+    private Vector2 ToMaskLocal(RectTransform rt)
+    {
+        if (_mapMask == null || rt == null) return Vector2.zero;
+        return (Vector2)_mapMask.InverseTransformPoint(rt.position);
     }
 
     private void OnDestroy()
@@ -298,67 +316,45 @@ public class MapUI : MonoBehaviour
 
         // Hand-placed static icons (Mama / Rahul / Skimmer).
         //
-        // Two modes:
-        //   - WorldPosition == (0, 0, 0) → "hand-placed" mode. We
-        //     captured the icon's Inspector anchoredPosition in
-        //     Start() and just keep restoring it every frame. The
-        //     icon stays exactly where the user dropped it. No
-        //     distance is reported for these (only the ones the
-        //     script is actively positioning count).
-        //   - WorldPosition != (0, 0, 0) → "world-anchored" mode. The
-        //     icon is driven every frame: (world - player) * PPM in
-        //     its parent's local space, snapped to the rim when the
-        //     point falls outside _mapPixelRadius. Child Arrow (if
-        //     assigned) is rotated to point at the real world pos.
+        // Coordinates are in canvas local space — no world position
+        // needed. Each icon was placed by hand in the Editor; we
+        // cached its mask-local position in Start(). Every frame we
+        // check the distance from the mask centre (where the
+        // player arrow sits) to that cached position.
         //
-        // Either way the icon stays visible. The script never yanks
-        // a hand-placed icon to (0, 0) — that's the bug we're
-        // avoiding.
+        //   - dist <= _clampRadius → icon visible, Arrow hidden.
+        //     anchoredPosition is left alone (whatever the user
+        //     put in the Inspector stays).
+        //   - dist > _clampRadius → icon hidden, Arrow shown on
+        //     the rim of the mask, rotated to point at the icon's
+        //     real position. When the icon comes back inside the
+        //     radius the next frame, the Arrow hides and the icon
+        //     shows again.
         float nearestDist = float.PositiveInfinity;
         for (int i = 0; i < _clampIcons.Length; i++)
         {
             var ci = _clampIcons[i];
             if (ci == null || ci.Icon == null) continue;
 
-            if (ci.WorldPosition == Vector3.zero)
-            {
-                // Hand-placed: restore the user-picked anchored
-                // position every frame so any other code that
-                // touches it (animation, dialogue panel, etc.) can't
-                // accidentally leave it offset.
-                if (ci.HasDefault)
-                {
-                    ci.Icon.gameObject.SetActive(true);
-                    ci.Icon.anchoredPosition = ci.DefaultAnchoredPos;
-                }
-                if (ci.Arrow != null) ci.Arrow.gameObject.SetActive(false);
-                continue;
-            }
-
-            Vector3 d2 = ci.WorldPosition - _playerTransform.position;
-            float mx = d2.x * _pixelsPerMeter;
-            float mz = d2.z * _pixelsPerMeter;
-            float dist = Mathf.Sqrt(mx * mx + mz * mz);
+            float dist = ci.IconMaskLocal.magnitude;
             if (dist < nearestDist) nearestDist = dist;
 
-            if (dist <= _mapPixelRadius)
+            if (dist <= _clampRadius)
             {
                 ci.Icon.gameObject.SetActive(true);
-                ci.Icon.anchoredPosition = new Vector2(mx, mz) + ci.AnchoredOffset;
-                if (ci.Arrow != null) ci.Arrow.gameObject.SetActive(false);
+                if (ci.HasArrow) ci.Arrow.gameObject.SetActive(false);
             }
             else
             {
-                float angle = Mathf.Atan2(mz, mx) * Mathf.Rad2Deg;
-                float rad = angle * Mathf.Deg2Rad;
-                ci.Icon.gameObject.SetActive(true);
-                ci.Icon.anchoredPosition = new Vector2(
-                    Mathf.Cos(rad) * _mapPixelRadius,
-                    Mathf.Sin(rad) * _mapPixelRadius) + ci.AnchoredOffset;
-                if (ci.Arrow != null)
+                ci.Icon.gameObject.SetActive(false);
+                if (ci.HasArrow)
                 {
+                    var dir = ci.IconMaskLocal / dist;
+                    var rimMaskLocal = dir * _clampRadius;
                     ci.Arrow.gameObject.SetActive(true);
-                    ci.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
+                    ci.Arrow.anchoredPosition = rimMaskLocal - ci.ArrowParentMaskLocal;
+                    float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
+                    ci.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle);
                 }
             }
         }
