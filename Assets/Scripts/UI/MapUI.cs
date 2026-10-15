@@ -26,6 +26,10 @@ public class MapUI : MonoBehaviour
     [Tooltip("Prefab for an edge-pointing arrow.")]
     [SerializeField] private RectTransform _markerArrowPrefab;
 
+    [Header("Clamp icons (static, hand-placed)")]
+    [Tooltip("Optional. Hand-placed icons inside MapBackground / MarkersParent that should snap to the rim when their world position is far from the player. Each entry pairs an icon (RectTransform) with the world position it represents. The script updates anchoredPosition every frame; if you also need a rotated arrow, assign one as a child of the icon.")]
+    [SerializeField] private ClampIcon[] _clampIcons;
+
     [Header("World anchor")]
     [Tooltip("The world position at which the map sprite sits at its designed RectTransform position (the value you set in the Inspector). When the player is here, the sprite does not pan.")]
     [SerializeField] private Vector3 _mapCenter = new Vector3(500f, 0f, 500f);
@@ -56,6 +60,23 @@ public class MapUI : MonoBehaviour
         public MapMarker Marker;
         public RectTransform Icon;
         public RectTransform Arrow;
+    }
+
+    // Hand-placed map icon: a RectTransform the user wired in the
+    // Inspector plus the world position it represents. MapUI moves
+    // the icon's anchoredPosition every frame; if the world point
+    // falls outside the visible mask, the icon is snapped to the
+    // rim and (if assigned) its child Arrow is rotated to point at
+    // the real position. The Vector2 anchoredOffset is an extra
+    // per-icon nudge in case the artist drew the sprite off-centre
+    // and wants the snap point to match the visual centre, not (0,0).
+    [System.Serializable]
+    private class ClampIcon
+    {
+        public RectTransform Icon;
+        public Vector3 WorldPosition;
+        public RectTransform Arrow;
+        public Vector2 AnchoredOffset;
     }
 
     private void Awake()
@@ -239,6 +260,47 @@ public class MapUI : MonoBehaviour
                 }
             }
         }
+
+        // Hand-placed static icons (Mama / Rahul / Skimmer): the user
+        // drops RectTransforms into _clampIcons with the world
+        // position they represent. anchoredPosition is in the icon's
+        // parent local space; if the icon lives inside MapBackground
+        // (which the script pans every frame) the parent pan and the
+        // icon's own (mx, mz) combine so the world point lines up
+        // with the visible mask.
+        float nearestDist = float.PositiveInfinity;
+        for (int i = 0; i < _clampIcons.Length; i++)
+        {
+            var ci = _clampIcons[i];
+            if (ci == null || ci.Icon == null) continue;
+            Vector3 d2 = ci.WorldPosition - _playerTransform.position;
+            float mx = d2.x * _pixelsPerMeter;
+            float mz = d2.z * _pixelsPerMeter;
+            float dist = Mathf.Sqrt(mx * mx + mz * mz);
+            if (dist < nearestDist) nearestDist = dist;
+
+            if (dist <= _mapPixelRadius)
+            {
+                ci.Icon.gameObject.SetActive(true);
+                ci.Icon.anchoredPosition = new Vector2(mx, mz) + ci.AnchoredOffset;
+                if (ci.Arrow != null) ci.Arrow.gameObject.SetActive(false);
+            }
+            else
+            {
+                float angle = Mathf.Atan2(mz, mx) * Mathf.Rad2Deg;
+                float rad = angle * Mathf.Deg2Rad;
+                ci.Icon.gameObject.SetActive(true);
+                ci.Icon.anchoredPosition = new Vector2(
+                    Mathf.Cos(rad) * _mapPixelRadius,
+                    Mathf.Sin(rad) * _mapPixelRadius) + ci.AnchoredOffset;
+                if (ci.Arrow != null)
+                {
+                    ci.Arrow.gameObject.SetActive(true);
+                    ci.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
+                }
+            }
+        }
+        Debug.Log($"[MapUI] nearest clamp icon: {nearestDist:F1}px from player arrow");
     }
 
     private bool IsCollected(string id)
