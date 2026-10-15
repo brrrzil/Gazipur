@@ -70,6 +70,16 @@ public class MapUI : MonoBehaviour
     // the real position. The Vector2 anchoredOffset is an extra
     // per-icon nudge in case the artist drew the sprite off-centre
     // and wants the snap point to match the visual centre, not (0,0).
+    // Hand-placed map icon: a RectTransform the user wired in the
+    // Inspector. Default behaviour: leave anchoredPosition alone
+    // (whatever the user placed by hand in the Editor is what shows
+    // up — the script only stops driving it). If WorldPosition is set
+    // to a non-zero value, the script also drives anchoredPosition
+    // every frame using GTA-style edge-clamp logic (anchored inside
+    // the mask, snapped to the rim and arrow rotated when outside).
+    // The Vector2 AnchoredOffset is an extra per-icon nudge in case
+    // the artist drew the sprite off-centre and wants the snap point
+    // to match the visual centre, not (0,0).
     [System.Serializable]
     private class ClampIcon
     {
@@ -77,6 +87,12 @@ public class MapUI : MonoBehaviour
         public Vector3 WorldPosition;
         public RectTransform Arrow;
         public Vector2 AnchoredOffset;
+
+        // Captured at Start: whatever the user placed the icon at in
+        // the Editor. Used when WorldPosition is (0, 0, 0) so the
+        // script doesn't yank the icon off-screen.
+        [System.NonSerialized] public Vector2 DefaultAnchoredPos;
+        [System.NonSerialized] public bool HasDefault;
     }
 
     private void Awake()
@@ -103,6 +119,25 @@ public class MapUI : MonoBehaviour
         }
 
         SetOpen(false);
+    }
+
+    private void Start()
+    {
+        // Capture hand-placed anchoredPosition so default-mode icons
+        // (those without a WorldPosition) sit where the user dropped
+        // them in the Editor. Without this the script would either
+        // yank them to (0, 0) every frame or never touch them — both
+        // are surprising.
+        if (_clampIcons != null)
+        {
+            for (int i = 0; i < _clampIcons.Length; i++)
+            {
+                var ci = _clampIcons[i];
+                if (ci == null || ci.Icon == null) continue;
+                ci.DefaultAnchoredPos = ci.Icon.anchoredPosition;
+                ci.HasDefault = true;
+            }
+        }
     }
 
     private void OnDestroy()
@@ -261,18 +296,45 @@ public class MapUI : MonoBehaviour
             }
         }
 
-        // Hand-placed static icons (Mama / Rahul / Skimmer): the user
-        // drops RectTransforms into _clampIcons with the world
-        // position they represent. anchoredPosition is in the icon's
-        // parent local space; if the icon lives inside MapBackground
-        // (which the script pans every frame) the parent pan and the
-        // icon's own (mx, mz) combine so the world point lines up
-        // with the visible mask.
+        // Hand-placed static icons (Mama / Rahul / Skimmer).
+        //
+        // Two modes:
+        //   - WorldPosition == (0, 0, 0) → "hand-placed" mode. We
+        //     captured the icon's Inspector anchoredPosition in
+        //     Start() and just keep restoring it every frame. The
+        //     icon stays exactly where the user dropped it. No
+        //     distance is reported for these (only the ones the
+        //     script is actively positioning count).
+        //   - WorldPosition != (0, 0, 0) → "world-anchored" mode. The
+        //     icon is driven every frame: (world - player) * PPM in
+        //     its parent's local space, snapped to the rim when the
+        //     point falls outside _mapPixelRadius. Child Arrow (if
+        //     assigned) is rotated to point at the real world pos.
+        //
+        // Either way the icon stays visible. The script never yanks
+        // a hand-placed icon to (0, 0) — that's the bug we're
+        // avoiding.
         float nearestDist = float.PositiveInfinity;
         for (int i = 0; i < _clampIcons.Length; i++)
         {
             var ci = _clampIcons[i];
             if (ci == null || ci.Icon == null) continue;
+
+            if (ci.WorldPosition == Vector3.zero)
+            {
+                // Hand-placed: restore the user-picked anchored
+                // position every frame so any other code that
+                // touches it (animation, dialogue panel, etc.) can't
+                // accidentally leave it offset.
+                if (ci.HasDefault)
+                {
+                    ci.Icon.gameObject.SetActive(true);
+                    ci.Icon.anchoredPosition = ci.DefaultAnchoredPos;
+                }
+                if (ci.Arrow != null) ci.Arrow.gameObject.SetActive(false);
+                continue;
+            }
+
             Vector3 d2 = ci.WorldPosition - _playerTransform.position;
             float mx = d2.x * _pixelsPerMeter;
             float mz = d2.z * _pixelsPerMeter;
