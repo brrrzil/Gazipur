@@ -27,9 +27,11 @@ public class MapUI : MonoBehaviour
     [SerializeField] private RectTransform _markerArrowPrefab;
 
     [Header("Clamp icons (static, hand-placed)")]
-    [Tooltip("Pixel radius in _mapMask local space. A clamp icon is never allowed to sit farther than this from the mask centre (where the player arrow is). When the icon's mask-local distance exceeds this, it is snapped to the rim in its current direction; the Arrow (if assigned) is shown next to it on the rim and rotated to point away from the centre.")]
+    [Tooltip("Pixel radius in _mapMask local space. When a clamp icon's distance from the mask centre exceeds this, the icon switches into arrow mode: its Image swaps to _clampArrowSprite, its RectTransform snaps to the rim (20x20) in the original direction, and its z-rotation points away from the centre. When the icon comes back inside the radius, the original sprite, original sizeDelta and identity rotation are restored and the icon returns to its hand-picked anchoredPosition.")]
     [SerializeField] private float _clampRadius = 100f;
-    [Tooltip("Hand-placed icons inside MapMask / MarkersParent. Each entry has an Icon (RectTransform) and an optional Arrow (RectTransform) sized 20x20 in the Editor. The icon keeps its standard size and rotation; when it would sit beyond _clampRadius it's snapped to the rim and the Arrow lights up to show which way to go.")]
+    [Tooltip("Sprite used while a clamp icon sits beyond _clampRadius (the off-radar arrow).")]
+    [SerializeField] private Sprite _clampArrowSprite;
+    [Tooltip("Hand-placed icons inside MapMask / MarkersParent. Each entry is a single RectTransform whose sprite, sizeDelta and rotation are swapped at runtime depending on its distance to the mask centre.")]
     [SerializeField] private ClampIcon[] _clampIcons;
 
     [Header("World anchor")]
@@ -64,27 +66,36 @@ public class MapUI : MonoBehaviour
         public RectTransform Arrow;
     }
 
-    // Hand-placed map icon: a RectTransform the user wired in the
-    // Inspector plus an optional Arrow (the off-radar sprite the
-    // user sized to 20x20 in the Editor). The two are mutually
-    // exclusive: when the icon's distance from the mask centre is
-    // within _clampRadius the icon is shown and the Arrow is
-    // hidden; when it exceeds _clampRadius the icon is hidden and
-    // the Arrow is shown on the rim, its z-rotation pointing away
-    // from the mask centre. The icon's own anchoredPosition, size
-    // and rotation are never touched by the script.
+    // Hand-placed map icon: a single RectTransform the user wired
+    // in the Inspector. The icon has two visual modes:
+    //
+    //   - Inside _clampRadius (default): the icon's own sprite,
+    //     own sizeDelta, identity rotation and hand-picked
+    //     anchoredPosition are shown. This is what the user
+    //     composed in the Editor.
+    //
+    //   - Beyond _clampRadius: the icon morphs into an arrow —
+    //     its Image swaps to _clampArrowSprite, its sizeDelta
+    //     becomes (20, 20), its z-rotation points away from the
+    //     mask centre and its anchoredPosition is clamped to
+    //     length _clampRadius in the original direction.
+    //
+    // When the player walks back inside the radius, the icon
+    // restores its original sprite / size / rotation / position.
     [System.Serializable]
     private class ClampIcon
     {
         public RectTransform Icon;
-        public RectTransform Arrow;
 
-        // The Arrow's parent RectTransform. Re-evaluated every
-        // frame because the Arrow's parent sits inside MapMask via
-        // MapBackground, which is panned every frame.
-        [System.NonSerialized] public RectTransform ArrowParentRt;
-        [System.NonSerialized] public bool HasArrow;
+        // Cached at Start: the image and the values to restore
+        // when the icon comes back inside _clampRadius.
+        [System.NonSerialized] public Image Image;
+        [System.NonSerialized] public Sprite OriginalSprite;
+        [System.NonSerialized] public Vector2 OriginalSizeDelta;
+        [System.NonSerialized] public Vector2 OriginalAnchoredPos;
+        [System.NonSerialized] public RectTransform IconParentRt;
         [System.NonSerialized] public bool HasIcon;
+        [System.NonSerialized] public bool HasImage;
     }
 
     private void Awake()
@@ -115,23 +126,25 @@ public class MapUI : MonoBehaviour
 
     private void Start()
     {
-        // Cache the Arrow's parent RectTransform (used each frame
-        // to translate the mask-local rim target into the Arrow's
-        // parent's local space). Start the Arrow hidden — the
-        // Update loop toggles it on/off based on the icon's
-        // distance to the mask centre.
+        // Capture each icon's hand-picked sprite / size / position
+        // so we can restore them when the player walks back inside
+        // _clampRadius. The icon's parent RectTransform is cached
+        // as well — its mask-local offset is re-evaluated each
+        // frame because the parent chain (MarkersParent inside
+        // MapBackground inside MapMask) is panned every frame by
+        // the sprite-pan line.
         if (_clampIcons == null) return;
         for (int i = 0; i < _clampIcons.Length; i++)
         {
             var ci = _clampIcons[i];
             if (ci == null || ci.Icon == null) continue;
             ci.HasIcon = true;
-            if (ci.Arrow != null)
-            {
-                ci.ArrowParentRt = ci.Arrow.parent as RectTransform;
-                ci.HasArrow = true;
-                ci.Arrow.gameObject.SetActive(false);
-            }
+            ci.IconParentRt = ci.Icon.parent as RectTransform;
+            ci.OriginalAnchoredPos = ci.Icon.anchoredPosition;
+            ci.OriginalSizeDelta = ci.Icon.sizeDelta;
+            ci.Image = ci.Icon.GetComponent<Image>();
+            ci.HasImage = ci.Image != null;
+            if (ci.HasImage) ci.OriginalSprite = ci.Image.sprite;
         }
     }
 
@@ -305,22 +318,22 @@ public class MapUI : MonoBehaviour
 
         // Hand-placed static icons (Mama / Rahul / Skimmer).
         //
-        // The icon's anchoredPosition, size and rotation are set
-        // by hand in the Editor and never touched here. Every
-        // frame we re-measure the icon's offset from the mask
-        // centre (ToMaskLocal includes the parent's sprite-pan,
-        // so the value stays correct as the player walks around).
+        // Each icon is a single RectTransform. Every frame we
+        // re-measure its offset from the mask centre (ToMaskLocal
+        // already includes the parent's sprite-pan, so this stays
+        // correct as the player walks around).
         //
-        //   - dist <= _clampRadius: icon visible at its
-        //     hand-picked position; Arrow hidden.
-        //   - dist > _clampRadius: icon is not allowed to sit
-        //     farther than _clampRadius from the centre, so it's
-        //     hidden. The Arrow (sized 20x20 in the Editor) is
-        //     shown on the rim in the same direction, with its
-        //     z-rotation pointing away from the centre. The
-        //     icon's anchoredPosition is left alone — when the
-        //     player comes back inside the radius, the icon
-        //     reappears at the same spot.
+        //   - dist <= _clampRadius: icon mode. The icon's own
+        //     sprite, sizeDelta, identity rotation and
+        //     hand-picked anchoredPosition are restored.
+        //
+        //   - dist > _clampRadius: arrow mode. The icon's Image
+        //     swaps to _clampArrowSprite, its sizeDelta becomes
+        //     (20, 20), its z-rotation points away from the
+        //     centre and its anchoredPosition is clamped to
+        //     length _clampRadius in the original direction. The
+        //     icon itself stays visible — it just *becomes* the
+        //     arrow.
         float nearestDist = float.PositiveInfinity;
         for (int i = 0; i < _clampIcons.Length; i++)
         {
@@ -333,28 +346,28 @@ public class MapUI : MonoBehaviour
 
             if (dist <= _clampRadius)
             {
-                if (ci.Icon.gameObject.activeSelf == false)
-                    ci.Icon.gameObject.SetActive(true);
-                if (ci.HasArrow && ci.Arrow.gameObject.activeSelf)
-                    ci.Arrow.gameObject.SetActive(false);
+                if (ci.Icon.sizeDelta != ci.OriginalSizeDelta)
+                    ci.Icon.sizeDelta = ci.OriginalSizeDelta;
+                if (ci.Icon.localRotation != Quaternion.identity)
+                    ci.Icon.localRotation = Quaternion.identity;
+                if (ci.Icon.anchoredPosition != ci.OriginalAnchoredPos)
+                    ci.Icon.anchoredPosition = ci.OriginalAnchoredPos;
+                if (ci.HasImage && ci.Image.sprite != ci.OriginalSprite)
+                    ci.Image.sprite = ci.OriginalSprite;
             }
             else
             {
-                if (ci.Icon.gameObject.activeSelf)
-                    ci.Icon.gameObject.SetActive(false);
-                if (ci.HasArrow)
-                {
-                    if (!ci.Arrow.gameObject.activeSelf)
-                        ci.Arrow.gameObject.SetActive(true);
-                    var dir = iconMaskLocal / dist;
-                    Vector2 rimMaskLocal = dir * _clampRadius;
-                    Vector2 arrowParentMask = ci.ArrowParentRt != null
-                        ? ToMaskLocal(ci.ArrowParentRt)
-                        : Vector2.zero;
-                    ci.Arrow.anchoredPosition = rimMaskLocal - arrowParentMask;
-                    float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
-                    ci.Arrow.localRotation = Quaternion.Euler(0f, 0f, angle);
-                }
+                var dir = iconMaskLocal / dist;
+                Vector2 rimMaskLocal = dir * _clampRadius;
+                Vector2 iconParentMask = ci.IconParentRt != null
+                    ? ToMaskLocal(ci.IconParentRt)
+                    : Vector2.zero;
+                ci.Icon.anchoredPosition = rimMaskLocal - iconParentMask;
+                ci.Icon.sizeDelta = new Vector2(20f, 20f);
+                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
+                ci.Icon.localRotation = Quaternion.Euler(0f, 0f, angle);
+                if (ci.HasImage && _clampArrowSprite != null && ci.Image.sprite != _clampArrowSprite)
+                    ci.Image.sprite = _clampArrowSprite;
             }
         }
         Debug.Log($"[MapUI] nearest clamp icon: {nearestDist:F1}px from player arrow");
