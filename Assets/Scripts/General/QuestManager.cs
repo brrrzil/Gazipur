@@ -19,7 +19,12 @@ public class QuestManager : MonoBehaviour
     [Inject] DataManager _data;
     [Inject] GameModeManager _mode;
     [Inject] Sounds _sounds;
-    [Inject] MapUI _mapUI;
+    // MapUI is NOT injected: it doesn't exist in the scene at
+    // SceneContext.Resolve() time. The map is an in-world item
+    // the player picks up first; MapUI gets created and assigns
+    // MapUI.Instance in its own Awake later. By the time the
+    // FoundBlueprint event fires, the player already has the map
+    // and MapUI.Instance is set, so the direct lookup is safe.
     private bool _isStartFind;
     private void Start()
     {
@@ -51,8 +56,11 @@ public class QuestManager : MonoBehaviour
                 // First loot after talking to the trader → the
                 // skimmer NPC activates in the world and its map
                 // icon unlocks. MapUI persists the unlock so it
-                // survives scene reloads and restarts.
-                _mapUI.UnlockClampIcon("Icon_Skimmer");
+                // survives scene reloads and restarts. Use
+                // MapUI.Instance directly because the map hasn't
+                // been picked up by the player at scene start, so
+                // [Inject] would resolve to null.
+                MapUI.Instance?.UnlockClampIcon("Icon_Skimmer");
             }
             if (QuestsState[Quests.filter] == 1 && _inventory.CheckFilterBlueprint(i))
             {
