@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Single owner of <see cref="RenderSettings.fogDensity"/>. Two
@@ -43,6 +44,36 @@ public class FogController : MonoBehaviour
         // Reset to the scene's authored density every launch. If you
         // want pickups to persist, add a separate "save game" hook
         // instead of touching this.
+        _clearedDensity = RenderSettings.fogDensity;
+        _liveDensity = _clearedDensity;
+        _targetDensity = _clearedDensity;
+        RenderSettings.fogDensity = _liveDensity;
+
+        // Without this, a launch that goes MainMenu -> GameScene
+        // (LoadSceneMode.Single) reads the MainMenu's authored fog
+        // density at Awake (m_Fog: 0 there), caches it as the
+        // baseline, and keeps RenderSettings.fogDensity at 0 even
+        // after GameScene loads with m_FogDensity: 0.2 — so the
+        // fog visibly disappears for anyone who starts from the
+        // menu. Re-reading on sceneLoaded for Single mode
+        // snapshots the *new* scene's authored density the moment
+        // it becomes active.
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        Instance = null;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Only re-read on full scene replacement. Additive loads
+        // (UI panels stacked on top of gameplay) shouldn't clobber
+        // the live density the player is currently looking at.
+        if (mode != LoadSceneMode.Single) return;
         _clearedDensity = RenderSettings.fogDensity;
         _liveDensity = _clearedDensity;
         _targetDensity = _clearedDensity;

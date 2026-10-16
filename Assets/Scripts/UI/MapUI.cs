@@ -153,6 +153,10 @@ public class MapUI : MonoBehaviour
                 ci.HasArrow = true;
                 ci.Arrow.gameObject.SetActive(false);
             }
+            // One-shot diagnostic so you can see at a glance why
+            // an icon is or isn't visible. Remove once you've
+            // confirmed the IsDiscovered source for each entry.
+            Debug.Log($"[MapUI] ClampIcon '{ci.Icon.name}': activeSelf={ci.Icon.gameObject.activeSelf}, PlayerPrefs[{key}]={unlocked}, IsDiscovered={ci.IsDiscovered}");
         }
     }
 
