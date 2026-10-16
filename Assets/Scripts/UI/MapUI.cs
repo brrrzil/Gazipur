@@ -90,6 +90,14 @@ public class MapUI : MonoBehaviour
         [System.NonSerialized] public RectTransform ArrowParentRt;
         [System.NonSerialized] public bool HasIcon;
         [System.NonSerialized] public bool HasArrow;
+
+        // "Discovered" gate. While false, Update() never touches
+        // the icon — the icon stays SetActive(false) on the
+        // prefab (e.g. Icon_Skimmer) until something calls
+        // UnlockClampIcon(iconName) for it. State is mirrored to
+        // PlayerPrefs so it survives scene reloads and game
+        // restarts.
+        [System.NonSerialized] public bool IsDiscovered;
     }
 
     private void Awake()
@@ -120,18 +128,25 @@ public class MapUI : MonoBehaviour
 
     private void Start()
     {
-        // Cache the Arrow's parent RectTransform and start every
-        // Arrow hidden. The Update loop toggles Icon / Arrow
-        // visibility based on the icon's distance to the mask
-        // centre. We do not touch the Icon's position, size or
-        // rotation here — those are the user's hand-picked
-        // values and stay as the Editor composed them.
+        // Cache the Arrow's parent RectTransform, start every Arrow
+        // hidden and resolve each icon's "discovered" state.
+        // IsDiscovered = true if either:
+        //   - the user left the icon SetActive(true) in the Editor
+        //     (Mama, Rahul — visible from the start of the game), or
+        //   - PlayerPrefs says we already unlocked it in a previous
+        //     session (Skimmer after the FoundBlueprint event).
+        // If neither is true (Skimmer on a fresh save) the icon
+        // stays SetActive(false) and Update() won't touch it until
+        // UnlockClampIcon(name) is called.
         if (_clampIcons == null) return;
         for (int i = 0; i < _clampIcons.Length; i++)
         {
             var ci = _clampIcons[i];
             if (ci == null || ci.Icon == null) continue;
             ci.HasIcon = true;
+            string key = PlayerPrefsKey(ci.Icon.name);
+            bool unlocked = PlayerPrefs.GetInt(key, 0) == 1;
+            ci.IsDiscovered = ci.Icon.gameObject.activeSelf || unlocked;
             if (ci.Arrow != null)
             {
                 ci.ArrowParentRt = ci.Arrow.parent as RectTransform;
@@ -140,6 +155,11 @@ public class MapUI : MonoBehaviour
             }
         }
     }
+
+    // PlayerPrefs key for an icon's "unlocked" state. The icon name
+    // is the unique identifier (set in the Editor) so this works
+    // for any future icon the user adds to the array.
+    private static string PlayerPrefsKey(string iconName) => "clamp_unlocked_" + iconName;
 
     // World position of a RectTransform, expressed in _mapMask
     // local space. The mask's pivot is the centre of the radar, so
@@ -201,6 +221,28 @@ public class MapUI : MonoBehaviour
 
     public void Toggle() => SetOpen(!_isOpen);
     public void Unlock() => SetOpen(true);
+
+    // Unlock a clamp icon by its GameObject name. The icon
+    // becomes visible the next frame (and on every subsequent
+    // session, because we persist the flag in PlayerPrefs).
+    // Safe to call multiple times — no-op after the first.
+    // Callers: QuestManager after StartRemark(foundBlueprint)
+    // for Icon_Skimmer; future event hooks for any new icons.
+    public void UnlockClampIcon(string iconName)
+    {
+        if (_clampIcons == null) return;
+        for (int i = 0; i < _clampIcons.Length; i++)
+        {
+            var ci = _clampIcons[i];
+            if (ci == null || ci.Icon == null) continue;
+            if (ci.Icon.name != iconName) continue;
+            if (ci.IsDiscovered) return;   // already unlocked
+            ci.IsDiscovered = true;
+            PlayerPrefs.SetInt(PlayerPrefsKey(iconName), 1);
+            PlayerPrefs.Save();
+            return;
+        }
+    }
 
     private void RebuildMarkers()
     {
@@ -328,6 +370,18 @@ public class MapUI : MonoBehaviour
         {
             var ci = _clampIcons[i];
             if (!ci.HasIcon) continue;
+
+            // Gate: undiscovered icons (e.g. Icon_Skimmer before
+            // the FoundBlueprint event) are forced off and
+            // ignored for the distance scan. Without this, the
+            // SetActive(true) below would bring the icon back
+            // every frame and bypass the unlock requirement.
+            if (!ci.IsDiscovered)
+            {
+                if (ci.Icon.gameObject.activeSelf) ci.Icon.gameObject.SetActive(false);
+                if (ci.HasArrow && ci.Arrow.gameObject.activeSelf) ci.Arrow.gameObject.SetActive(false);
+                continue;
+            }
 
             Vector2 iconMaskLocal = ToMaskLocal(ci.Icon);
             float dist = iconMaskLocal.magnitude;

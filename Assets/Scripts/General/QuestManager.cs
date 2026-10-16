@@ -19,6 +19,7 @@ public class QuestManager : MonoBehaviour
     [Inject] DataManager _data;
     [Inject] GameModeManager _mode;
     [Inject] Sounds _sounds;
+    [Inject] MapUI _mapUI;
     private bool _isStartFind;
     private void Start()
     {
@@ -47,6 +48,11 @@ public class QuestManager : MonoBehaviour
                 _dialog.Remarks.StartRemark(RemarksType.foundBlueprint);
                 _filterPlace.SetActive(true);
                 _mode.ChangeMode(GameMode.otherPanels);
+                // First loot after talking to the trader в†’ the
+                // skimmer NPC activates in the world and its map
+                // icon unlocks. MapUI persists the unlock so it
+                // survives scene reloads and restarts.
+                _mapUI.UnlockClampIcon("Icon_Skimmer");
             }
             if (QuestsState[Quests.filter] == 1 && _inventory.CheckFilterBlueprint(i))
             {
@@ -86,7 +92,7 @@ public class QuestManager : MonoBehaviour
         _filterPlace.SetActive(true);
         QuestsState[Quests.filter] = 2;
 
-        // BUGFIX: переключаем фоновую музыку на трек победы
+        // BUGFIX: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         _sounds.SwitchToWinBackground();
     }
 }
