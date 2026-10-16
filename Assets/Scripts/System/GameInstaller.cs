@@ -36,5 +36,12 @@ public class GameInstaller : MonoInstaller
         Container.Bind<DialogManager>().FromInstance(_dialogManager).AsSingle();
         Container.Bind<QuestManager>().FromInstance(_quest).AsSingle();
         Container.Bind<Tooltipe>().FromInstance(_tooltipe).AsSingle();
+        // MapUI lives in GameScene.unity (inside the 'Map' GameObject
+        // that becomes visible after the player picks the map up), not
+        // inside GameManager.prefab, so it can't be wired via a
+        // SerializeField reference. Bind it from the scene hierarchy
+        // instead — InstallBindings runs after every MonoBehaviour in
+        // the scene has Awoke, so FindObjectOfType will find it.
+        Container.Bind<MapUI>().FromComponentInHierarchy().AsSingle();
     }
 }
