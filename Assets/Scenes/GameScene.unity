@@ -4791,7 +4791,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &102783010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22901,6 +22901,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9004151675252628971, guid: de78e3a52ba2d3f4a857b1efd5812b4b, type: 3}
   m_PrefabInstance: {fileID: 519839386}
   m_PrefabAsset: {fileID: 0}
+--- !u!224 &520809197 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7072921906958931816, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &523875645 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6968629164310146697, guid: 672db997276968a48822ef49c311d4de, type: 3}
@@ -39161,6 +39166,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 832986058}
   m_Mesh: {fileID: -5364287261382099456, guid: 7d601acd1d30b1c4bbce664437ebbf81, type: 3}
+--- !u!224 &837307143 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 4702460987857348341, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &837453104
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -40954,6 +40964,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 6210666715188049390, guid: 5f90848816f15184f970f2ad0e1a2b49, type: 3}
   m_PrefabInstance: {fileID: 878353956}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &879080153 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3870148341776206662, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &879724805
 PrefabInstance:
@@ -52044,6 +52059,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1213123906}
   m_Mesh: {fileID: -5364287261382099456, guid: 7d601acd1d30b1c4bbce664437ebbf81, type: 3}
+--- !u!224 &1213149743 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 2643955016290491636, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1217657124
 GameObject:
   m_ObjectHideFlags: 0
@@ -76024,6 +76044,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8574154285596830383, guid: 71c0f9b797ca9a541b923028f5212e70, type: 3}
   m_PrefabInstance: {fileID: 1811518338}
   m_PrefabAsset: {fileID: 0}
+--- !u!224 &1811569401 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 4646657192539932029, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1817072659
 GameObject:
   m_ObjectHideFlags: 0
@@ -76799,6 +76824,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4037493392227636345, guid: fb614737d76537b4880b68246a62bf57, type: 3}
+--- !u!224 &1851975570 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 5535051176440662363, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+  m_PrefabInstance: {fileID: 5006747320137223824}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1855164785
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -93469,6 +93499,14 @@ MonoBehaviour:
   _markersEdgeParent: {fileID: 816569468}
   _markerIconPrefab: {fileID: 8154647190314918618, guid: 3898f462a44680e4f99188865a8b6848, type: 3}
   _markerArrowPrefab: {fileID: 1579537487295723615, guid: 7ec90bae77f10534280a5b991025c39d, type: 3}
+  _clampRadius: 150
+  _clampIcons:
+  - Icon: {fileID: 1811569401}
+    Arrow: {fileID: 879080153}
+  - Icon: {fileID: 1851975570}
+    Arrow: {fileID: 1213149743}
+  - Icon: {fileID: 837307143}
+    Arrow: {fileID: 520809197}
   _mapCenter: {x: 500, y: 0, z: 500}
   _pixelsPerMeter: 5
   _collectedPrefix: map_marker_collected_
@@ -105150,6 +105188,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1524791604}
     m_Modifications:
+    - target: {fileID: 471142794739154431, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1863680334631408512, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2903127805141434633, guid: 825bae53a08f44142a17b384c3a62718, type: 3}
       propertyPath: m_Name
       value: MapMask
