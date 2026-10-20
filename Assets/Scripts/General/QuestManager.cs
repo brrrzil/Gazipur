@@ -14,6 +14,8 @@ public class QuestManager : MonoBehaviour
     [SerializeField] private GameObject _filterObject;
     [SerializeField] private GameObject winPanel;
     [SerializeField] private Toggle _medecineCheckBox;
+    [Tooltip("Ending comics shown when the filter is completed. Its _playOnStart must be off so it waits for Play(). Wire its _onComicsFinished to ShowWinPanel(). Leave empty to fall back to the win panel directly.")]
+    [SerializeField] private ComicsController _endingComics;
     [Inject] Inventory _inventory;
     [Inject] DialogManager _dialog;
     [Inject] DataManager _data;
@@ -90,17 +92,33 @@ public class QuestManager : MonoBehaviour
     }
     public void CompleteFilter()
     {
-        // Use the dedicated `win` GameMode (added in round 10) so that
-        // PlayerMovement.SetMode treats this as a UI mode and the player
-        // can't move while the win panel is up. WinDiePanel.ContinueButton
-        // returns the game to outdors when the player clicks Continue.
-        _mode.ChangeMode(GameMode.win);
-        winPanel.SetActive(true);
         _blueprintPanel.SetActive(false);
         _filterPlace.SetActive(true);
         QuestsState[Quests.filter] = 2;
 
         // BUGFIX: ����������� ������� ������ �� ���� ������
         _sounds.SwitchToWinBackground();
+
+        // Ending comics instead of the bare win panel. The comics
+        // controller takes over the mode (GameMode.comics), pauses
+        // the game and shows the slides; wire its _onComicsFinished
+        // event to ShowWinPanel() to bring the old panel back after
+        // the player reads the ending.
+        if (_endingComics != null) _endingComics.Play();
+        else
+        {
+            // No comics wired in the Inspector — fall back to the
+            // previous behaviour so the game can't soft-lock.
+            ShowWinPanel();
+        }
+    }
+
+    // Show the win panel after the ending comics finishes. Kept public
+    // so it can be wired to ComicsController._onComicsFinished in the
+    // Inspector.
+    public void ShowWinPanel()
+    {
+        _mode.ChangeMode(GameMode.win);
+        winPanel.SetActive(true);
     }
 }

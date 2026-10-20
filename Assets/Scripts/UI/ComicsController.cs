@@ -10,6 +10,10 @@ public class ComicsController : MonoBehaviour
 {
     private const string PREFS_KEY = "comics_opening_shown";
 
+    [Header("Trigger")]
+    [Tooltip("If true, the comics plays automatically on Start. Set to false for the ending comics so it waits for an explicit Play() call from the win condition.")]
+    [SerializeField] private bool _playOnStart = true;
+
     [Header("Slides")]
     [Tooltip("Each slide is a child GameObject (Image/RawImage) shown one at a time. The first slide is shown on Start.")]
     [SerializeField] private GameObject[] _slides;
@@ -43,6 +47,7 @@ public class ComicsController : MonoBehaviour
     private CanvasGroup _canvasGroup;
     private int _currentSlide = -1;
     private bool _finished;
+    private bool _started;
     private Coroutine _transitionRoutine;
     private float _savedTimeScale = 1f;
     private float _currentSlideTime;
@@ -59,7 +64,7 @@ public class ComicsController : MonoBehaviour
         }
         if (_skipButton != null)
         {
-            _skipButton.gameObject.SetActive(true);
+            _skipButton.gameObject.SetActive(_playOnStart);
             _skipButton.onClick.AddListener(OnStartButtonClicked);
         }
 
@@ -71,11 +76,49 @@ public class ComicsController : MonoBehaviour
             _canvasGroup.interactable = false;
             return;
         }
+
+        // Deferred comics (the ending sequence) must stay invisible and
+        // non-interactive until Play() is called. Otherwise the ending's
+        // Skip button would float on screen for the whole game, and the
+        // slides themselves would render behind the HUD from frame one.
+        if (!_playOnStart)
+        {
+            _canvasGroup.alpha = 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable = false;
+            for (int i = 0; i < _slides.Length; i++)
+                if (_slides[i] != null) _slides[i].SetActive(false);
+        }
     }
 
     private void Start()
     {
         if (_finished) return;
+        if (!_playOnStart) return;
+
+        Begin();
+    }
+
+    // Start the slide sequence. Called automatically on Start when
+    // _playOnStart is true; call it explicitly (from the win condition
+    // or a UnityEvent) for deferred comics like the ending sequence.
+    public void Play()
+    {
+        if (_finished) return;
+        if (_started) return;
+        Begin();
+    }
+
+    private void Begin()
+    {
+        _started = true;
+
+        // Deferred comics were hidden in Awake — reveal the whole
+        // group (alpha + raycasts) before showing slide 0.
+        _canvasGroup.alpha = 1f;
+        _canvasGroup.blocksRaycasts = true;
+        _canvasGroup.interactable = true;
+        if (_skipButton != null) _skipButton.gameObject.SetActive(true);
 
         if (_pauseGame)
         {
@@ -96,7 +139,7 @@ public class ComicsController : MonoBehaviour
 
     private void Update()
     {
-        if (_finished) return;
+        if (!_started || _finished) return;
         if (_advanceOnClick)
         {
             bool advancePressed =
