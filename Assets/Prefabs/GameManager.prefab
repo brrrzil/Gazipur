@@ -194,8 +194,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::QuestManager
   _filterPanel: {fileID: 0}
   _blueprintPanel: {fileID: 0}
-  _filterPlace: {fileID: 0}
-  _filterObject: {fileID: 0}
+  _skimmerPlace: {fileID: 0}
+  _skimmerActive: {fileID: 0}
   winPanel: {fileID: 0}
   _medecineCheckBox: {fileID: 0}
 --- !u!1 &3537786038201433493

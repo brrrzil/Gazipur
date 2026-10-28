@@ -45420,11 +45420,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2209787343157371546}
     - target: {fileID: 7013588148307530979, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
-      propertyPath: _filterPlace
+      propertyPath: _skimmerPlace
       value: 
       objectReference: {fileID: 1032317218}
     - target: {fileID: 7013588148307530979, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}
-      propertyPath: _filterObject
+      propertyPath: _skimmerActive
       value: 
       objectReference: {fileID: 580951469}
     - target: {fileID: 7013588148307530979, guid: ac309359e8a6a654b9602de6b7bbb0e0, type: 3}

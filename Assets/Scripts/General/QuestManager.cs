@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Zenject;
 using static EnumData;
@@ -10,8 +11,12 @@ public class QuestManager : MonoBehaviour
 
     [SerializeField] private GameObject _filterPanel;
     [SerializeField] private GameObject _blueprintPanel;
-    [SerializeField] private GameObject _filterPlace;
-    [SerializeField] private GameObject _filterObject;
+    [Tooltip("The skimmer build site. Visible while the player is building, hidden once the skimmer is finished.")]
+    [FormerlySerializedAs("_filterPlace")]
+    [SerializeField] private GameObject _skimmerPlace;
+    [Tooltip("The finished skimmer. Hidden until the build completes.")]
+    [FormerlySerializedAs("_filterObject")]
+    [SerializeField] private GameObject _skimmerActive;
     [SerializeField] private GameObject winPanel;
     [SerializeField] private Toggle _medecineCheckBox;
     [Tooltip("Ending cutscene played when the filter is completed. Optional - if empty the win panel is shown directly. Wire the cutscene's _onFinished event to ShowWinPanel() so the panel appears after the sequence ends.")]
@@ -35,9 +40,9 @@ public class QuestManager : MonoBehaviour
             [Quests.filter] = 0,
             [Quests.healMother] = 0
         };
-        _filterObject.SetActive(false);
+        _skimmerActive.SetActive(false);
         _blueprintPanel.SetActive(false);
-        _filterPlace.SetActive(false);
+        _skimmerPlace.SetActive(false);
         _medecineCheckBox.gameObject.SetActive(false);
         _mode.onChangeMode += m =>
         {
@@ -53,7 +58,7 @@ public class QuestManager : MonoBehaviour
                 _filterPanel.SetActive(true);
                 _blueprintPanel.SetActive(true);
                 _dialog.Remarks.StartRemark(RemarksType.foundBlueprint);
-                _filterPlace.SetActive(true);
+                _skimmerPlace.SetActive(true);
                 _mode.ChangeMode(GameMode.otherPanels);
                 // First loot after talking to the trader → the
                 // skimmer NPC activates in the world and its map
@@ -93,8 +98,12 @@ public class QuestManager : MonoBehaviour
     public void CompleteFilter()
     {
         _blueprintPanel.SetActive(false);
-        _filterPlace.SetActive(true);
         QuestsState[Quests.filter] = 2;
+
+        // The build is done: the construction site goes away and the
+        // finished skimmer takes its place.
+        _skimmerPlace.SetActive(false);
+        _skimmerActive.SetActive(true);
 
         // BUGFIX: ����������� ������� ������ �� ���� ������
         _sounds.SwitchToWinBackground();
