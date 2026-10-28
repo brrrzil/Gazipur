@@ -17,6 +17,7 @@ public class GameModeManager : MonoBehaviour
     public UnityEvent<bool> OnOtherPanels = new UnityEvent<bool>();
     public UnityEvent<bool> OnWin = new UnityEvent<bool>();
     public UnityEvent<bool> OnComics = new UnityEvent<bool>();
+    public UnityEvent<bool> OnCutscene = new UnityEvent<bool>();
     public System.Action<GameMode> onChangeMode;
 
     // Explicit list of modes where the player cannot move/look and the cursor
@@ -34,6 +35,10 @@ public class GameModeManager : MonoBehaviour
         GameMode.otherPanels,
         GameMode.win,
         GameMode.comics,
+        // Cutscene locks the player (no walk, no look) but keeps the
+        // game clock running so Timeline / DOTween can animate.
+        // The cursor is hidden by CutsceneController itself.
+        GameMode.cutscene,
     };
 
     public static bool IsUIMode(GameMode mode) => UIModes.Contains(mode);
@@ -65,9 +70,15 @@ public class GameModeManager : MonoBehaviour
             [GameMode.otherPanels] = OnOtherPanels,
             [GameMode.win] = OnWin,
             [GameMode.comics] = OnComics,
+            [GameMode.cutscene] = OnCutscene,
         };
         _control.OnEsc += () =>
         {
+            // Esc must not break out of a cutscene — the sequence owns
+            // the screen until it finishes. Otherwise the player could
+            // skip the ending by mashing Esc.
+            if (_data.gameMode == GameMode.cutscene) return;
+
             if (_data.gameMode == GameMode.outdors)
             {
                 // Open the pause menu.

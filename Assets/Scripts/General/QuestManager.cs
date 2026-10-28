@@ -14,6 +14,8 @@ public class QuestManager : MonoBehaviour
     [SerializeField] private GameObject _filterObject;
     [SerializeField] private GameObject winPanel;
     [SerializeField] private Toggle _medecineCheckBox;
+    [Tooltip("Ending cutscene played when the filter is completed. Optional - if empty the win panel is shown directly. Wire the cutscene's _onFinished event to ShowWinPanel() so the panel appears after the sequence ends.")]
+    [SerializeField] private CutsceneController _cutscene;
     [Inject] Inventory _inventory;
     [Inject] DialogManager _dialog;
     [Inject] DataManager _data;
@@ -90,17 +92,37 @@ public class QuestManager : MonoBehaviour
     }
     public void CompleteFilter()
     {
-        // Use the dedicated `win` GameMode (added in round 10) so that
-        // PlayerMovement.SetMode treats this as a UI mode and the player
-        // can't move while the win panel is up. WinDiePanel.ContinueButton
-        // returns the game to outdors when the player clicks Continue.
-        _mode.ChangeMode(GameMode.win);
-        winPanel.SetActive(true);
         _blueprintPanel.SetActive(false);
         _filterPlace.SetActive(true);
         QuestsState[Quests.filter] = 2;
 
         // BUGFIX: ����������� ������� ������ �� ���� ������
         _sounds.SwitchToWinBackground();
+
+        // If a cutscene is wired up, it owns the screen: it plays the
+        // Timeline and then shows the win panel via its _onFinished
+        // event (wire CutsceneController._onFinished -> ShowWinPanel).
+        // Without a cutscene we fall back to the old behaviour so the
+        // game can never soft-lock at the ending.
+        if (_cutscene != null)
+        {
+            _cutscene.Play();
+        }
+        else
+        {
+            ShowWinPanel();
+        }
+    }
+
+    // Show the win panel. Public so it can be wired to
+    // CutsceneController._onFinished in the Inspector.
+    public void ShowWinPanel()
+    {
+        // Use the dedicated `win` GameMode (added in round 10) so that
+        // PlayerMovement.SetMode treats this as a UI mode and the player
+        // can't move while the win panel is up. WinDiePanel.ContinueButton
+        // returns the game to outdors when the player clicks Continue.
+        _mode.ChangeMode(GameMode.win);
+        winPanel.SetActive(true);
     }
 }

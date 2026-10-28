@@ -49,7 +49,11 @@ public class DebugCheat : MonoBehaviour
     [SerializeField] private Key _cheatKey = Key.P;
     [SerializeField] private int _moneyAmount = 1000;
 
+    [Tooltip("Key that triggers the win condition (the same call the skimmer build uses when it finishes). Lets you jump straight to the ending / cutscene for testing.")]
+    [SerializeField] private Key _winKey = Key.O;
+
     private DataManager _data;
+    private QuestManager _quest;
 
     private void Update()
     {
@@ -61,6 +65,15 @@ public class DebugCheat : MonoBehaviour
         // indexing.
         var kb = Keyboard.current;
         if (kb == null) return;
+
+        // Win cheat first: it is the more interesting one for testing
+        // the ending cutscene, and it must not also fire the money
+        // cheat in the same frame.
+        if (kb[_winKey].wasPressedThisFrame)
+        {
+            TriggerWin();
+            return;
+        }
 
         if (!kb[_cheatKey].wasPressedThisFrame) return;
 
@@ -91,5 +104,15 @@ public class DebugCheat : MonoBehaviour
         // _moneyCount Text automatically) and
         // handles negative values for spend paths.
         _data.ChangeMoney(_moneyAmount);
+    }
+
+    // Fire the same entry point the skimmer build uses when it
+    // finishes, so the whole ending sequence (cutscene + win panel)
+    // can be tested without crafting every part first.
+    private void TriggerWin()
+    {
+        if (_quest == null) _quest = FindFirstObjectByType<QuestManager>();
+        if (_quest == null) return;
+        _quest.CompleteFilter();
     }
 }

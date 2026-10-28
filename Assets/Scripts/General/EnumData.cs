@@ -14,7 +14,11 @@ public static class EnumData
         die,
         otherPanels,
         win,
-        comics
+        comics,
+        // Cutscene: the game is locked while a scripted sequence
+        // plays (Timeline / PlayableDirector). Added at the END of
+        // the enum so existing serialized values keep their meaning.
+        cutscene
     }
     public enum ToolsType
     {
