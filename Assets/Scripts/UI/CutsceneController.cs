@@ -92,7 +92,7 @@ public class CutsceneController : MonoBehaviour
         CaptureState();
 
         Debug.Log($"[Cutscene] playing '{_director.playableAsset.name}' " +
-                  $"({_restoreTargets != null ? _restoreTargets.Length : 0} restore targets, " +
+                  $"({(_restoreTargets != null ? _restoreTargets.Length : 0)} restore targets, " +
                   $"mode on finish: {_modeOnFinish})");
 
         // Remember the cursor so we can put it back exactly as it was.
