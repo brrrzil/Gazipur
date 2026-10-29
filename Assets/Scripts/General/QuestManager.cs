@@ -109,18 +109,31 @@ public class QuestManager : MonoBehaviour
         _sounds.SwitchToWinBackground();
 
         // If a cutscene is wired up, it owns the screen: it plays the
-        // Timeline and then shows the win panel via its _onFinished
-        // event (wire CutsceneController._onFinished -> ShowWinPanel).
-        // Without a cutscene we fall back to the old behaviour so the
-        // game can never soft-lock at the ending.
-        if (_cutscene != null)
+        // Timeline and the win panel is shown afterwards — either by
+        // CutsceneController._onFinished (-> ShowWinPanel) or by a
+        // Control Track on the Timeline itself.
+        //
+        // The field being empty is an easy mistake to make (the
+        // reference has to be dragged in the Inspector), and the
+        // silent fallback to ShowWinPanel() made it look like the
+        // cutscene settings were being ignored. So: look the
+        // controller up by type as a fallback, and say so loudly in
+        // the console when even that fails.
+        if (_cutscene == null)
         {
-            _cutscene.Play();
+            _cutscene = FindFirstObjectByType<CutsceneController>();
+            if (_cutscene == null)
+            {
+                Debug.LogWarning("QuestManager: no CutsceneController found — showing the win panel directly. " +
+                                 "Assign one to the 'Cutscene' field to play the ending cutscene.");
+                ShowWinPanel();
+                return;
+            }
+            Debug.Log("QuestManager: Cutscene field was empty, found the CutsceneController by type instead. " +
+                      "Assign it in the Inspector to remove this warning.");
         }
-        else
-        {
-            ShowWinPanel();
-        }
+
+        _cutscene.Play();
     }
 
     // Show the win panel. Public so it can be wired to
