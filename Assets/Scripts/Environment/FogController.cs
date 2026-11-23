@@ -96,6 +96,11 @@ public class FogController : MonoBehaviour
     /// what the world would be if aim weren't pressed.</summary>
     public float ClearedDensity => _clearedDensity;
 
+    //public void SetFogDensity(float amount)
+    //{
+    //    RenderSettings.fogDensity = amount;
+    //}
+
     /// <summary>Push the cleared density down by <paramref name="amount"/>,
     /// clamped at 0. Aim zoom follows along automatically because
     /// multiplies against the cleared value.</summary>

@@ -18,9 +18,9 @@ public class QuestManager : MonoBehaviour
     [FormerlySerializedAs("_filterObject")]
     [SerializeField] private GameObject _skimmerActive;
     [SerializeField] private GameObject winPanel;
+    [SerializeField] private CutsceneController _cutscene;
     [SerializeField] private Toggle _medecineCheckBox;
     [Tooltip("Ending cutscene played when the filter is completed. Optional - if empty the win panel is shown directly. Wire the cutscene's _onFinished event to ShowWinPanel() so the panel appears after the sequence ends.")]
-    [SerializeField] private CutsceneController _cutscene;
     [Inject] Inventory _inventory;
     [Inject] DialogManager _dialog;
     [Inject] DataManager _data;
@@ -99,6 +99,7 @@ public class QuestManager : MonoBehaviour
     {
         _blueprintPanel.SetActive(false);
         QuestsState[Quests.filter] = 2;
+        RenderSettings.fogDensity = 0;
 
         // The build is done: the construction site goes away and the
         // finished skimmer takes its place.
@@ -133,6 +134,7 @@ public class QuestManager : MonoBehaviour
                       "Assign it in the Inspector to remove this warning.");
         }
 
+        _cutscene.gameObject.SetActive(true);
         _cutscene.Play();
     }
 
